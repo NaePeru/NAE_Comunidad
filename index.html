@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proyecto Z — Accede a tu plataforma</title>
+  <meta name="description" content="Plataforma de aprendizaje y comunidad.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/layout.css">
+  <link rel="stylesheet" href="assets/css/gamificacion.css">
+
+  <style>
+    /* Estilos exclusivos de la página de login */
+    .auth-wrap {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+    }
+    /* Lado izquierdo: hero/branding */
+    .auth-hero {
+      background:
+        radial-gradient(circle at 20% 20%, rgba(242,169,0,0.12), transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(224,92,42,0.10), transparent 50%),
+        linear-gradient(160deg, #0F1117, #171B26);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px;
+      border-right: 1px solid var(--border);
+    }
+    .auth-hero .brand-mark {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .auth-hero h1 {
+      font-size: 44px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 18px;
+    }
+    .auth-hero h1 .accent {
+      background: linear-gradient(135deg, var(--gold), var(--orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .auth-hero p {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 420px;
+      line-height: 1.7;
+    }
+    .auth-features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 36px;
+    }
+    .auth-feature {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .auth-feature .ficon {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: rgba(242,169,0,0.1);
+      border: 1px solid rgba(242,169,0,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+
+    /* Lado derecho: formulario */
+    .auth-form-side {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 28px;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 400px;
+    }
+    .auth-card h2 {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
+    }
+    .auth-card .sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+    .auth-toggle {
+      text-align: center;
+      margin-top: 22px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .auth-toggle button {
+      color: var(--gold);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+    .config-warning {
+      margin-top: 18px;
+      padding: 12px 14px;
+      background: rgba(255,107,107,0.08);
+      border: 1px solid rgba(255,107,107,0.25);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: #ffb3b3;
+      line-height: 1.5;
+    }
+    .config-warning code {
+      font-family: var(--font-mono);
+      background: rgba(0,0,0,0.3);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 860px) {
+      .auth-wrap { grid-template-columns: 1fr; }
+      .auth-hero { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-wrap">
+
+    <!-- ── LADO IZQUIERDO: HERO ─────────────────────────────────────────── -->
+    <div class="auth-hero">
+      <div class="brand-mark">
+        <span style="font-size:18px;">◆</span> PROYECTO Z
+      </div>
+
+      <h1>
+        Aprende, conecta y <span class="accent">crece</span><br>
+        en una sola plataforma.
+      </h1>
+      <p>
+        Cursos, comunidad y eventos en vivo. Gana puntos, sube de nivel
+        y avanza junto a otros estudiantes.
+      </p>
+
+      <div class="auth-features">
+        <div class="auth-feature">
+          <div class="ficon">📚</div>
+          <div>Cursos de Excel, Power BI, SQL y más</div>
+        </div>
+        <div class="auth-feature">
+          <div class="ficon">💬</div>
+          <div>Comunidad activa con discusiones en tiempo real</div>
+        </div>
+        <div class="auth-feature">
+          <div class="ficon">🏆</div>
+          <div>Gamificación: puntos, niveles y ranking</div>
+        </div>
+        <div class="auth-feature">
+          <div class="ficon">📡</div>
+          <div>Clases en vivo y eventos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LADO DERECHO: FORMULARIO ─────────────────────────────────────── -->
+    <div class="auth-form-side">
+      <div class="auth-card">
+
+        <!-- ACCESO CON MAGIC LINK (igual que Skool) -->
+        <div id="panel-login">
+          <h2>Accede a tu plataforma 🚀</h2>
+          <p class="sub">Ingresa tu nombre y email. Te enviaremos un link mágico para entrar, sin contraseña.</p>
+
+          <form id="form-login">
+            <div class="field">
+              <label class="field-label">Nombre</label>
+              <div class="input-group">
+                <span class="input-icon">👤</span>
+                <input type="text" id="login-nombre" placeholder="Tu nombre" autocomplete="name">
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Email</label>
+              <div class="input-group">
+                <span class="input-icon">✉️</span>
+                <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="email" required>
+              </div>
+            </div>
+
+            <span class="field-error" id="login-error"></span>
+
+            <button type="submit" class="btn btn-primary btn-block" id="login-btn">
+              Enviar link mágico →
+            </button>
+          </form>
+
+          <p class="muted center" style="font-size:11.5px;margin-top:14px;line-height:1.6;">
+            🔒 Sin contraseñas. Recibirás un email con un enlace seguro.<br>
+            ¿Ya tienes cuenta? Solo pon tu email y te enviaremos el link.
+          </p>
+        </div>
+
+        <!-- Mensaje de éxito (se muestra al enviar el link) -->
+        <div id="panel-enviado" class="hidden">
+          <div style="text-align:center;padding:10px 0;">
+            <div style="font-size:56px;margin-bottom:16px;">📨</div>
+            <h2 style="font-size:22px;font-weight:800;margin-bottom:8px;">¡Revisa tu correo!</h2>
+            <p class="sub" style="margin-bottom:24px;">
+              Enviamos un link mágico a:<br>
+              <strong id="email-enviado" style="color:var(--gold);"></strong>
+            </p>
+            <div class="card" style="background:rgba(61,214,140,0.06);border-color:rgba(61,214,140,0.2);text-align:left;font-size:13px;line-height:1.7;color:var(--muted);">
+              <strong style="color:var(--green);">Pasos:</strong><br>
+              1. Abrí tu email<br>
+              2. Buscá el mensaje de Proyecto Z<br>
+              3. Hacé click en el enlace del correo<br>
+              4. ¡Vas a entrar automáticamente!
+            </div>
+            <button type="button" class="btn btn-ghost btn-block" style="margin-top:18px;" onclick="volverLogin()">
+              ← Volver
+            </button>
+          </div>
+        </div>
+
+        <!-- AVISO DE CONFIGURACIÓN (solo si no se configuró Supabase) -->
+        <div class="config-warning hidden" id="config-warning">
+          ⚠️ <strong>Falta configurar Supabase.</strong><br>
+          Edita <code>assets/js/supabase-client.js</code> con tu URL y anon key.
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase, supabaseConfigured } from './assets/js/supabase-client.js';
+    import { enviarMagicLink } from './assets/js/auth.js';
+    import { toast } from './assets/js/utils.js';
+
+    // Mostrar aviso si no está configurado
+    if (!supabaseConfigured) {
+      document.getElementById('config-warning').classList.remove('hidden');
+    }
+
+    // Si ya hay sesión activa (vienen del magic link), ir directo a la app
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        window.location.href = 'app/aula.html';
+      }
+    });
+
+    // Detectar si viene de un magic link (URL con tokens)
+    // detectSessionInUrl: true en el cliente ya maneja esto automáticamente,
+    // pero mostramos un mensaje mientras tanto.
+    if (window.location.hash.includes('access_token') || window.location.search.includes('code')) {
+      toast('✅ Verificando acceso...');
+    }
+
+    // ── Volver al formulario desde el panel de "email enviado" ──
+    window.volverLogin = function() {
+      document.getElementById('panel-enviado').classList.add('hidden');
+      document.getElementById('panel-login').classList.remove('hidden');
+    };
+
+    // ── Enviar magic link ──
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errEl = document.getElementById('login-error');
+      errEl.textContent = '';
+
+      const nombre = document.getElementById('login-nombre').value.trim();
+      const email = document.getElementById('login-email').value.trim();
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Enviando link...';
+
+      const { error, enviado } = await enviarMagicLink({ nombre, email });
+
+      btn.disabled = false;
+      btn.innerHTML = 'Enviar link mágico →';
+
+      if (error) {
+        errEl.textContent = error;
+      } else if (enviado) {
+        // Mostrar pantalla de "revisa tu correo"
+        document.getElementById('email-enviado').textContent = email;
+        document.getElementById('panel-login').classList.add('hidden');
+        document.getElementById('panel-enviado').classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

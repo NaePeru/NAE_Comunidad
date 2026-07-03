@@ -1,0 +1,194 @@
+/* ============================================================================
+   PROYECTO Z — layout.css
+   Estructura general: topbar, sidebar, contenedores, grid, responsive.
+   ============================================================================ */
+
+/* ── TOPBAR (barra superior global, estilo tu Index.html) ────────────────── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: var(--topbar-h);
+  padding: 0 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+}
+.topbar .brand {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.topbar .sep { color: var(--muted2); }
+.topbar .level-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.topbar-spacer { flex: 1; }
+
+/* Chip de nivel del usuario actual */
+.nivel-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 20px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Pill de validez de membresía */
+.validity-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+
+/* ── CONTENEDOR PRINCIPAL ────────────────────────────────────────────────── */
+.container {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+.page-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.page-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+
+/* ── NAV LATERAL (sidebar) ───────────────────────────────────────────────── */
+.app-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 18px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--gold);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.sidebar-link:hover { background: var(--card); color: var(--text); text-decoration: none; }
+.sidebar-link.active {
+  background: rgba(242,169,0,0.1);
+  color: var(--gold);
+}
+.sidebar-link .nav-icon { font-size: 17px; width: 22px; text-align: center; }
+.sidebar-footer {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-user-info { min-width: 0; flex: 1; }
+.sidebar-user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-user-role { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+
+.app-main { min-width: 0; }
+
+
+/* ── GRID DE TARJETAS ────────────────────────────────────────────────────── */
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+
+/* ── TAB BAR MÓVIL (barra inferior en celular) ───────────────────────────── */
+.tabbar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+  padding: 8px 6px env(safe-area-inset-bottom);
+}
+.tabbar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px;
+  font-size: 10px;
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+}
+.tabbar-item.active { color: var(--gold); }
+.tabbar-item .tab-icon { font-size: 19px; }
+
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .tabbar { display: flex; }
+  .app-main { padding-bottom: 80px; }
+  .container { padding: 20px 16px 100px; }
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .page-title { font-size: 22px; }
+  .topbar { padding: 0 16px; gap: 10px; }
+  .topbar .level-label { display: none; }
+}

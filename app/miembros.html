@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Miembros — Proyecto Z</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <link rel="stylesheet" href="../assets/css/gamificacion.css">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span style="font-size:16px;">◆</span> PROYECTO Z</div>
+      <nav class="sidebar-nav">
+        <a href="aula.html" class="sidebar-link"><span class="nav-icon">🏠</span> Aula</a>
+        <a href="cursos.html" class="sidebar-link"><span class="nav-icon">📚</span> Cursos</a>
+        <a href="comunidad.html" class="sidebar-link"><span class="nav-icon">💬</span> Comunidad</a>
+        <a href="eventos.html" class="sidebar-link"><span class="nav-icon">📅</span> Eventos</a>
+        <a href="miembros.html" class="sidebar-link active"><span class="nav-icon">👥</span> Miembros</a>
+        <a href="perfil.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Mi perfil</a>
+        <a href="admin.html" class="sidebar-link" id="link-admin" style="display:none;"><span class="nav-icon">🛡️</span> Admin</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="avatar avatar-sm" id="sb-avatar"></div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sb-name">—</div>
+          <div class="sidebar-user-role" id="sb-role">—</div>
+        </div>
+        <button class="btn btn-sm btn-ghost" onclick="window.__logout()" title="Cerrar sesión">⏻</button>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <div class="topbar">
+        <span class="brand">Miembros</span>
+        <span class="sep">·</span>
+        <span class="level-label">RANKING</span>
+        <div class="topbar-spacer"></div>
+        <span class="nivel-chip" id="tb-nivel-chip"></span>
+      </div>
+
+      <div class="container" style="max-width:720px;">
+
+        <div class="page-header">
+          <h1 class="page-title">Ranking 🏆</h1>
+          <p class="page-sub">Quién está aportando más valor a la comunidad.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-3" style="margin-bottom:24px;">
+          <div class="card" style="text-align:center;padding:16px;">
+            <div style="font-size:24px;font-weight:800;font-family:var(--font-mono);color:var(--gold);" id="stat-miembros">0</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">MIEMBROS</div>
+          </div>
+          <div class="card" style="text-align:center;padding:16px;">
+            <div style="font-size:24px;font-weight:800;font-family:var(--font-mono);color:var(--green);" id="stat-activos">0</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">ACTIVOS / SEMANA</div>
+          </div>
+          <div class="card" style="text-align:center;padding:16px;">
+            <div style="font-size:24px;font-weight:800;font-family:var(--font-mono);color:var(--blue);" id="stat-posts">0</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">PUBLICACIONES</div>
+          </div>
+        </div>
+
+        <!-- Tabs: Semana / Total -->
+        <div style="display:flex;gap:8px;margin-bottom:18px;">
+          <button class="pill active" id="tab-semana" onclick="cambiarTab('semana')">📅 Esta semana</button>
+          <button class="pill" id="tab-total" onclick="cambiarTab('total')">🏆 Histórico</button>
+        </div>
+
+        <!-- Leaderboard -->
+        <div id="lb-list">
+          <div class="empty-state"><div class="empty-icon">⏳</div>Cargando ranking...</div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <div class="tabbar">
+    <a href="aula.html" class="tabbar-item"><span class="tab-icon">🏠</span>Aula</a>
+    <a href="cursos.html" class="tabbar-item"><span class="tab-icon">📚</span>Cursos</a>
+    <a href="comunidad.html" class="tabbar-item"><span class="tab-icon">💬</span>Comunidad</a>
+    <a href="eventos.html" class="tabbar-item"><span class="tab-icon">📅</span>Eventos</a>
+    <a href="perfil.html" class="tabbar-item"><span class="tab-icon">👤</span>Perfil</a>
+  </div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, logout, esAdmin, session } from '../assets/js/auth.js';
+    import { getNivel, iniciales, colorAvatar } from '../assets/js/utils.js';
+    import { cargarLeaderboard, cargarRankingTotal, cargarStatsComunidad } from '../assets/js/miembros.js';
+
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) {
+      window.location.href = '../index.html';
+    } else {
+      await cargarPerfilCompleto();
+      inicializar();
+    }
+
+    async function inicializar() {
+      const p = session.profile;
+      if (esAdmin()) document.getElementById('link-admin').style.display = 'flex';
+
+      document.getElementById('sb-name').textContent = p.nombre;
+      document.getElementById('sb-role').textContent = esAdmin() ? 'ADMIN' : (session.membership?.estado || 'alumno').toUpperCase();
+      const av = document.getElementById('sb-avatar');
+      const [c1, c2] = p.color || colorAvatar(p.nombre);
+      if (p.avatar_url) {
+        av.style.background = 'transparent'; av.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = p.avatar_url;
+        img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
+        av.appendChild(img);
+      } else {
+        av.style.background = c1; av.style.color = c2;
+        av.textContent = iniciales(p.nombre);
+      }
+
+      const nivel = getNivel(p.puntos || 0);
+      const chip = document.getElementById('tb-nivel-chip');
+      chip.style.cssText += `background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};`;
+      chip.textContent = `${nivel.emoji} ${nivel.nombre}`;
+
+      // Cargar datos
+      await cargarStatsComunidad();
+      await cargarLeaderboard();
+    }
+
+    let tabActual = 'semana';
+    async function cambiarTab(tab) {
+      tabActual = tab;
+      document.getElementById('tab-semana').classList.toggle('active', tab === 'semana');
+      document.getElementById('tab-total').classList.toggle('active', tab === 'total');
+      document.getElementById('lb-list').innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div>Cargando...</div>';
+      if (tab === 'semana') await cargarLeaderboard();
+      else await cargarRankingTotal();
+    }
+    window.cambiarTab = cambiarTab;
+
+    window.__logout = logout;
+  </script>
+</body>
+</html>

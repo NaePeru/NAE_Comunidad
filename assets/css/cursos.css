@@ -1,0 +1,442 @@
+/* ============================================================================
+   PROYECTO Z — cursos.css
+   Estilos del catálogo de cursos y la vista de detalle (lecciones).
+   Inspirado en Skool Classroom + Domestika: limpio, premium, con progreso.
+   ============================================================================ */
+
+/* ── TIPOGRAFÍA MEJORADA ──────────────────────────────────────────────────── */
+.courses-page .page-title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+.courses-page .page-sub {
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 6px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+
+/* ── FILTROS ──────────────────────────────────────────────────────────────── */
+.course-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 26px;
+  flex-wrap: wrap;
+}
+
+
+/* ── TARJETAS DE CURSO (catálogo rediseñado) ──────────────────────────────── */
+.course-card {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  margin-bottom: 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  overflow: hidden;
+}
+.course-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--cat-accent, var(--gold));
+  opacity: 0.8;
+}
+.course-card:hover {
+  border-color: var(--cat-accent, rgba(242,169,0,0.4));
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.32);
+  text-decoration: none;
+}
+.course-card:hover::before { opacity: 1; }
+.course-card.locked { opacity: 0.6; cursor: not-allowed; }
+.course-card.locked:hover {
+  border-color: var(--border);
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.course-thumb {
+  flex-shrink: 0;
+  width: 92px;
+  height: 92px;
+  margin: 16px 0 16px 18px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  position: relative;
+}
+.course-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+.course-body { flex: 1; min-width: 0; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; }
+.course-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #FFFFFF !important;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.course-desc {
+  font-size: 13px;
+  color: rgba(232,232,240,0.75);
+  font-weight: 400;
+  line-height: 1.55;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.course-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(232,232,240,0.55);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.course-meta .meta-dot { opacity: 0.4; }
+
+.course-progress {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.course-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.course-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cat-accent, var(--gold)), var(--orange));
+  border-radius: 20px;
+  transition: width 0.6s ease;
+}
+.course-progress-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cat-accent, var(--gold));
+  min-width: 38px;
+  text-align: right;
+}
+
+.course-action {
+  flex-shrink: 0;
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--cat-accent-bg, rgba(242,169,0,0.1));
+  border: 1px solid var(--cat-accent-border, rgba(242,169,0,0.3));
+  color: var(--cat-accent, var(--gold));
+  white-space: nowrap;
+  margin-right: 18px;
+  transition: all 0.18s;
+}
+.course-card:hover .course-action {
+  transform: scale(1.03);
+}
+.course-card.locked .course-action {
+  background: rgba(255,255,255,0.04);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+/* B edge: cuando el progreso es 100%, acción con check */
+.course-card.completed .course-action {
+  background: rgba(61,214,140,0.1);
+  border-color: rgba(61,214,140,0.3);
+  color: var(--green);
+}
+
+
+/* ── VISTA DE CURSO (detalle con lecciones) ──────────────────────────────── */
+.course-header {
+  background: linear-gradient(135deg, var(--card), var(--card2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.course-header::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--cat-accent, rgba(242,169,0,0.1)) 0%, transparent 70%);
+  opacity: 0.25;
+}
+.course-header-top {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+}
+.course-header-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  flex-shrink: 0;
+}
+.course-header-info { flex: 1; }
+.course-header-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.course-header-desc {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.6;
+}
+
+.course-header-stats {
+  display: flex;
+  gap: 28px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  position: relative;
+}
+.course-stat .num {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--gold);
+}
+.course-stat .label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.course-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.course-back:hover { color: var(--gold); }
+
+/* ── MÓDULO ──────────────────────────────────────────────────────────────── */
+.module {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.module-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--card2);
+  border-bottom: 1px solid var(--border);
+}
+.module-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(242,169,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.module-title {
+  font-size: 14px;
+  font-weight: 700;
+  flex: 1;
+}
+.module-progress {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── LECCIÓN ─────────────────────────────────────────────────────────────── */
+.lesson-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.lesson-item:last-child { border-bottom: none; }
+.lesson-item:hover { background: rgba(255,255,255,0.025); }
+.lesson-item.active { background: rgba(242,169,0,0.07); }
+
+.lesson-check {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: transparent;
+  transition: all 0.2s;
+}
+.lesson-check.done {
+  background: var(--green);
+  border-color: var(--green);
+  color: #0f1117;
+}
+.lesson-info { flex: 1; min-width: 0; }
+.lesson-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+.lesson-meta {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.lesson-duration {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted2);
+}
+
+
+/* ── REPRODUCTOR DE LECCIÓN ───────────────────────────────────────────────── */
+.lesson-player {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  margin-bottom: 24px;
+}
+.lesson-player-title {
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+.video-wrap {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+  background: #000;
+}
+.video-wrap iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: 0;
+}
+.lesson-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
+.lesson-player-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.lesson-complete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--green), #2bb374);
+  color: #06160e;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.lesson-complete-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(61,214,140,0.3); }
+.lesson-complete-btn.done {
+  background: var(--card2);
+  color: var(--green);
+  border: 1px solid rgba(61,214,140,0.4);
+}
+
+/* Mensaje de curso bloqueado */
+.locked-msg {
+  text-align: center;
+  padding: 50px 24px;
+}
+.locked-msg .lock-icon { font-size: 54px; margin-bottom: 16px; }
+.locked-msg h3 { font-size: 19px; margin-bottom: 10px; font-weight: 700; }
+.locked-msg p { color: var(--muted); font-size: 14px; max-width: 400px; margin: 0 auto 22px; line-height: 1.6; }
+
+
+/* ── RESPONSIVE ───────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .course-thumb { width: 64px; height: 64px; font-size: 28px; margin: 12px 0 12px 14px; }
+  .course-body { padding: 12px 14px; }
+  .course-title { font-size: 15px; }
+  .course-desc { font-size: 12px; }
+  .course-action { padding: 8px 14px; font-size: 10px; margin-right: 14px; }
+  .courses-page .page-title { font-size: 24px; }
+}

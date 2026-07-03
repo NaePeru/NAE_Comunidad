@@ -1,0 +1,268 @@
+/* ============================================================================
+   PROYECTO Z — comunidad.css
+   Estilos del feed de comunidad, posts, comentarios, composer y markdown.
+   ============================================================================ */
+
+/* ── MARKDOWN (render de publicaciones) ──────────────────────────────────── */
+.md-p { margin: 0 0 8px; line-height: 1.7; }
+.md-p:last-child { margin-bottom: 0; }
+.md-h1 { font-size: 22px; font-weight: 800; margin: 14px 0 8px; }
+.md-h2 { font-size: 19px; font-weight: 700; margin: 12px 0 6px; }
+.md-h3 { font-size: 16px; font-weight: 700; margin: 10px 0 4px; color: var(--gold); }
+.md-quote {
+  border-left: 3px solid var(--gold);
+  padding: 6px 14px;
+  margin: 8px 0;
+  color: var(--muted);
+  background: rgba(242,169,0,0.05);
+  border-radius: 0 8px 8px 0;
+}
+.md-list { margin: 6px 0 8px 20px; line-height: 1.8; }
+.md-list li { list-style: disc; margin-bottom: 2px; }
+.md-link { color: var(--blue); text-decoration: underline; }
+.md-link:hover { color: var(--gold); }
+.md-code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: rgba(0,0,0,0.35);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--gold);
+}
+.md-codeblock {
+  font-family: var(--font-mono);
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  overflow-x: auto;
+  margin: 10px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.md-codeblock code { color: var(--text); }
+
+
+/* ── FEED DE COMUNIDAD ───────────────────────────────────────────────────── */
+.feed-post {
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 14px;
+  animation: slideUp 0.3s ease;
+}
+.feed-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.feed-avatar {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.feed-name {
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.feed-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted2);
+  margin-top: 1px;
+}
+.feed-time .cat-tag { color: var(--gold); font-size: 10.5px; }
+.feed-body {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--text);
+  word-break: break-word;
+}
+.feed-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.feed-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  transition: all 0.18s;
+}
+.feed-action:hover { border-color: var(--border2); color: var(--text); }
+.feed-action.liked {
+  color: #ff5b7a;
+  border-color: rgba(255,91,122,0.3);
+  background: rgba(255,91,122,0.08);
+}
+
+
+/* ── COMENTARIOS ─────────────────────────────────────────────────────────── */
+.comments-section { margin-top: 12px; display: none; }
+.comments-section.open { display: block; }
+.comment {
+  display: flex; gap: 10px;
+  padding: 10px 0;
+  border-top: 1px dashed var(--border);
+}
+.comment-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.comment-body { flex: 1; min-width: 0; }
+.comment-name { font-size: 13px; font-weight: 600; }
+.comment-text { font-size: 13.5px; color: var(--text); line-height: 1.5; word-break: break-word; }
+.comment-time { font-family: var(--font-mono); font-size: 10px; color: var(--muted2); margin-top: 2px; }
+.comment-input { display: flex; gap: 8px; margin-top: 10px; }
+.comment-input input { flex: 1; padding: 9px 12px; }
+
+
+/* ── COMPOSER (caja de crear post) ───────────────────────────────────────── */
+.composer {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.composer textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  color: var(--text);
+  font-size: 14px;
+  min-height: 90px;
+  resize: vertical;
+  line-height: 1.6;
+}
+.composer-footer { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.composer select { width: auto; padding: 8px 12px; font-size: 12px; }
+.composer-hint {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--muted2);
+  margin-top: 8px;
+}
+
+/* Botón LIVE */
+.btn-live {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.btn-live:hover { color: #ff5b5b; border-color: rgba(255,91,91,0.3); }
+.btn-live.active {
+  background: #ff5b5b;
+  color: #fff;
+  border-color: #ff5b5b;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,91,91,0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(255,91,91,0); }
+}
+
+/* Badge LIVE en el feed */
+.badge-live {
+  background: #ff5b5b !important;
+  color: #fff !important;
+  border: 1px solid #ff5b5b !important;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+/* Post en modo LIVE: borde rojo sutil */
+.post-live {
+  border-color: rgba(255,91,91,0.3);
+  background: linear-gradient(180deg, rgba(255,91,91,0.04), rgba(255,255,255,0.018));
+}
+
+/* Likes en comentarios */
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.comment-like {
+  font-size: 11px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.comment-like.liked { color: #ff5b7a; }
+.composer-tools {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+.composer-tool {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+}
+.composer-tool:hover { color: var(--gold); border-color: rgba(242,169,0,0.3); }
+
+
+/* ── BOTÓN FLOTANTE (composer móvil) ─────────────────────────────────────── */
+.fab-new-post {
+  display: none;
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  z-index: 90;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--orange));
+  color: #1a1208;
+  font-size: 26px;
+  box-shadow: 0 6px 20px rgba(242,169,0,0.4);
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 900px) {
+  .fab-new-post { display: flex; }
+}

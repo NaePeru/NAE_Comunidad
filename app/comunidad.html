@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comunidad — Proyecto Z</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <link rel="stylesheet" href="../assets/css/gamificacion.css">
+  <link rel="stylesheet" href="../assets/css/comunidad.css">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- ── SIDEBAR ──────────────────────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span style="font-size:16px;">◆</span> PROYECTO Z</div>
+      <nav class="sidebar-nav">
+        <a href="aula.html" class="sidebar-link"><span class="nav-icon">🏠</span> Aula</a>
+        <a href="cursos.html" class="sidebar-link"><span class="nav-icon">📚</span> Cursos</a>
+        <a href="comunidad.html" class="sidebar-link active"><span class="nav-icon">💬</span> Comunidad</a>
+        <a href="eventos.html" class="sidebar-link"><span class="nav-icon">📅</span> Eventos</a>
+        <a href="miembros.html" class="sidebar-link"><span class="nav-icon">👥</span> Miembros</a>
+        <a href="perfil.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Mi perfil</a>
+        <a href="admin.html" class="sidebar-link" id="link-admin" style="display:none;"><span class="nav-icon">🛡️</span> Admin</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="avatar avatar-sm" id="sb-avatar"></div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sb-name">—</div>
+          <div class="sidebar-user-role" id="sb-role">—</div>
+        </div>
+        <button class="btn btn-sm btn-ghost" onclick="window.__logout()" title="Cerrar sesión">⏻</button>
+      </div>
+    </aside>
+
+    <!-- ── CONTENIDO PRINCIPAL ──────────────────────────────────────────── -->
+    <main class="app-main">
+      <div class="topbar">
+        <span class="brand">Comunidad</span>
+        <span class="sep">·</span>
+        <span class="level-label">FEED</span>
+        <div class="topbar-spacer"></div>
+        <span class="nivel-chip" id="tb-nivel-chip"></span>
+      </div>
+
+      <div class="container" style="max-width:760px;">
+
+        <div class="page-header">
+          <h1 class="page-title">Comunidad 💬</h1>
+          <p class="page-sub">Comparte avances, resuelve dudas y motívate. Gana puntos participando.</p>
+        </div>
+
+        <!-- COMPOSER (caja para crear post) -->
+        <div class="composer" id="composer">
+          <textarea id="composer-text" placeholder="¿Qué quieres compartir? 
+
+Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
+          <div class="composer-footer">
+            <select id="composer-cat">
+              <option value="general">💬 General</option>
+              <option value="excel">📊 MS Excel</option>
+              <option value="powerbi">⚡ Power BI</option>
+            </select>
+            <button type="button" class="btn btn-live" id="live-btn" onclick="toggleLive()">
+              🔴 LIVE
+            </button>
+            <button class="btn btn-primary" id="composer-btn" onclick="publicar()">
+              Publicar →
+            </button>
+          </div>
+          <div class="composer-hint">
+            ❤️ Gana puntos cuando otros le den like a tus aportes ·
+            <span id="live-status"></span>
+          </div>
+        </div>
+
+        <!-- FILTROS -->
+        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+          <button class="pill active" onclick="filtrarCat('todo', this)">🌐 Todo</button>
+          <button class="pill" onclick="filtrarCat('general', this)">💬 General</button>
+          <button class="pill" onclick="filtrarCat('excel', this)">📊 Excel</button>
+          <button class="pill" onclick="filtrarCat('powerbi', this)">⚡ Power BI</button>
+        </div>
+
+        <!-- FEED -->
+        <div id="feed-list">
+          <div class="empty-state"><div class="empty-icon">⏳</div>Cargando publicaciones...</div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Tabbar móvil -->
+  <div class="tabbar">
+    <a href="aula.html" class="tabbar-item"><span class="tab-icon">🏠</span>Aula</a>
+    <a href="cursos.html" class="tabbar-item"><span class="tab-icon">📚</span>Cursos</a>
+    <a href="comunidad.html" class="tabbar-item active"><span class="tab-icon">💬</span>Comunidad</a>
+    <a href="eventos.html" class="tabbar-item"><span class="tab-icon">📅</span>Eventos</a>
+    <a href="perfil.html" class="tabbar-item"><span class="tab-icon">👤</span>Perfil</a>
+  </div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, logout, esAdmin, session } from '../assets/js/auth.js';
+    import { getNivel, iniciales, colorAvatar, toast } from '../assets/js/utils.js';
+    import { cargarFeed, crearPost, filtrar, iniciarRealtime } from '../assets/js/comunidad.js';
+
+    // ── Refrescar chip de nivel cuando cambian los puntos ──
+    window.addEventListener('perfil-actualizado', (e) => {
+      const p = session.profile;
+      const nivel = getNivel(p.puntos || 0);
+      const chip = document.getElementById('tb-nivel-chip');
+      if (chip) {
+        chip.style.cssText += `background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};`;
+        chip.textContent = `${nivel.emoji} ${nivel.nombre}`;
+      }
+    });
+
+    // ── Verificar sesión ──
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) {
+      window.location.href = '../index.html';
+    } else {
+      await cargarPerfilCompleto();
+      inicializar();
+    }
+
+    async function inicializar() {
+      const p = session.profile;
+
+      // Admin link
+      if (esAdmin()) document.getElementById('link-admin').style.display = 'flex';
+
+      // Sidebar perfil
+      document.getElementById('sb-name').textContent = p.nombre;
+      document.getElementById('sb-role').textContent = esAdmin() ? 'ADMIN' : (session.membership?.estado || 'alumno').toUpperCase();
+      const av = document.getElementById('sb-avatar');
+      const [c1, c2] = p.color || colorAvatar(p.nombre);
+      if (p.avatar_url) {
+        av.style.background = 'transparent';
+        av.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = p.avatar_url;
+        img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
+        av.appendChild(img);
+      } else {
+        av.style.background = c1; av.style.color = c2;
+        av.textContent = iniciales(p.nombre);
+      }
+
+      // Nivel chip
+      const nivel = getNivel(p.puntos || 0);
+      const chip = document.getElementById('tb-nivel-chip');
+      chip.style.cssText += `background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};`;
+      chip.textContent = `${nivel.emoji} ${nivel.nombre}`;
+
+      // Cargar feed + realtime
+      await cargarFeed();
+      iniciarRealtime();
+    }
+
+    // ── Estado LIVE ──
+    let liveActivo = false;
+    function toggleLive() {
+      liveActivo = !liveActivo;
+      const btn = document.getElementById('live-btn');
+      const status = document.getElementById('live-status');
+      if (liveActivo) {
+        btn.classList.add('active');
+        status.innerHTML = '<strong style="color:#ff5b5b;">🔴 Modo LIVE activo (+5 pts bonus)</strong>';
+      } else {
+        btn.classList.remove('active');
+        status.innerHTML = '';
+      }
+    }
+    window.toggleLive = toggleLive;
+
+    // ── Publicar nuevo post ──
+    async function publicar() {
+      const txt = document.getElementById('composer-text').value;
+      const cat = document.getElementById('composer-cat').value;
+      const btn = document.getElementById('composer-btn');
+
+      if (!txt.trim()) { toast('⚠️ Escribe algo primero'); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+      const { error } = await crearPost(txt, cat, liveActivo);
+      btn.disabled = false;
+      btn.innerHTML = 'Publicar →';
+
+      if (!error) {
+        document.getElementById('composer-text').value = '';
+        // Resetear LIVE tras publicar
+        if (liveActivo) { liveActivo = false; toggleLive(); }
+        await cargarFeed();
+      }
+    }
+    window.publicar = publicar;
+
+    // ── Filtrar ──
+    function filtrarCat(cat, btn) {
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      filtrar(cat);
+    }
+    window.filtrarCat = filtrarCat;
+
+    window.__logout = logout;
+  </script>
+</body>
+</html>

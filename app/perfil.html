@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi perfil — Proyecto Z</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <link rel="stylesheet" href="../assets/css/gamificacion.css">
+  <link rel="stylesheet" href="../assets/css/comunidad.css">
+
+  <style>
+    /* Estilos exclusivos del perfil */
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 26px;
+      background: linear-gradient(135deg, var(--card), var(--card2));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 26px;
+    }
+    .profile-avatar-big {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid rgba(242,169,0,0.4);
+      flex-shrink: 0;
+    }
+    .profile-avatar-placeholder {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 38px;
+      border: 3px solid rgba(242,169,0,0.4);
+      flex-shrink: 0;
+    }
+    .profile-name { font-size: 24px; font-weight: 800; }
+    .profile-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    .avatar-upload {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .upload-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      background: rgba(242,169,0,0.1);
+      border: 1px dashed rgba(242,169,0,0.4);
+      border-radius: var(--radius-sm);
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .upload-label:hover { background: rgba(242,169,0,0.16); }
+    .upload-hint { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted2); }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 26px; }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      text-align: center;
+    }
+    .stat-num { font-size: 28px; font-weight: 800; font-family: var(--font-mono); color: var(--gold); }
+    .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    @media (max-width: 560px) {
+      .profile-header { flex-direction: column; text-align: center; }
+      .stat-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- ── SIDEBAR ──────────────────────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span style="font-size:16px;">◆</span> PROYECTO Z</div>
+      <nav class="sidebar-nav">
+        <a href="aula.html" class="sidebar-link"><span class="nav-icon">🏠</span> Aula</a>
+        <a href="cursos.html" class="sidebar-link"><span class="nav-icon">📚</span> Cursos</a>
+        <a href="comunidad.html" class="sidebar-link"><span class="nav-icon">💬</span> Comunidad</a>
+        <a href="eventos.html" class="sidebar-link"><span class="nav-icon">📅</span> Eventos</a>
+        <a href="miembros.html" class="sidebar-link"><span class="nav-icon">👥</span> Miembros</a>
+        <a href="perfil.html" class="sidebar-link active"><span class="nav-icon">⚙️</span> Mi perfil</a>
+        <a href="admin.html" class="sidebar-link" id="link-admin" style="display:none;"><span class="nav-icon">🛡️</span> Admin</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="avatar avatar-sm" id="sb-avatar"></div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sb-name">—</div>
+          <div class="sidebar-user-role" id="sb-role">—</div>
+        </div>
+        <button class="btn btn-sm btn-ghost" onclick="window.__logout()" title="Cerrar sesión">⏻</button>
+      </div>
+    </aside>
+
+    <!-- ── CONTENIDO PRINCIPAL ──────────────────────────────────────────── -->
+    <main class="app-main">
+      <div class="topbar">
+        <span class="brand">Perfil</span>
+        <span class="sep">·</span>
+        <span class="level-label">AJUSTES</span>
+        <div class="topbar-spacer"></div>
+        <span class="nivel-chip" id="tb-nivel-chip"></span>
+      </div>
+
+      <div class="container" style="max-width:720px;">
+
+        <!-- Cabecera de perfil con avatar grande -->
+        <div class="profile-header">
+          <div id="profile-avatar-wrap"></div>
+          <div style="flex:1;min-width:0;">
+            <div class="profile-name" id="p-name">—</div>
+            <div class="profile-sub" id="p-sub">—</div>
+            <div class="avatar-upload">
+              <label class="upload-label" for="avatar-file" id="upload-label">
+                📸 Cambiar foto
+              </label>
+              <input type="file" id="avatar-file" accept="image/*" style="display:none;" onchange="window.__subirFoto(event)">
+              <span class="upload-hint">JPG o PNG · Máx 4MB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-num" id="st-puntos">0</div>
+            <div class="stat-label">Puntos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="st-nivel">1</div>
+            <div class="stat-label">Nivel</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="st-dias">—</div>
+            <div class="stat-label">Días activos</div>
+          </div>
+        </div>
+
+        <!-- Barra de progreso al siguiente nivel -->
+        <div class="card">
+          <div id="p-progress-label" style="font-size:13px;margin-bottom:10px;"></div>
+          <div class="progress-wrap" style="margin-top:6px;">
+            <div class="progress-bar" id="p-progress" style="width:0%"></div>
+          </div>
+          <div class="progress-label" id="p-progress-detail"></div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Tabbar móvil -->
+  <div class="tabbar">
+    <a href="aula.html" class="tabbar-item"><span class="tab-icon">🏠</span>Aula</a>
+    <a href="cursos.html" class="tabbar-item"><span class="tab-icon">📚</span>Cursos</a>
+    <a href="comunidad.html" class="tabbar-item"><span class="tab-icon">💬</span>Comunidad</a>
+    <a href="eventos.html" class="tabbar-item"><span class="tab-icon">📅</span>Eventos</a>
+    <a href="perfil.html" class="tabbar-item active"><span class="tab-icon">👤</span>Perfil</a>
+  </div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, logout, esAdmin, session, diasRestantes } from '../assets/js/auth.js';
+    import { getNivel, getSiguienteNivel, iniciales, colorAvatar, formatNum, toast } from '../assets/js/utils.js';
+    import { subirAvatar } from '../assets/js/storage.js';
+
+    // ── Verificar sesión ──
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) {
+      window.location.href = '../index.html';
+    } else {
+      await cargarPerfilCompleto();
+      inicializar();
+    }
+
+    function inicializar() {
+      const p = session.profile;
+
+      // Admin link
+      if (esAdmin()) document.getElementById('link-admin').style.display = 'flex';
+
+      // Sidebar
+      document.getElementById('sb-name').textContent = p.nombre;
+      document.getElementById('sb-role').textContent = esAdmin() ? 'ADMIN' : (session.membership?.estado || 'alumno').toUpperCase();
+      const av = document.getElementById('sb-avatar');
+      const [c1, c2] = p.color || colorAvatar(p.nombre);
+      if (p.avatar_url) {
+        av.innerHTML = '';
+        av.style.background = 'transparent';
+        const img = document.createElement('img');
+        img.src = p.avatar_url;
+        img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
+        av.appendChild(img);
+      } else {
+        av.style.background = c1; av.style.color = c2;
+        av.textContent = iniciales(p.nombre);
+      }
+
+      // Topbar chip
+      const nivel = getNivel(p.puntos || 0);
+      const chip = document.getElementById('tb-nivel-chip');
+      chip.style.cssText += `background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};`;
+      chip.textContent = `${nivel.emoji} ${nivel.nombre}`;
+
+      // Avatar grande
+      const wrap = document.getElementById('profile-avatar-wrap');
+      if (p.avatar_url) {
+        wrap.innerHTML = `<img src="${p.avatar_url}" class="profile-avatar-big" alt="${p.nombre}">`;
+      } else {
+        wrap.innerHTML = `<div class="profile-avatar-placeholder" style="background:${c1};color:${c2};">${iniciales(p.nombre)}</div>`;
+      }
+
+      // Nombre + rol
+      document.getElementById('p-name').textContent = p.nombre;
+      document.getElementById('p-sub').textContent = esAdmin() ? '🛡️ Administrador' : `Alumno · ${session.membership?.estado || 'activo'}`;
+
+      // Stats
+      document.getElementById('st-puntos').textContent = formatNum(p.puntos || 0);
+      document.getElementById('st-nivel').textContent = nivel.num;
+      const dias = diasRestantes();
+      document.getElementById('st-dias').textContent = dias != null ? dias : '∞';
+
+      // Progreso de nivel
+      const lbl = document.getElementById('p-progress-label');
+      const bar = document.getElementById('p-progress');
+      const det = document.getElementById('p-progress-detail');
+      const sig = getSiguienteNivel(p.puntos || 0);
+      if (sig) {
+        const pct = Math.round(((p.puntos - nivel.min) / (sig.min - nivel.min)) * 100);
+        bar.style.width = `${pct}%`;
+        bar.style.background = `linear-gradient(90deg, ${nivel.color}, ${sig.color})`;
+        lbl.innerHTML = `${nivel.emoji} ${nivel.nombre} → ${sig.emoji} ${sig.nombre}`;
+        det.innerHTML = `<span>${p.puntos} pts</span><span>Faltan ${sig.min - p.puntos} pts</span>`;
+      } else {
+        bar.style.width = '100%';
+        lbl.textContent = `🌟 Nivel máximo alcanzado`;
+        det.innerHTML = `<span>${p.puntos} pts</span><span>¡Felicidades!</span>`;
+      }
+    }
+
+    // ── Subir foto ──
+    async function subirFoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const label = document.getElementById('upload-label');
+      label.innerHTML = '<span class="spinner"></span> Subiendo...';
+      label.style.pointerEvents = 'none';
+
+      const { url, error } = await subirAvatar(file);
+
+      label.innerHTML = '📸 Cambiar foto';
+      label.style.pointerEvents = 'auto';
+
+      if (error) {
+        toast('⚠️ ' + error);
+      } else {
+        toast('✅ Foto actualizada');
+        inicializar();  // refrescar todo
+      }
+    }
+    window.__subirFoto = subirFoto;
+    window.__logout = logout;
+  </script>
+</body>
+</html>

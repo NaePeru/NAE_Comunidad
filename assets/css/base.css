@@ -1,0 +1,125 @@
+/* ============================================================================
+   PROYECTO Z — base.css
+   Variables globales, reset y estilos base.
+   Conserva el tema oscuro dorado/naranja de tu diseño NAE original.
+   ============================================================================ */
+
+:root {
+  /* ── Paleta principal (igual a tu Index.html) ── */
+  --gold:      #F2A900;
+  --orange:    #E05C2A;
+  --bg:        #0F1117;
+  --panel:     #171B26;
+  --card:      #1E2333;
+  --card2:     #242A3A;
+  --border:    rgba(255,255,255,0.08);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #E8E8F0;
+  --muted:     rgba(255,255,255,0.6);
+  --muted2:    rgba(255,255,255,0.42);
+  --green:     #3DD68C;
+  --red:       #FF6B6B;
+  --blue:      #6ba3f2;
+  --purple:    #c46bf2;
+
+  /* ── Niveles NAE ── */
+  --lvl1:      #6B7280;  /* Aprendiz       🌱 */
+  --lvl2:      #3B82F6;  /* Analista Jr.   📊 */
+  --lvl3:      #8B5CF6;  /* Analista Datos ⚡ */
+  --lvl4:      #F59E0B;  /* Analista Sr.   🏆 */
+  --lvl5:      #f2c244;  /* Experto NAE    🌟 */
+
+  /* ── Tipografías ── */
+  --font-sans: 'Sora', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* ── Espaciado y radios ── */
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* ── Sombras ── */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.18);
+  --shadow:    0 8px 24px rgba(0,0,0,0.28);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.4);
+
+  /* ── Layout ── */
+  --topbar-h: 64px;
+  --maxw:     1200px;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img { max-width: 100%; display: block; }
+
+a { color: var(--gold); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(242,169,0,0.5);
+}
+textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+/* ── Utilidades ── */
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--muted); }
+.center { text-align: center; }
+.hidden { display: none !important; }
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-sm { gap: 8px; }
+.gap { gap: 16px; }
+
+/* ── Scrollbar personalizado ── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb {
+  background: var(--card2);
+  border-radius: 10px;
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+/* ── Animaciones globales ── */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* ── Accesibilidad ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
