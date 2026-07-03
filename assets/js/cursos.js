@@ -164,19 +164,33 @@ function renderCursoLayout(course, modules, lessons, myDone) {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const cs = catStyle(course.categoria);
 
-  // Construir el sidebar de módulos (si no hay módulos, agrupar todas las lecciones en "Lecciones")
-  const modsParaSidebar = modules.length > 0
-    ? modules
-    : [{ id: null, titulo: 'Lecciones', descripcion: '' }];
+  // Construir el sidebar de módulos.
+  // Lógica robusta: muestra TODAS las lecciones, tengan o no módulo asignado.
+  const leccionesSinModulo = lessons.filter(l => !l.module_id);
+  let modsParaSidebar = modules.length > 0 ? [...modules] : [];
+
+  // Si hay lecciones sin módulo, agregarlas como grupo "Lecciones"
+  if (leccionesSinModulo.length > 0) {
+    modsParaSidebar.push({ id: null, titulo: 'Lecciones', descripcion: '' });
+  }
+  // Fallback por si no hay nada
+  if (modsParaSidebar.length === 0) {
+    modsParaSidebar.push({ id: null, titulo: 'Lecciones', descripcion: '' });
+  }
 
   const modsHtml = modsParaSidebar.map(mod => {
-    const modLessons = lessons.filter(l =>
-      modules.length > 0 ? l.module_id === mod.id : true  // sin módulos → todas
-    );
+    // Lecciones de este módulo (si mod.id es null → las que no tienen módulo)
+    let modLessons;
+    if (mod.id === null) {
+      modLessons = lessons.filter(l => !l.module_id);
+    } else {
+      modLessons = lessons.filter(l => l.module_id === mod.id);
+    }
     const modDone = modLessons.filter(l => myDone.has(l.id)).length;
+    const modKey = mod.id || 'nomod';
     return `
-      <div class="sb-module" id="sb-mod-${mod.id || 'nomod'}">
-        <div class="sb-module-header" onclick="window.__toggleModulo('${mod.id || 'nomod'}')">
+      <div class="sb-module" id="sb-mod-${modKey}">
+        <div class="sb-module-header" onclick="window.__toggleModulo('${modKey}')">
           <span class="sb-module-chevron">▼</span>
           <span class="sb-module-name">${escapeHtml(mod.titulo)}</span>
           <span class="sb-module-count">${modDone}/${modLessons.length}</span>
