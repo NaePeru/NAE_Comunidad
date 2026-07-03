@@ -133,6 +133,11 @@ export async function borrarCurso(id) {
   await cargarCursosAdmin();
 }
 
+// ── Crear / editar lección (exportada para admin.html) ──
+export async function guardarLeccion(formData) {
+  return _guardarLeccion(formData);
+}
+
 
 // ============================================================================
 // LECCIONES — gestionar módulos y lecciones de un curso
@@ -249,7 +254,7 @@ async function borrarModulo(modId) {
 }
 
 // ── Crear / editar lección ──
-async function guardarLeccion(formData) {
+async function _guardarLeccion(formData) {
   const cursoId = document.getElementById('admin-lecciones-panel').dataset.cursoId;
   const datos = {
     course_id: cursoId,
