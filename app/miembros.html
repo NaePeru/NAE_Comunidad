@@ -15,27 +15,15 @@
 </head>
 <body>
 
-      <div class="container" style="max-width:720px;margin-top:24px;">
+      <div class="container" style="max-width:1000px;margin-top:24px;">
 
+        <div class="community-layout">
+
+        <!-- COLUMNA PRINCIPAL: Ranking -->
+        <div>
         <div class="page-header">
           <h1 class="page-title">Ranking 🏆</h1>
           <p class="page-sub">Quién está aportando más valor a la comunidad.</p>
-        </div>
-
-        <!-- Stats -->
-        <div class="grid grid-3" style="margin-bottom:24px;">
-          <div class="card" style="text-align:center;padding:16px;">
-            <div style="font-size:24px;font-weight:800;font-family:var(--font-mono);color:var(--gold);" id="stat-miembros">0</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px;">MIEMBROS</div>
-          </div>
-          <div class="card" style="text-align:center;padding:16px;">
-            <div style="font-size:24px;font-weight:800;font-family:var(--font-mono);color:var(--green);" id="stat-activos">0</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px;">ACTIVOS / SEMANA</div>
-          </div>
-          <div class="card" style="text-align:center;padding:16px;">
-            <div style="font-size:24px;font-weight:800;font-family:var(--font-mono);color:var(--blue);" id="stat-posts">0</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px;">PUBLICACIONES</div>
-          </div>
         </div>
 
         <!-- Tabs: Semana / Total -->
@@ -48,7 +36,47 @@
         <div id="lb-list">
           <div class="empty-state"><div class="empty-icon">⏳</div>Cargando ranking...</div>
         </div>
+        </div>
 
+        <!-- COLUMNA LATERAL: Panel de comunidad -->
+        <aside class="community-panel">
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <div class="panel-card-icon">🎓</div>
+              <div class="panel-card-title">Nae. Information</div>
+            </div>
+            <div class="panel-card-desc">
+              Comunidad de aprendizaje de Excel y Power BI. Aprendé, compartí y crecé como Analista de Datos junto a otros estudiantes.
+            </div>
+            <div class="panel-stats">
+              <div>
+                <div class="panel-stat-num" id="stat-miembros">0</div>
+                <div class="panel-stat-label">Miembros</div>
+              </div>
+              <div>
+                <div class="panel-stat-num" id="stat-activos" style="color:var(--green);">0</div>
+                <div class="panel-stat-label">Activos/sem</div>
+              </div>
+              <div>
+                <div class="panel-stat-num" id="stat-posts" style="color:var(--blue);">0</div>
+                <div class="panel-stat-label">Posts</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <div class="panel-card-icon">📅</div>
+              <div class="panel-card-title">Próximo seminario</div>
+            </div>
+            <div class="panel-card-desc">
+              Seminarios en vivo los sábados. Próximamente el calendario con las fechas y enlaces.
+            </div>
+            <a href="eventos.html" class="btn btn-ghost btn-block btn-sm">Ver eventos →</a>
+          </div>
+        </aside>
+
+        </div>
       </div>
 
   <div class="tabbar"></div>

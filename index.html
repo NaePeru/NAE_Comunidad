@@ -263,7 +263,7 @@
     // Si ya hay sesión activa (vienen del magic link), ir directo a la app
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        window.location.href = 'app/aula.html';
+        window.location.href = 'app/comunidad.html';
       }
     });
 

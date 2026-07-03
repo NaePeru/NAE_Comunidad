@@ -141,14 +141,8 @@ export async function cargarCurso(courseId) {
     .in('lesson_id', (lessons || []).map(l => l.id));
   const myDone = new Set((myProgress || []).filter(p => p.completado).map(p => p.lesson_id));
 
-  // Lista aplanada de lecciones (para navegación siguiente/anterior)
-  const flattened = [];
-  (modules && modules.length > 0 ? modules : [{ id: null, titulo: 'Lecciones' }]).forEach(mod => {
-    const modLessons = (lessons || []).filter(l =>
-      modules && modules.length > 0 ? l.module_id === mod.id : !l.module_id
-    );
-    flattened.push(...modLessons);
-  });
+  // Lista aplanada de TODAS las lecciones (tengan o no módulo asignado)
+  const flattened = (lessons || []).slice();
 
   cursoState = { course, modules: modules || [], lessons: lessons || [], myDone, flattened };
 
@@ -170,10 +164,14 @@ function renderCursoLayout(course, modules, lessons, myDone) {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const cs = catStyle(course.categoria);
 
-  // Construir el sidebar de módulos
-  const modsHtml = (modules.length > 0 ? modules : [{ id: null, titulo: 'Lecciones', descripcion: '' }]).map(mod => {
+  // Construir el sidebar de módulos (si no hay módulos, agrupar todas las lecciones en "Lecciones")
+  const modsParaSidebar = modules.length > 0
+    ? modules
+    : [{ id: null, titulo: 'Lecciones', descripcion: '' }];
+
+  const modsHtml = modsParaSidebar.map(mod => {
     const modLessons = lessons.filter(l =>
-      modules.length > 0 ? l.module_id === mod.id : !l.module_id
+      modules.length > 0 ? l.module_id === mod.id : true  // sin módulos → todas
     );
     const modDone = modLessons.filter(l => myDone.has(l.id)).length;
     return `

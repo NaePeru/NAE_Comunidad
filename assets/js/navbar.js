@@ -9,9 +9,8 @@ import { getNivel, iniciales, colorAvatar } from './utils.js';
 
 // Estructura de pestañas (id → ruta + label + icono)
 const PESTANAS = [
-  { id: 'aula',      ruta: 'aula.html',      icono: '🏠', label: 'Aula' },
-  { id: 'cursos',    ruta: 'cursos.html',    icono: '📚', label: 'Cursos' },
   { id: 'comunidad', ruta: 'comunidad.html', icono: '💬', label: 'Comunidad' },
+  { id: 'cursos',    ruta: 'cursos.html',    icono: '📚', label: 'Cursos' },
   { id: 'eventos',   ruta: 'eventos.html',   icono: '📅', label: 'Eventos' },
   { id: 'miembros',  ruta: 'miembros.html',  icono: '👥', label: 'Miembros' },
   { id: 'perfil',    ruta: 'perfil.html',    icono: '⚙️', label: 'Perfil' },
@@ -19,10 +18,10 @@ const PESTANAS = [
 const PESTANA_ADMIN = { id: 'admin', ruta: 'admin.html', icono: '🛡️', label: 'Admin' };
 
 const TABBAR_MOVIL = [
-  { id: 'aula',      ruta: 'aula.html',      icono: '🏠' },
-  { id: 'cursos',    ruta: 'cursos.html',    icono: '📚' },
   { id: 'comunidad', ruta: 'comunidad.html', icono: '💬' },
+  { id: 'cursos',    ruta: 'cursos.html',    icono: '📚' },
   { id: 'eventos',   ruta: 'eventos.html',   icono: '📅' },
+  { id: 'miembros',  ruta: 'miembros.html',  icono: '👥' },
   { id: 'perfil',    ruta: 'perfil.html',    icono: '👤' },
 ];
 
@@ -44,7 +43,7 @@ export function renderNavbar(activoId) {
   navbar.className = 'navbar';
   navbar.innerHTML = `
     <div class="navbar-top">
-      <a href="aula.html" class="navbar-brand">
+      <a href="comunidad.html" class="navbar-brand">
         <span class="brand-mark">◆</span> NAE
       </a>
       <div class="navbar-user">

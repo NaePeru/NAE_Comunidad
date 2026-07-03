@@ -56,7 +56,7 @@ export async function login(email, password) {
 export async function logout() {
   await supabase.auth.signOut();
   Object.assign(session, { user: null, profile: null, membership: null });
-  window.location.href = '../index.html';
+  window.location.href = 'comunidad.html';
 }
 
 // ── CARGAR PERFIL + MEMBRESÍA DEL USUARIO ACTUAL ────────────────────────────
