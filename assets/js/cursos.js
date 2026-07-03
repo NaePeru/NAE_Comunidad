@@ -1,13 +1,23 @@
 // ============================================================================
-// PROYECTO Z — cursos.js
-// Catálogo de cursos + vista de detalle con módulos, lecciones y progreso.
+// PROYECTO Z — cursos.js  (v3 — Layout estilo Skool)
+// Sidebar de módulos/lecciones colapsable + reproductor grande + siguiente lección.
 // ============================================================================
 
 import { supabase } from './supabase-client.js';
 import { session, tieneAcceso } from './auth.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, toast } from './utils.js';
 
-// ── CARGAR CATÁLOGO DE CURSOS ───────────────────────────────────────────────
+// Estado del catálogo
+window.__coursesData = [];
+
+// ── CATALOGO ─────────────────────────────────────────────────────────────────
+const CAT_COLORS = {
+  excel:   { accent: '#217346', bg: 'rgba(33,115,70,0.12)',  border: 'rgba(33,115,70,0.35)',  label: '📊 Excel',    thumb: 'linear-gradient(135deg,#0d2818,#217346)' },
+  powerbi: { accent: '#E05C2A', bg: 'rgba(224,92,42,0.12)',  border: 'rgba(224,92,42,0.35)',  label: '⚡ Power BI', thumb: 'linear-gradient(135deg,#2a1200,#c4480a)' },
+  general: { accent: '#F2A900', bg: 'rgba(242,169,0,0.12)',  border: 'rgba(242,169,0,0.35)',  label: '📚 General',  thumb: 'linear-gradient(135deg,#1a1d2e,#2a2e44)' },
+};
+function catStyle(cat) { return CAT_COLORS[cat] || CAT_COLORS.general; }
+
 export async function cargarCatalogo() {
   const { data: courses, error } = await supabase
     .from('courses')
@@ -16,31 +26,15 @@ export async function cargarCatalogo() {
     .order('orden', { ascending: true });
 
   if (error) {
-    console.error('Error cargando cursos:', error);
     document.getElementById('courses-list').innerHTML =
       '<div class="empty-state"><div class="empty-icon">⚠️</div>Error al cargar cursos.</div>';
     return;
   }
 
-  // Contar lecciones por curso
-  const { data: counts } = await supabase
-    .from('lessons')
-    .select('course_id');
-
+  const { data: counts } = await supabase.from('lessons').select('course_id');
   const lessonCounts = {};
-  (counts || []).forEach(l => {
-    lessonCounts[l.course_id] = (lessonCounts[l.course_id] || 0) + 1;
-  });
+  (counts || []).forEach(l => { lessonCounts[l.course_id] = (lessonCounts[l.course_id] || 0) + 1; });
 
-  // Mi progreso
-  const { data: myProgress } = await supabase
-    .from('lesson_progress')
-    .select('lesson_id, completado')
-    .eq('user_id', session.user.id);
-
-  const myDone = new Set((myProgress || []).filter(p => p.completado).map(p => p.lesson_id));
-
-  // Mapear progreso por curso (necesitamos lessons por curso)
   const { data: allLessons } = await supabase.from('lessons').select('id, course_id');
   const lessonsByCourse = {};
   (allLessons || []).forEach(l => {
@@ -48,22 +42,16 @@ export async function cargarCatalogo() {
     lessonsByCourse[l.course_id].push(l.id);
   });
 
+  const { data: myProgress } = await supabase
+    .from('lesson_progress')
+    .select('lesson_id, completado')
+    .eq('user_id', session.user.id);
+  const myDone = new Set((myProgress || []).filter(p => p.completado).map(p => p.lesson_id));
+
   window.__coursesData = courses;
   renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone);
 }
 
-// ── COLORES DE CATEGORÍA ────────────────────────────────────────────────────
-const CAT_COLORS = {
-  excel:   { accent: '#217346', bg: 'rgba(33,115,70,0.12)',  border: 'rgba(33,115,70,0.35)',  label: '📊 Excel',    thumb: 'linear-gradient(135deg,#0d2818,#217346)' },
-  powerbi: { accent: '#E05C2A', bg: 'rgba(224,92,42,0.12)',  border: 'rgba(224,92,42,0.35)',  label: '⚡ Power BI', thumb: 'linear-gradient(135deg,#2a1200,#c4480a)' },
-  general: { accent: '#F2A900', bg: 'rgba(242,169,0,0.12)',  border: 'rgba(242,169,0,0.35)',  label: '📚 General',  thumb: 'linear-gradient(135deg,#1a1d2e,#2a2e44)' },
-};
-
-function catStyle(cat) {
-  return CAT_COLORS[cat] || CAT_COLORS.general;
-}
-
-// ── RENDER CATÁLOGO ─────────────────────────────────────────────────────────
 function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
   const list = document.getElementById('courses-list');
   if (!courses || courses.length === 0) {
@@ -121,14 +109,15 @@ function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
   }).join('');
 }
 
-// ── CARGAR CURSO INDIVIDUAL (detalle con lecciones) ─────────────────────────
+
+// ============================================================================
+// VISTA DE CURSO INDIVIDUAL (sidebar + reproductor)
+// ============================================================================
+let cursoState = null;   // { course, modules, lessons, myDone, flattened }
+
 export async function cargarCurso(courseId) {
-  // Datos del curso
   const { data: course, error: cErr } = await supabase
-    .from('courses')
-    .select('*')
-    .eq('id', courseId)
-    .single();
+    .from('courses').select('*').eq('id', courseId).single();
 
   if (cErr || !course) {
     document.getElementById('curso-container').innerHTML =
@@ -138,191 +127,285 @@ export async function cargarCurso(courseId) {
 
   // ¿Bloqueado?
   const bloqueado = course.requiere_pago && !tieneAcceso();
-  if (bloqueado) {
-    renderCursoBloqueado(course);
-    return;
-  }
+  if (bloqueado) { renderCursoBloqueado(course); return; }
 
-  // Módulos
   const { data: modules } = await supabase
-    .from('modules')
-    .select('*')
-    .eq('course_id', courseId)
-    .order('orden', { ascending: true });
-
-  // Lecciones
+    .from('modules').select('*').eq('course_id', courseId).order('orden', { ascending: true });
   const { data: lessons } = await supabase
-    .from('lessons')
-    .select('*')
-    .eq('course_id', courseId)
-    .order('orden', { ascending: true });
+    .from('lessons').select('*').eq('course_id', courseId).order('orden', { ascending: true });
 
-  // Mi progreso
   const { data: myProgress } = await supabase
     .from('lesson_progress')
     .select('lesson_id, completado')
     .eq('user_id', session.user.id)
     .in('lesson_id', (lessons || []).map(l => l.id));
-
   const myDone = new Set((myProgress || []).filter(p => p.completado).map(p => p.lesson_id));
-  const total = (lessons || []).length;
-  const done = (lessons || []).filter(l => myDone.has(l.id)).length;
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
-  window.__cursoData = { course, modules, lessons, myDone, total, done, pct };
-  renderCurso(course, modules, lessons, myDone, total, done, pct);
+  // Lista aplanada de lecciones (para navegación siguiente/anterior)
+  const flattened = [];
+  (modules && modules.length > 0 ? modules : [{ id: null, titulo: 'Lecciones' }]).forEach(mod => {
+    const modLessons = (lessons || []).filter(l =>
+      modules && modules.length > 0 ? l.module_id === mod.id : !l.module_id
+    );
+    flattened.push(...modLessons);
+  });
 
-  // Abrir primera lección no completada por defecto
-  const primera = (lessons || []).find(l => !myDone.has(l.id)) || (lessons || [])[0];
-  if (primera) abrirLeccion(primera.id);
+  cursoState = { course, modules: modules || [], lessons: lessons || [], myDone, flattened };
+
+  if (flattened.length === 0) {
+    renderCursoSinLecciones(course);
+    return;
+  }
+
+  renderCursoLayout(course, modules || [], lessons || [], myDone);
+
+  // Abrir la primera lección no completada (o la primera)
+  const primera = flattened.find(l => !myDone.has(l.id)) || flattened[0];
+  abrirLeccion(primera.id);
 }
 
-// ── RENDER DEL CURSO ────────────────────────────────────────────────────────
-function renderCurso(course, modules, lessons, myDone, total, done, pct) {
-  document.getElementById('curso-container').innerHTML = `
-    <div class="course-back" onclick="history.back()">← Volver al catálogo</div>
+function renderCursoLayout(course, modules, lessons, myDone) {
+  const total = lessons.length;
+  const done = lessons.filter(l => myDone.has(l.id)).length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const cs = catStyle(course.categoria);
 
-    <div class="course-header">
-      <div class="course-header-top">
-        <div class="course-header-icon" style="background:${course.color_tema || '#0a1a3d'};">${course.icono || '📘'}</div>
-        <div class="course-header-info">
-          <div class="course-header-title">${escapeHtml(course.titulo)}</div>
-          <div class="course-header-desc">${escapeHtml(course.descripcion || '')}</div>
+  // Construir el sidebar de módulos
+  const modsHtml = (modules.length > 0 ? modules : [{ id: null, titulo: 'Lecciones', descripcion: '' }]).map(mod => {
+    const modLessons = lessons.filter(l =>
+      modules.length > 0 ? l.module_id === mod.id : !l.module_id
+    );
+    const modDone = modLessons.filter(l => myDone.has(l.id)).length;
+    return `
+      <div class="sb-module" id="sb-mod-${mod.id || 'nomod'}">
+        <div class="sb-module-header" onclick="window.__toggleModulo('${mod.id || 'nomod'}')">
+          <span class="sb-module-chevron">▼</span>
+          <span class="sb-module-name">${escapeHtml(mod.titulo)}</span>
+          <span class="sb-module-count">${modDone}/${modLessons.length}</span>
         </div>
-      </div>
-      <div class="course-header-stats">
-        <div class="course-stat"><div class="num">${total}</div><div class="label">Lecciones</div></div>
-        <div class="course-stat"><div class="num">${done}</div><div class="label">Completadas</div></div>
-        <div class="course-stat"><div class="num">${pct}%</div><div class="label">Progreso</div></div>
-      </div>
-      <div class="course-progress-bar" style="margin-top:14px;">
-        <div class="course-progress-fill" style="width:${pct}%"></div>
+        <ul class="sb-lessons">
+          ${modLessons.map(l => `
+            <li class="sb-lesson ${myDone.has(l.id) ? 'done-item' : ''}" id="sb-l-${l.id}" onclick="window.__abrirLeccion('${l.id}')">
+              <span class="sb-lesson-check ${myDone.has(l.id) ? 'done' : ''}">${myDone.has(l.id) ? '✓' : ''}</span>
+              <span class="sb-lesson-title">${escapeHtml(l.titulo)}</span>
+              ${l.duracion_min ? `<span class="sb-lesson-duration">${l.duracion_min}m</span>` : ''}
+            </li>
+          `).join('')}
+        </ul>
+      </div>`;
+  }).join('');
+
+  document.getElementById('curso-container').innerHTML = `
+    <div class="curso-back" onclick="history.back()">← Volver al catálogo</div>
+
+    <div class="curso-layout">
+      <!-- SIDEBAR -->
+      <aside class="curso-sidebar" id="curso-sidebar">
+        <div class="sidebar-course-info">
+          <div class="sidebar-course-thumb" style="background:${cs.thumb};">${course.icono || '📘'}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="sidebar-course-name">${escapeHtml(course.titulo)}</div>
+            <div class="sidebar-progress">
+              <div class="sidebar-progress-bar"><div class="sidebar-progress-fill" id="sb-progress-fill" style="width:${pct}%"></div></div>
+              <span class="sidebar-progress-text" id="sb-progress-text">${pct}%</span>
+            </div>
+          </div>
+        </div>
+        ${modsHtml}
+      </aside>
+
+      <!-- MAIN -->
+      <div class="curso-main">
+        <div class="curso-main-header">
+          <div class="curso-breadcrumb" id="player-breadcrumb">
+            <span>${escapeHtml(course.titulo)}</span>
+          </div>
+          <button class="btn-toggle-sidebar" onclick="window.__toggleSidebar()">☰</button>
+        </div>
+        <div id="player-area">
+          <div class="empty-state"><div class="empty-icon">⏳</div>Cargando lección...</div>
+        </div>
       </div>
     </div>
-
-    <div id="lesson-player"></div>
-
-    ${modules && modules.length > 0 ? modules.map(mod => {
-      const modLessons = (lessons || []).filter(l => l.module_id === mod.id);
-      const modDone = modLessons.filter(l => myDone.has(l.id)).length;
-      return `
-        <div class="module">
-          <div class="module-header">
-            <div class="module-icon">📦</div>
-            <div class="module-title">${escapeHtml(mod.titulo)}</div>
-            <div class="module-progress">${modDone}/${modLessons.length}</div>
-          </div>
-          ${modLessons.map(l => `
-            <div class="lesson-item" id="li-${l.id}" onclick="window.__abrirLeccion('${l.id}')">
-              <div class="lesson-check ${myDone.has(l.id) ? 'done' : ''}">${myDone.has(l.id) ? '✓' : ''}</div>
-              <div class="lesson-info">
-                <div class="lesson-title">${escapeHtml(l.titulo)}</div>
-                <div class="lesson-meta">${l.tipo === 'video' ? '🎬 Video' : '📄 Texto'}</div>
-              </div>
-              <div class="lesson-duration">${l.duracion_min || ''} ${l.duracion_min ? 'min' : ''}</div>
-            </div>
-          `).join('')}
-        </div>`;
-    }).join('') : `
-      <div class="module">
-        <div class="module-header">
-          <div class="module-icon">📦</div>
-          <div class="module-title">Lecciones del curso</div>
-          <div class="module-progress">${done}/${total}</div>
-        </div>
-        ${(lessons || []).map(l => `
-          <div class="lesson-item" id="li-${l.id}" onclick="window.__abrirLeccion('${l.id}')">
-            <div class="lesson-check ${myDone.has(l.id) ? 'done' : ''}">${myDone.has(l.id) ? '✓' : ''}</div>
-            <div class="lesson-info">
-              <div class="lesson-title">${escapeHtml(l.titulo)}</div>
-              <div class="lesson-meta">${l.tipo === 'video' ? '🎬 Video' : '📄 Texto'}</div>
-            </div>
-            <div class="lesson-duration">${l.duracion_min || ''} ${l.duracion_min ? 'min' : ''}</div>
-          </div>
-        `).join('')}
-      </div>
-    `}
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="window.__toggleSidebar()"></div>
   `;
 }
 
-// ── RENDER CURSO BLOQUEADO ──────────────────────────────────────────────────
 function renderCursoBloqueado(course) {
   document.getElementById('curso-container').innerHTML = `
     <div class="course-back" onclick="history.back()">← Volver al catálogo</div>
     <div class="card locked-msg">
       <div class="lock-icon">🔒</div>
       <h3>Este curso es Premium</h3>
-      <p>Para acceder a <strong>${escapeHtml(course.titulo)}</strong> necesitás una membresía activa.
-         Los cursos gratuitos (Excel Básico y Tablas Dinámicas) están disponibles sin costo.</p>
+      <p>Para acceder a <strong>${escapeHtml(course.titulo)}</strong> necesitás una membresía activa.</p>
       <a href="perfil.html" class="btn btn-primary">Ver opciones de membresía</a>
     </div>
   `;
 }
 
-// ── ABRIR LECCIÓN (reproductor) ─────────────────────────────────────────────
-function abrirLeccion(lessonId) {
-  const { lessons, myDone } = window.__cursoData;
-  const l = lessons.find(x => x.id === lessonId);
-  if (!l) return;
-
-  // Marcar como activa
-  document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
-  const li = document.getElementById(`li-${lessonId}`);
-  if (li) li.classList.add('active');
-
-  // Scroll al reproductor
-  document.getElementById('lesson-player').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  const isDone = myDone.has(lessonId);
-  const videoHtml = l.tipo === 'video' && l.url_contenido
-    ? `<div class="video-wrap"><iframe src="${l.url_contenido}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe></div>`
-    : `<div class="empty-state"><div class="empty-icon">📄</div>Contenido textual</div>`;
-
-  document.getElementById('lesson-player').innerHTML = `
-    <div class="lesson-player">
-      <div class="lesson-player-title">${escapeHtml(l.titulo)}</div>
-      ${videoHtml}
-      ${l.descripcion ? `<div class="lesson-desc">${escapeHtml(l.descripcion)}</div>` : ''}
-      <div class="lesson-player-actions">
-        <button class="lesson-complete-btn ${isDone ? 'done' : ''}" onclick="window.__completarLeccion('${lessonId}')">
-          ${isDone ? '✓ Completada' : 'Marcar como completada ✅'}
-        </button>
-      </div>
+function renderCursoSinLecciones(course) {
+  document.getElementById('curso-container').innerHTML = `
+    <div class="course-back" onclick="history.back()">← Volver al catálogo</div>
+    <div class="card no-lessons-msg">
+      <div class="icon">📦</div>
+      <h3 style="font-size:18px;margin-bottom:8px;">Aún no hay lecciones</h3>
+      <p style="color:var(--muted);font-size:14px;">Este curso todavía no tiene contenido. Volvé pronto.</p>
     </div>
   `;
 }
 
+
+// ── ABRIR LECCIÓN (render reproductor) ──────────────────────────────────────
+function abrirLeccion(lessonId) {
+  if (!cursoState) return;
+  const { lessons, myDone, flattened, course, modules } = cursoState;
+  const l = lessons.find(x => x.id === lessonId);
+  if (!l) return;
+
+  // Marcar activa en sidebar
+  document.querySelectorAll('.sb-lesson').forEach(el => el.classList.remove('active'));
+  const sbItem = document.getElementById(`sb-l-${lessonId}`);
+  if (sbItem) sbItem.classList.add('active');
+
+  // Breadcrumb: Curso > Módulo > Lección
+  const mod = modules.find(m => m.id === l.module_id);
+  document.getElementById('player-breadcrumb').innerHTML = `
+    <span>${escapeHtml(course.titulo)}</span>
+    <span>›</span>
+    <span>${mod ? escapeHtml(mod.titulo) : 'Lecciones'}</span>
+    <span>›</span>
+    <span class="crumb-active">${escapeHtml(l.titulo)}</span>
+  `;
+
+  // Video
+  const videoHtml = (l.tipo === 'video' && l.url_contenido)
+    ? `<div class="video-wrap"><iframe src="${l.url_contenido}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe></div>`
+    : `<div class="empty-state" style="padding:40px;"><div class="empty-icon">📄</div>Sin video. Lección de texto.</div>`;
+
+  // ¿Hay siguiente lección?
+  const idx = flattened.findIndex(x => x.id === lessonId);
+  const siguiente = idx >= 0 && idx < flattened.length - 1 ? flattened[idx + 1] : null;
+
+  const isDone = myDone.has(lessonId);
+  document.getElementById('player-area').innerHTML = `
+    <div class="player-card">
+      ${videoHtml}
+      <div class="player-content">
+        ${mod ? `<span class="player-module-tag">📦 ${escapeHtml(mod.titulo)}</span>` : ''}
+        <h2 class="player-lesson-title">${escapeHtml(l.titulo)}</h2>
+        ${l.descripcion ? `<div class="player-lesson-desc">${escapeHtml(l.descripcion)}</div>` : ''}
+        <div class="player-actions">
+          <div class="player-actions-left">
+            <button class="lesson-complete-btn ${isDone ? 'done' : ''}" onclick="window.__completarLeccion('${lessonId}')">
+              ${isDone ? '✓ Completada' : 'Marcar como completada'}
+            </button>
+          </div>
+          ${siguiente ? `
+            <button class="lesson-next-btn" onclick="window.__abrirLeccion('${siguiente.id}')">
+              Siguiente: ${escapeHtml(siguiente.titulo).slice(0, 30)}${siguiente.titulo.length > 30 ? '…' : ''} →
+            </button>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // En móvil, cerrar el sidebar al elegir lección
+  cerrarSidebarMovil();
+  // Scroll arriba
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+
 // ── COMPLETAR LECCIÓN ───────────────────────────────────────────────────────
 async function completarLeccion(lessonId) {
-  const { myDone } = window.__cursoData;
+  if (!cursoState) return;
+  const { myDone, lessons, modules, course } = cursoState;
   const nuevoEstado = !myDone.has(lessonId);
 
-  // Upsert progreso
-  await supabase
-    .from('lesson_progress')
-    .upsert({
-      user_id: session.user.id,
-      lesson_id: lessonId,
-      completado: nuevoEstado,
-      porcentaje: nuevoEstado ? 100 : 0,
-      completado_en: nuevoEstado ? new Date().toISOString() : null,
-    });
+  await supabase.from('lesson_progress').upsert({
+    user_id: session.user.id,
+    lesson_id: lessonId,
+    completado: nuevoEstado,
+    porcentaje: nuevoEstado ? 100 : 0,
+    completado_en: nuevoEstado ? new Date().toISOString() : null,
+  });
 
   if (nuevoEstado) {
     myDone.add(lessonId);
-    import('../assets/js/utils.js').then(m => m.toast('✅ Lección completada'));
+    toast('✅ Lección completada');
   } else {
     myDone.delete(lessonId);
   }
 
-  // Re-render del curso completo (para actualizar progreso)
-  const courseId = window.__cursoData.course.id;
-  await cargarCurso(courseId);
-  // Volver a abrir la lección actual
-  abrirLeccion(lessonId);
+  // Recalcular progreso del sidebar
+  const total = lessons.length;
+  const done = lessons.filter(l => myDone.has(l.id)).length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const fill = document.getElementById('sb-progress-fill');
+  const txt = document.getElementById('sb-progress-text');
+  if (fill) fill.style.width = pct + '%';
+  if (txt) txt.textContent = pct + '%';
+
+  // Actualizar el check del sidebar para esta lección
+  const sbItem = document.getElementById(`sb-l-${lessonId}`);
+  if (sbItem) {
+    const check = sbItem.querySelector('.sb-lesson-check');
+    if (nuevoEstado) {
+      check.classList.add('done');
+      check.textContent = '✓';
+      sbItem.classList.add('done-item');
+    } else {
+      check.classList.remove('done');
+      check.textContent = '';
+      sbItem.classList.remove('done-item');
+    }
+  }
+
+  // Actualizar el botón del reproductor
+  const btn = document.querySelector('.lesson-complete-btn');
+  if (btn) {
+    if (nuevoEstado) { btn.classList.add('done'); btn.innerHTML = '✓ Completada'; }
+    else { btn.classList.remove('done'); btn.innerHTML = 'Marcar como completada'; }
+  }
+
+  // Actualizar el conteo del módulo
+  const l = lessons.find(x => x.id === lessonId);
+  if (l) {
+    const modId = l.module_id || 'nomod';
+    const modLessons = lessons.filter(x => (modules.length > 0 ? x.module_id === l.module_id : !x.module_id));
+    const modDone = modLessons.filter(x => myDone.has(x.id)).length;
+    const modHeader = document.querySelector(`#sb-mod-${modId} .sb-module-count`);
+    if (modHeader) modHeader.textContent = `${modDone}/${modLessons.length}`;
+  }
 }
+
+
+// ── TOGGLE MÓDULO (colapsar/expandir) ──────────────────────────────────────
+function toggleModulo(modId) {
+  const mod = document.getElementById(`sb-mod-${modId}`);
+  if (mod) mod.classList.toggle('collapsed');
+}
+
+// ── SIDEBAR MÓVIL ───────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('curso-sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if (sb && ov) {
+    sb.classList.toggle('open');
+    ov.classList.toggle('open');
+  }
+}
+function cerrarSidebarMovil() {
+  const sb = document.getElementById('curso-sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('open');
+}
+
 
 // ── EXPORTAR ────────────────────────────────────────────────────────────────
 window.__abrirLeccion = abrirLeccion;
 window.__completarLeccion = completarLeccion;
-window.__locked = () => import('../assets/js/utils.js').then(m => m.toast('🔒 Necesitas membresía para este curso'));
+window.__toggleModulo = toggleModulo;
+window.__toggleSidebar = toggleSidebar;
+window.__locked = () => toast('🔒 Necesitas membresía para este curso');
