@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Proyecto Z</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <link rel="stylesheet" href="../assets/css/gamificacion.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span style="font-size:16px;">◆</span> PROYECTO Z</div>
+      <nav class="sidebar-nav">
+        <a href="aula.html" class="sidebar-link"><span class="nav-icon">🏠</span> Aula</a>
+        <a href="cursos.html" class="sidebar-link"><span class="nav-icon">📚</span> Cursos</a>
+        <a href="comunidad.html" class="sidebar-link"><span class="nav-icon">💬</span> Comunidad</a>
+        <a href="eventos.html" class="sidebar-link"><span class="nav-icon">📅</span> Eventos</a>
+        <a href="miembros.html" class="sidebar-link"><span class="nav-icon">👥</span> Miembros</a>
+        <a href="perfil.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Mi perfil</a>
+        <a href="admin.html" class="sidebar-link active"><span class="nav-icon">🛡️</span> Admin</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="avatar avatar-sm" id="sb-avatar"></div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sb-name">—</div>
+          <div class="sidebar-user-role" id="sb-role">—</div>
+        </div>
+        <button class="btn btn-sm btn-ghost" onclick="window.__logout()" title="Cerrar sesión">⏻</button>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <div class="topbar">
+        <span class="brand">Admin</span>
+        <span class="sep">·</span>
+        <span class="level-label">GESTIÓN</span>
+        <div class="topbar-spacer"></div>
+        <span class="nivel-chip" id="tb-nivel-chip"></span>
+      </div>
+
+      <div class="container" style="max-width:920px;">
+
+        <div class="page-header">
+          <h1 class="page-title">Panel de administración 🛡️</h1>
+          <p class="page-sub">Gestioná cursos, lecciones y alumnos desde acá.</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="admin-tabs">
+          <button class="admin-tab active" data-tab="dashboard" onclick="window.__adminMostrar('dashboard')">📊 Dashboard</button>
+          <button class="admin-tab" data-tab="cursos" onclick="window.__adminMostrar('cursos')">📚 Cursos</button>
+          <button class="admin-tab" data-tab="alumnos" onclick="window.__adminMostrar('alumnos')">👥 Alumnos</button>
+        </div>
+
+        <!-- SECCIÓN DASHBOARD -->
+        <section id="admin-section-dashboard">
+          <div class="stat-grid">
+            <div class="stat-box"><div class="num" id="ad-total-users">0</div><div class="label">Alumnos</div></div>
+            <div class="stat-box"><div class="num" id="ad-total-courses">0</div><div class="label">Cursos</div></div>
+            <div class="stat-box"><div class="num" id="ad-total-lessons">0</div><div class="label">Lecciones</div></div>
+            <div class="stat-box"><div class="num" id="ad-total-posts">0</div><div class="label">Posts</div></div>
+          </div>
+
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:8px;">📋 Resumen</div>
+            <p class="muted" style="font-size:13px;line-height:1.7;">
+              Desde este panel podés gestionar todo el contenido de tu plataforma.
+              Andá a <strong>Cursos</strong> para crear/editar lecciones y subir tus videos de YouTube/Vimeo.
+              Andá a <strong>Alumnos</strong> para activar o suspender accesos.
+            </p>
+          </div>
+        </section>
+
+        <!-- SECCIÓN CURSOS -->
+        <section id="admin-section-cursos" class="hidden">
+          <div class="section-header">
+            <div class="section-title">Cursos</div>
+            <button class="btn btn-primary" onclick="window.__openCursoModal()">+ Nuevo curso</button>
+          </div>
+          <div id="admin-courses-list">
+            <div class="empty-state"><div class="empty-icon">⏳</div>Cargando...</div>
+          </div>
+        </section>
+
+        <!-- SECCIÓN LECCIONES (gestión de módulos/lecciones de un curso) -->
+        <section id="admin-section-lecciones" class="hidden">
+          <div class="course-back" onclick="window.__adminMostrar('cursos')">← Volver a cursos</div>
+          <div class="section-header">
+            <div class="section-title" id="lecciones-curso-titulo">🎬 Lecciones</div>
+          </div>
+          <div id="admin-lecciones-panel"></div>
+        </section>
+
+        <!-- SECCIÓN ALUMNOS -->
+        <section id="admin-section-alumnos" class="hidden">
+          <div class="section-header">
+            <div class="section-title">Alumnos</div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Alumno</th>
+                  <th>Nivel</th>
+                  <th>Puntos</th>
+                  <th>Membresía</th>
+                  <th>Ingreso</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="admin-alumnos-tbody">
+                <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⏳</div>Cargando...</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ════════ MODAL: CREAR/EDITAR CURSO ════════ -->
+  <div class="modal-overlay" id="modal-curso">
+    <div class="modal">
+      <div class="modal-title" id="modal-curso-title">Nuevo curso</div>
+      <p class="modal-sub">Completa los datos del curso.</p>
+
+      <div class="admin-form">
+        <input type="hidden" id="curso-id">
+        <div class="form-group">
+          <label class="form-label">Título *</label>
+          <input type="text" class="form-input" id="curso-titulo" placeholder="Ej: MS Excel - Nivel Intermedio">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <textarea class="form-textarea" id="curso-desc" placeholder="¿De qué trata este curso?"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Categoría</label>
+            <select class="form-select" id="curso-cat">
+              <option value="general">📚 General</option>
+              <option value="excel">📊 Excel</option>
+              <option value="powerbi">⚡ Power BI</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Icono (emoji)</label>
+            <input type="text" class="form-input" id="curso-icono" placeholder="📘" maxlength="4">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Orden</label>
+            <input type="number" class="form-input" id="curso-orden" value="1" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Color (gradiente)</label>
+            <input type="text" class="form-input" id="curso-color" placeholder="linear-gradient(135deg,#0d2818,#217346)">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de acceso</label>
+          <div class="toggle-wrap">
+            <div class="toggle-option active" id="toggle-gratis" onclick="window.__setPago(false)">🎁 Gratis</div>
+            <div class="toggle-option" id="toggle-pago" onclick="window.__setPago(true)">💰 Pago</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <div class="toggle-wrap">
+            <div class="toggle-option active" id="toggle-publicado" onclick="window.__setPublicado(true)">✅ Publicado</div>
+            <div class="toggle-option" id="toggle-borrador" onclick="window.__setPublicado(false)">📝 Borrador</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-ghost btn-block" onclick="window.__closeModal('modal-curso')">Cancelar</button>
+        <button class="btn btn-primary btn-block" onclick="window.__guardarCursoForm()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ MODAL: CREAR/EDITAR LECCIÓN ════════ -->
+  <div class="modal-overlay" id="modal-leccion">
+    <div class="modal">
+      <div class="modal-title" id="modal-leccion-title">Nueva lección</div>
+      <p class="modal-sub">Pegá el link de YouTube/Vimeo (formato embed).</p>
+
+      <div class="admin-form">
+        <input type="hidden" id="leccion-id">
+        <input type="hidden" id="leccion-mod-id">
+        <div class="form-group">
+          <label class="form-label">Título de la lección *</label>
+          <input type="text" class="form-input" id="leccion-titulo" placeholder="Ej: BUSCARV paso a paso">
+        </div>
+        <div class="form-group">
+          <label class="form-label">URL del video (YouTube embed)</label>
+          <input type="text" class="form-input" id="leccion-url" placeholder="https://www.youtube.com/embed/XXXXXXX">
+          <div class="form-hint">💡 Usá el formato /embed/. Si tu link es normal, lo convertimos solo.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <textarea class="form-textarea" id="leccion-desc" placeholder="¿Qué se aprende en esta lección?"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Duración (minutos)</label>
+            <input type="number" class="form-input" id="leccion-duracion" value="10" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Orden</label>
+            <input type="number" class="form-input" id="leccion-orden" value="1" min="1">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-ghost btn-block" onclick="window.__closeModal('modal-leccion')">Cancelar</button>
+        <button class="btn btn-primary btn-block" onclick="window.__guardarLeccionForm()">Guardar lección</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, logout, esAdmin, session } from '../assets/js/auth.js';
+    import { getNivel, iniciales, colorAvatar, toast } from '../assets/js/utils.js';
+    import {
+      cargarDashboard, cargarCursosAdmin, cargarAlumnos, mostrarSeccion,
+      guardarCurso, borrarCurso, guardarLeccion, getCursosCache, getCursoById, getLeccionById
+    } from '../assets/js/admin.js';
+
+    // ── Verificar sesión y admin ──
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) {
+      window.location.href = '../index.html';
+    } else {
+      await cargarPerfilCompleto();
+      if (!esAdmin()) {
+        document.querySelector('.container').innerHTML =
+          '<div class="empty-state"><div class="empty-icon">🔒</div>No tenés permiso de admin.</div>';
+      } else {
+        inicializar();
+      }
+    }
+
+    async function inicializar() {
+      const p = session.profile;
+      document.getElementById('sb-name').textContent = p.nombre;
+      document.getElementById('sb-role').textContent = 'ADMIN';
+      const av = document.getElementById('sb-avatar');
+      const [c1, c2] = p.color || colorAvatar(p.nombre);
+      if (p.avatar_url) {
+        av.style.background = 'transparent'; av.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = p.avatar_url;
+        img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
+        av.appendChild(img);
+      } else {
+        av.style.background = c1; av.style.color = c2;
+        av.textContent = iniciales(p.nombre);
+      }
+
+      const nivel = getNivel(p.puntos || 0);
+      const chip = document.getElementById('tb-nivel-chip');
+      chip.style.cssText += `background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};`;
+      chip.textContent = `${nivel.emoji} ${nivel.nombre}`;
+
+      await cargarDashboard();
+    }
+
+    // ── Navegación ──
+    window.__adminMostrar = mostrarSeccion;
+
+    // ── Estado del modal de curso ──
+    let cursoEsPago = false;
+    let cursoPublicado = true;
+
+    window.__setPago = (esPago) => {
+      cursoEsPago = esPago;
+      document.getElementById('toggle-gratis').classList.toggle('active', !esPago);
+      document.getElementById('toggle-pago').classList.toggle('active', esPago);
+    };
+
+    window.__setPublicado = (pub) => {
+      cursoPublicado = pub;
+      document.getElementById('toggle-publicado').classList.toggle('active', pub);
+      document.getElementById('toggle-borrador').classList.toggle('active', !pub);
+    };
+
+    // ── Abrir modal de curso (crear o editar) ──
+    window.__openCursoModal = (id = null) => {
+      const modal = document.getElementById('modal-curso');
+      document.getElementById('curso-id').value = id || '';
+
+      if (id) {
+        const c = getCursoById(id);
+        document.getElementById('modal-curso-title').textContent = 'Editar curso';
+        document.getElementById('curso-titulo').value = c.titulo;
+        document.getElementById('curso-desc').value = c.descripcion || '';
+        document.getElementById('curso-cat').value = c.categoria;
+        document.getElementById('curso-icono').value = c.icono || '📘';
+        document.getElementById('curso-orden').value = c.orden;
+        document.getElementById('curso-color').value = c.color_tema || '';
+        window.__setPago(c.requiere_pago);
+        window.__setPublicado(c.publicado);
+      } else {
+        document.getElementById('modal-curso-title').textContent = 'Nuevo curso';
+        document.getElementById('curso-titulo').value = '';
+        document.getElementById('curso-desc').value = '';
+        document.getElementById('curso-cat').value = 'general';
+        document.getElementById('curso-icono').value = '📘';
+        document.getElementById('curso-orden').value = (getCursosCache().length || 0) + 1;
+        document.getElementById('curso-color').value = '';
+        window.__setPago(false);
+        window.__setPublicado(true);
+      }
+      modal.classList.add('open');
+    };
+
+    window.__guardarCursoForm = async () => {
+      const data = {
+        id: document.getElementById('curso-id').value || null,
+        titulo: document.getElementById('curso-titulo').value,
+        descripcion: document.getElementById('curso-desc').value,
+        categoria: document.getElementById('curso-cat').value,
+        icono: document.getElementById('curso-icono').value,
+        orden: document.getElementById('curso-orden').value,
+        color_tema: document.getElementById('curso-color').value,
+        requiere_pago: cursoEsPago,
+        publicado: cursoPublicado,
+      };
+      const { error } = await guardarCurso(data);
+      if (!error) window.__closeModal('modal-curso');
+    };
+
+    // ── Abrir modal de lección ──
+    window.__openLeccionModal = (id = null, modId = null) => {
+      const modal = document.getElementById('modal-leccion');
+      document.getElementById('leccion-id').value = id || '';
+      document.getElementById('leccion-mod-id').value = modId || '';
+
+      if (id) {
+        // Edición: buscar la lección en cache y precargar datos
+        const cursoId = document.getElementById('admin-lecciones-panel').dataset.cursoId;
+        const l = getLeccionById(cursoId, id);
+        document.getElementById('modal-leccion-title').textContent = 'Editar lección';
+        if (l) {
+          document.getElementById('leccion-titulo').value = l.titulo || '';
+          document.getElementById('leccion-url').value = l.url_contenido || '';
+          document.getElementById('leccion-desc').value = l.descripcion || '';
+          document.getElementById('leccion-duracion').value = l.duracion_min || 10;
+          document.getElementById('leccion-orden').value = l.orden || 1;
+        }
+      } else {
+        document.getElementById('modal-leccion-title').textContent = 'Nueva lección';
+        document.getElementById('leccion-titulo').value = '';
+        document.getElementById('leccion-url').value = '';
+        document.getElementById('leccion-desc').value = '';
+        document.getElementById('leccion-duracion').value = '10';
+        document.getElementById('leccion-orden').value = '1';
+      }
+
+      modal.classList.add('open');
+    };
+
+    window.__guardarLeccionForm = async () => {
+      let url = document.getElementById('leccion-url').value.trim();
+      // Auto-convertir YouTube normal a embed
+      const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/);
+      if (ytMatch) url = 'https://www.youtube.com/embed/' + ytMatch[1];
+
+      const data = {
+        id: document.getElementById('leccion-id').value || null,
+        module_id: document.getElementById('leccion-mod-id').value || null,
+        titulo: document.getElementById('leccion-titulo').value,
+        url_contenido: url,
+        descripcion: document.getElementById('leccion-desc').value,
+        duracion_min: document.getElementById('leccion-duracion').value,
+        orden: document.getElementById('leccion-orden').value,
+      };
+      const { error } = await guardarLeccion(data);
+      if (!error) window.__closeModal('modal-leccion');
+    };
+
+    // ── Cerrar modales ──
+    window.__closeModal = (id) => document.getElementById(id).classList.remove('open');
+
+    window.__logout = logout;
+  </script>
+</body>
+</html>
