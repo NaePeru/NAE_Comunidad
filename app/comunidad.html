@@ -16,41 +16,7 @@
 </head>
 <body>
 
-  <div class="app-shell">
-
-    <!-- ── SIDEBAR ──────────────────────────────────────────────────────── -->
-    <aside class="sidebar">
-      <div class="sidebar-brand"><span style="font-size:16px;">◆</span> PROYECTO Z</div>
-      <nav class="sidebar-nav">
-        <a href="aula.html" class="sidebar-link"><span class="nav-icon">🏠</span> Aula</a>
-        <a href="cursos.html" class="sidebar-link"><span class="nav-icon">📚</span> Cursos</a>
-        <a href="comunidad.html" class="sidebar-link active"><span class="nav-icon">💬</span> Comunidad</a>
-        <a href="eventos.html" class="sidebar-link"><span class="nav-icon">📅</span> Eventos</a>
-        <a href="miembros.html" class="sidebar-link"><span class="nav-icon">👥</span> Miembros</a>
-        <a href="perfil.html" class="sidebar-link"><span class="nav-icon">⚙️</span> Mi perfil</a>
-        <a href="admin.html" class="sidebar-link" id="link-admin" style="display:none;"><span class="nav-icon">🛡️</span> Admin</a>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="avatar avatar-sm" id="sb-avatar"></div>
-        <div class="sidebar-user-info">
-          <div class="sidebar-user-name" id="sb-name">—</div>
-          <div class="sidebar-user-role" id="sb-role">—</div>
-        </div>
-        <button class="btn btn-sm btn-ghost" onclick="window.__logout()" title="Cerrar sesión">⏻</button>
-      </div>
-    </aside>
-
-    <!-- ── CONTENIDO PRINCIPAL ──────────────────────────────────────────── -->
-    <main class="app-main">
-      <div class="topbar">
-        <span class="brand">Comunidad</span>
-        <span class="sep">·</span>
-        <span class="level-label">FEED</span>
-        <div class="topbar-spacer"></div>
-        <span class="nivel-chip" id="tb-nivel-chip"></span>
-      </div>
-
-      <div class="container" style="max-width:760px;">
+      <div class="container" style="max-width:760px;margin-top:24px;">
 
         <div class="page-header">
           <h1 class="page-title">Comunidad 💬</h1>
@@ -95,35 +61,16 @@ Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
         </div>
 
       </div>
-    </main>
 
-  </div>
-
-  <!-- Tabbar móvil -->
-  <div class="tabbar">
-    <a href="aula.html" class="tabbar-item"><span class="tab-icon">🏠</span>Aula</a>
-    <a href="cursos.html" class="tabbar-item"><span class="tab-icon">📚</span>Cursos</a>
-    <a href="comunidad.html" class="tabbar-item active"><span class="tab-icon">💬</span>Comunidad</a>
-    <a href="eventos.html" class="tabbar-item"><span class="tab-icon">📅</span>Eventos</a>
-    <a href="perfil.html" class="tabbar-item"><span class="tab-icon">👤</span>Perfil</a>
-  </div>
+  <!-- Tabbar móvil (lo rellena navbar.js) -->
+  <div class="tabbar"></div>
 
   <script type="module">
     import { supabase } from '../assets/js/supabase-client.js';
-    import { cargarPerfilCompleto, logout, esAdmin, session } from '../assets/js/auth.js';
-    import { getNivel, iniciales, colorAvatar, toast } from '../assets/js/utils.js';
+    import { cargarPerfilCompleto, session } from '../assets/js/auth.js';
+    import { toast } from '../assets/js/utils.js';
+    import { renderNavbar } from '../assets/js/navbar.js';
     import { cargarFeed, crearPost, filtrar, iniciarRealtime } from '../assets/js/comunidad.js';
-
-    // ── Refrescar chip de nivel cuando cambian los puntos ──
-    window.addEventListener('perfil-actualizado', (e) => {
-      const p = session.profile;
-      const nivel = getNivel(p.puntos || 0);
-      const chip = document.getElementById('tb-nivel-chip');
-      if (chip) {
-        chip.style.cssText += `background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};`;
-        chip.textContent = `${nivel.emoji} ${nivel.nombre}`;
-      }
-    });
 
     // ── Verificar sesión ──
     const { data: { session: sess } } = await supabase.auth.getSession();
@@ -135,37 +82,16 @@ Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
     }
 
     async function inicializar() {
-      const p = session.profile;
-
-      // Admin link
-      if (esAdmin()) document.getElementById('link-admin').style.display = 'flex';
-
-      // Sidebar perfil
-      document.getElementById('sb-name').textContent = p.nombre;
-      document.getElementById('sb-role').textContent = esAdmin() ? 'ADMIN' : (session.membership?.estado || 'alumno').toUpperCase();
-      const av = document.getElementById('sb-avatar');
-      const [c1, c2] = p.color || colorAvatar(p.nombre);
-      if (p.avatar_url) {
-        av.style.background = 'transparent';
-        av.innerHTML = '';
-        const img = document.createElement('img');
-        img.src = p.avatar_url;
-        img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
-        av.appendChild(img);
-      } else {
-        av.style.background = c1; av.style.color = c2;
-        av.textContent = iniciales(p.nombre);
-      }
-
-      // Nivel chip
-      const nivel = getNivel(p.puntos || 0);
-      const chip = document.getElementById('tb-nivel-chip');
-      chip.style.cssText += `background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};`;
-      chip.textContent = `${nivel.emoji} ${nivel.nombre}`;
+      renderNavbar('comunidad');
 
       // Cargar feed + realtime
       await cargarFeed();
       iniciarRealtime();
+
+      // Refrescar navbar cuando cambian los puntos
+      window.addEventListener('perfil-actualizado', () => {
+        renderNavbar('comunidad');
+      });
     }
 
     // ── Estado LIVE ──
@@ -214,8 +140,6 @@ Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
       filtrar(cat);
     }
     window.filtrarCat = filtrarCat;
-
-    window.__logout = logout;
   </script>
 </body>
 </html>

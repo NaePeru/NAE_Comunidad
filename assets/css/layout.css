@@ -81,65 +81,139 @@
 }
 
 
-/* ── NAV LATERAL (sidebar) ───────────────────────────────────────────────── */
-.app-shell {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  min-height: 100vh;
-}
-.sidebar {
+/* ============================================================================
+   NAVBAR SUPERIOR HORIZONTAL — estilo Skool
+   ============================================================================ */
+
+.app-shell { min-height: 100vh; }
+
+/* ── NAVBAR (barra de navegación principal) ───────────────────────────────── */
+.navbar {
   position: sticky;
   top: 0;
-  height: 100vh;
+  z-index: 100;
   background: var(--panel);
-  border-right: 1px solid var(--border);
-  padding: 20px 14px;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
 }
-.sidebar-brand {
+
+/* Fila 1: Logo + perfil */
+.navbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.navbar-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 10px 18px;
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--gold);
-  font-size: 14px;
+  font-size: 15px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-.sidebar-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
-  border-radius: var(--radius-sm);
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.15s;
-}
-.sidebar-link:hover { background: var(--card); color: var(--text); text-decoration: none; }
-.sidebar-link.active {
-  background: rgba(242,169,0,0.1);
-  color: var(--gold);
-}
-.sidebar-link .nav-icon { font-size: 17px; width: 22px; text-align: center; }
-.sidebar-footer {
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+.navbar-brand .brand-mark { font-size: 18px; }
+
+.navbar-user {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.sidebar-user-info { min-width: 0; flex: 1; }
-.sidebar-user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sidebar-user-role { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+.navbar-user-info {
+  text-align: right;
+  line-height: 1.2;
+}
+.navbar-user-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.navbar-user-role {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--muted);
+}
 
-.app-main { min-width: 0; }
+/* Fila 2: Pestañas horizontales */
+.navbar-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.navbar-tabs::-webkit-scrollbar { display: none; }
+.navbar-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.navbar-tab:hover { color: var(--text); text-decoration: none; }
+.navbar-tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+.navbar-tab .nav-icon { font-size: 15px; }
+
+
+/* ── CONTENEDOR PRINCIPAL ────────────────────────────────────────────────── */
+.container {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+}
+
+.page-header { margin-bottom: 24px; }
+.page-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.page-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Chip de nivel + validez membresía */
+.nivel-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 20px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.validity-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
 
 
 /* ── GRID DE TARJETAS ────────────────────────────────────────────────────── */
@@ -149,7 +223,7 @@
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
 
 
-/* ── TAB BAR MÓVIL (barra inferior en celular) ───────────────────────────── */
+/* ── TAB BAR MÓVIL ───────────────────────────────────────────────────────── */
 .tabbar {
   display: none;
   position: fixed;
@@ -171,6 +245,7 @@
   font-size: 10px;
   color: var(--muted);
   border-radius: var(--radius-sm);
+  text-decoration: none;
 }
 .tabbar-item.active { color: var(--gold); }
 .tabbar-item .tab-icon { font-size: 19px; }
@@ -178,10 +253,8 @@
 
 /* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .app-shell { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
+  .navbar-tabs { display: none; }
   .tabbar { display: flex; }
-  .app-main { padding-bottom: 80px; }
   .container { padding: 20px 16px 100px; }
   .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
 }
@@ -189,6 +262,6 @@
 @media (max-width: 560px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .page-title { font-size: 22px; }
-  .topbar { padding: 0 16px; gap: 10px; }
-  .topbar .level-label { display: none; }
+  .navbar-top { padding: 8px 16px; }
+  .navbar-user-info { display: none; }
 }
