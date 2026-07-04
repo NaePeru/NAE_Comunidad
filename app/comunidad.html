@@ -16,16 +16,21 @@
 </head>
 <body>
 
-      <div class="container" style="max-width:760px;margin-top:24px;">
+      <div class="container" style="max-width:1000px;margin-top:24px;">
+
+        <div class="community-layout">
+
+        <!-- COLUMNA PRINCIPAL: Feed -->
+        <div style="min-width:0;">
 
         <div class="page-header">
           <h1 class="page-title">Comunidad 💬</h1>
-          <p class="page-sub">Comparte avances, resuelve dudas y motívate. Gana puntos participando.</p>
+          <p class="page-sub">Comparte avances, resuelve dudas y motívate.</p>
         </div>
 
         <!-- COMPOSER (caja para crear post) -->
         <div class="composer" id="composer">
-          <textarea id="composer-text" placeholder="¿Qué quieres compartir? 
+          <textarea id="composer-text" placeholder="¿Qué quieres compartir?
 
 Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
           <div class="composer-footer">
@@ -60,6 +65,50 @@ Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
           <div class="empty-state"><div class="empty-icon">⏳</div>Cargando publicaciones...</div>
         </div>
 
+        </div>
+
+        <!-- COLUMNA LATERAL: Panel de comunidad -->
+        <aside class="community-panel">
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <div class="panel-card-icon">🎓</div>
+              <div class="panel-card-title">Nae. Information</div>
+            </div>
+            <div class="panel-card-desc">
+              Aprendé Excel, Power BI y SQL. Compartí conocimiento, ganá puntos y crecé como Analista de Datos junto a la comunidad.
+            </div>
+            <div class="panel-stats">
+              <div>
+                <div class="panel-stat-num" id="com-members">—</div>
+                <div class="panel-stat-label">Miembros</div>
+              </div>
+              <div>
+                <div class="panel-stat-num" id="com-online" style="color:var(--green);">—</div>
+                <div class="panel-stat-label">Posts</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <div class="panel-card-icon">📡</div>
+              <div class="panel-card-title">Próximo seminario</div>
+            </div>
+            <div class="panel-card-desc" id="com-next-event">
+              Cargando...
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <div class="panel-card-icon">🏆</div>
+              <div class="panel-card-title">Top de la semana</div>
+            </div>
+            <div id="com-top-week" style="font-size:13px;line-height:1.8;"></div>
+          </div>
+        </aside>
+
+        </div>
       </div>
 
   <!-- Tabbar móvil (lo rellena navbar.js) -->
@@ -88,10 +137,57 @@ Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
       await cargarFeed();
       iniciarRealtime();
 
+      // Cargar panel lateral derecho
+      cargarPanelComunidad();
+
       // Refrescar navbar cuando cambian los puntos
       window.addEventListener('perfil-actualizado', () => {
         renderNavbar('comunidad');
       });
+    }
+
+    // ── Cargar datos del panel lateral ──
+    async function cargarPanelComunidad() {
+      // Total miembros
+      const { count: totalMiembros } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
+      const elM = document.getElementById('com-members');
+      if (elM) elM.textContent = totalMiembros || 0;
+
+      // Total posts
+      const { count: totalPosts } = await supabase.from('posts').select('id', { count: 'exact', head: true });
+      const elP = document.getElementById('com-online');
+      if (elP) elP.textContent = totalPosts || 0;
+
+      // Próximo evento
+      const hoy = new Date().toISOString().split('T')[0];
+      const { data: eventos } = await supabase
+        .from('events').select('titulo, fecha, hora').gte('fecha', hoy).order('fecha').limit(1);
+      const elE = document.getElementById('com-next-event');
+      if (elE) {
+        if (eventos && eventos.length > 0) {
+          const e = eventos[0];
+          const f = new Date(e.fecha + 'T00:00:00').toLocaleDateString('es-PE', { day:'numeric', month:'short' });
+          elE.innerHTML = `📅 ${f}${e.hora ? ' · ' + e.hora.substring(0,5) : ''}<br><strong style="color:var(--gold);">${e.titulo}</strong>`;
+        } else {
+          elE.textContent = 'Próximamente anunciaremos el siguiente seminario. ¡Stay tuned!';
+        }
+      }
+
+      // Top de la semana
+      const { data: top } = await supabase
+        .from('leaderboard_semanal')
+        .select('nombre, puntos_semana').gt('puntos_semana', 0).order('posicion').limit(5);
+      const elT = document.getElementById('com-top-week');
+      if (elT) {
+        if (top && top.length > 0) {
+          elT.innerHTML = top.map((u, i) => {
+            const medal = ['🥇','🥈','🥉'][i] || `${i+1}.`;
+            return `<div style="display:flex;justify-content:space-between;padding:3px 0;">${medal} ${u.nombre} <strong style="color:var(--gold);">${u.puntos_semana}</strong></div>`;
+          }).join('');
+        } else {
+          elT.innerHTML = '<span style="color:var(--muted2);">Aún no hay actividad esta semana.</span>';
+        }
+      }
     }
 
     // ── Estado LIVE ──

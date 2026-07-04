@@ -47,17 +47,29 @@ export function renderNavbar(activoId) {
       <a href="comunidad.html" class="navbar-brand">
         <span class="brand-mark">◆</span> NAE
       </a>
-      <div class="navbar-user">
+      <div class="navbar-actions">
+        <button class="navbar-icon-btn" id="navbar-search-btn" title="Buscar" onclick="window.__toggleSearch()">
+          🔍
+        </button>
+        <button class="navbar-icon-btn" id="navbar-bell-btn" title="Notificaciones">
+          🔔<span class="navbar-badge"></span>
+        </button>
         <span class="nivel-chip" style="background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};">
           ${nivel.emoji} ${nivel.nombre}
         </span>
-        <div class="navbar-user-info">
-          <div class="navbar-user-name">${p?.nombre || 'Alumno'}</div>
-          <div class="navbar-user-role">${esAdminUser ? 'ADMIN' : (session.membership?.estado || 'alumno').toUpperCase()}</div>
+        <div class="navbar-user">
+          <div class="navbar-user-info">
+            <div class="navbar-user-name">${p?.nombre || 'Alumno'}</div>
+            <div class="navbar-user-role">${esAdminUser ? 'ADMIN' : (session.membership?.estado || 'alumno').toUpperCase()}</div>
+          </div>
+          ${avatarHtml}
+          <button class="btn btn-sm btn-ghost" onclick="window.__logout()" title="Cerrar sesión">⏻</button>
         </div>
-        ${avatarHtml}
-        <button class="btn btn-sm btn-ghost" onclick="window.__logout()" title="Cerrar sesión">⏻</button>
       </div>
+    </div>
+    <div class="navbar-search-bar" id="navbar-search-bar">
+      <input type="text" id="navbar-search-input" placeholder="Buscar en la comunidad..." oninput="window.__doSearch(this.value)">
+      <div id="navbar-search-results" class="navbar-search-results"></div>
     </div>
     <div class="navbar-tabs">
       ${pestanas.map(t => `
@@ -92,3 +104,51 @@ export function renderNavbar(activoId) {
 
   window.__logout = logout;
 }
+
+// ── BUSCADOR ────────────────────────────────────────────────────────────────
+import { supabase } from './supabase-client.js';
+import { escapeHtml } from './utils.js';
+
+window.__toggleSearch = () => {
+  const bar = document.getElementById('navbar-search-bar');
+  if (!bar) return;
+  bar.classList.toggle('open');
+  if (bar.classList.contains('open')) {
+    setTimeout(() => document.getElementById('navbar-search-input')?.focus(), 100);
+  }
+};
+
+let searchTimer;
+window.__doSearch = (q) => {
+  clearTimeout(searchTimer);
+  if (!q || q.trim().length < 2) {
+    document.getElementById('navbar-search-results').innerHTML = '';
+    return;
+  }
+  searchTimer = setTimeout(async () => {
+    const query = q.trim();
+    const [posts, courses, users] = await Promise.all([
+      supabase.from('posts').select('id, contenido, categoria').ilike('contenido', `%${query}%`).limit(3),
+      supabase.from('courses').select('id, titulo, icono').ilike('titulo', `%${query}%`).limit(3),
+      supabase.from('profiles').select('id, nombre, avatar_url').ilike('nombre', `%${query}%`).limit(3),
+    ]);
+
+    let html = '';
+    if (courses.data?.length > 0) {
+      html += '<div class="search-group-title">📚 Cursos</div>';
+      html += courses.data.map(c => `<a href="cursos.html" class="search-result-item">${c.icono||'📘'} ${escapeHtml(c.titulo)}</a>`).join('');
+    }
+    if (posts.data?.length > 0) {
+      html += '<div class="search-group-title">💬 Publicaciones</div>';
+      html += posts.data.map(p => `<a href="comunidad.html" class="search-result-item">💭 ${escapeHtml(p.contenido.substring(0,50))}...</a>`).join('');
+    }
+    if (users.data?.length > 0) {
+      html += '<div class="search-group-title">👥 Personas</div>';
+      html += users.data.map(u => `<a href="miembros.html" class="search-result-item">👤 ${escapeHtml(u.nombre)}</a>`).join('');
+    }
+    if (!html) html = '<div class="search-empty">Sin resultados para "' + escapeHtml(query) + '"</div>';
+
+    const res = document.getElementById('navbar-search-results');
+    if (res) res.innerHTML = html;
+  }, 300);
+};
