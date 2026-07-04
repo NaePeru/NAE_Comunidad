@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnóstico — Proyecto Z</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <style>
+    body { font-family: 'Sora', sans-serif; }
+    .debug-box {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 24px;
+    }
+    .debug-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .debug-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 8px;
+      font-family: 'Sora', sans-serif;
+    }
+    .debug-err { color: #ff6b6b; }
+    .debug-ok { color: #3dd68c; }
+    .debug-warn { color: #f2a900; }
+    pre { margin: 0; }
+    .btn-debug {
+      display: inline-block;
+      padding: 8px 16px;
+      background: var(--gold);
+      color: #000;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 4px 4px;
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="debug-box">
+    <h1 style="font-size:22px;margin-bottom:6px;">🔧 Diagnóstico de Base de Datos</h1>
+    <p class="muted" style="font-size:13px;margin-bottom:20px;">Esta página muestra exactamente qué hay en Supabase. Útil para encontrar bugs.</p>
+
+    <div id="output">Cargando sesión...</div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+
+    const out = document.getElementById('output');
+
+    // Helpers
+    function section(title, content, cls = '') {
+      return `<div class="debug-section ${cls}"><div class="debug-title">${title}</div><pre>${content}</pre></div>`;
+    }
+    function log(html) { out.innerHTML += html; }
+
+    // ── Verificar sesión ──
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) {
+      out.innerHTML = section('⚠️ Sesión', 'No hay sesión. Andá a index.html y logueate primero.', 'debug-warn');
+    } else {
+      log(section('✅ Sesión', `Logueado como: ${sess.user.email}\nUser ID: ${sess.user.id}`, 'debug-ok'));
+      await diagnostico();
+    }
+
+    async function diagnostico() {
+      // 1. TODOS los cursos
+      const { data: cursos, error: errC } = await supabase
+        .from('courses').select('id, titulo, slug, publicado, requiere_pago, orden').order('orden');
+      if (errC) { log(section('❌ Error cursos', JSON.stringify(errC, null, 2), 'debug-err')); return; }
+
+      log(section('📚 TODOS LOS CURSOS (' + cursos.length + ')',
+        cursos.map(c => `[${c.orden}] ${c.titulo}\n    id: ${c.id}\n    publicado: ${c.publicado} | pago: ${c.requiere_pago} | slug: ${c.slug}`).join('\n\n')
+      ));
+
+      // 2. Para cada curso, mostrar módulos y lecciones
+      for (const c of cursos) {
+        // Módulos
+        const { data: mods, error: errM } = await supabase
+          .from('modules').select('id, titulo, orden').eq('course_id', c.id).order('orden');
+        // Lecciones
+        const { data: lecs, error: errL } = await supabase
+          .from('lessons').select('id, titulo, module_id, orden, duracion_min').eq('course_id', c.id).order('orden');
+
+        let html = `CURSO: ${c.titulo}\n`;
+        html += `   publicado: ${c.publicado} | requiere_pago: ${c.requiere_pago}\n\n`;
+        if (errM) html += `   ❌ Error módulos: ${errM.message}\n`;
+        else html += `   📦 Módulos (${mods?.length || 0}):\n${(mods||[]).map(m => `      • ${m.titulo} (id: ${m.id})`).join('\n') || '      (ninguno)'}\n\n`;
+        if (errL) html += `   ❌ Error lecciones: ${errL.message}\n`;
+        else html += `   🎬 Lecciones (${lecs?.length || 0}):\n${(lecs||[]).map(l => `      • ${l.titulo}\n        module_id: ${l.module_id || 'NULL ⚠️'} | orden: ${l.orden}`).join('\n') || '      (ninguna)'}`;
+
+        const tieneLecciones = (lecs?.length || 0) > 0;
+        const cls = tieneLecciones ? '' : 'debug-warn';
+        log(section('━━━ ' + c.titulo + ' ━━━', html, cls));
+      }
+
+      // 3. Test: leer lecciones como lo hace curso.html
+      const urlParams = new URLSearchParams(window.location.search);
+      const testId = urlParams.get('id');
+      if (testId) {
+        const { data: testLecs, error: testErr } = await supabase
+          .from('lessons').select('*').eq('course_id', testId).order('orden');
+        log(section('🧪 TEST query curso.html (id=' + testId + ')',
+          testErr ? `❌ ERROR: ${testErr.message}` :
+          `Lecciones encontradas: ${testLecs?.length || 0}\n${JSON.stringify(testLecs, null, 2)}`,
+          testErr ? 'debug-err' : ''
+        ));
+      }
+
+      log('<div style="margin-top:20px;"><a href="cursos.html" class="btn-debug">← Volver a cursos</a></div>');
+    }
+  </script>
+</body>
+</html>

@@ -121,7 +121,7 @@ export async function cargarCurso(courseId) {
 
   if (cErr || !course) {
     document.getElementById('curso-container').innerHTML =
-      '<div class="empty-state"><div class="empty-icon">❌</div>Curso no encontrado.</div>';
+      '<div class="empty-state"><div class="empty-icon">❌</div>Curso no encontrado.<br><code style="font-size:11px;color:var(--muted2);">' + escapeHtml(cErr?.message || 'ID inválido') + '</code></div>';
     return;
   }
 
@@ -129,10 +129,22 @@ export async function cargarCurso(courseId) {
   const bloqueado = course.requiere_pago && !tieneAcceso();
   if (bloqueado) { renderCursoBloqueado(course); return; }
 
-  const { data: modules } = await supabase
+  const { data: modules, error: errMod } = await supabase
     .from('modules').select('*').eq('course_id', courseId).order('orden', { ascending: true });
-  const { data: lessons } = await supabase
+  const { data: lessons, error: errLec } = await supabase
     .from('lessons').select('*').eq('course_id', courseId).order('orden', { ascending: true });
+
+  // Logs de diagnóstico (visibles en consola)
+  console.log('🔍 cargarCurso — courseId:', courseId);
+  console.log('🔍 módulos:', modules, 'error:', errMod);
+  console.log('🔍 lecciones:', lessons, 'error:', errLec);
+
+  // Si la consulta de lecciones da error (ej: RLS bloquea), mostrar mensaje claro
+  if (errLec) {
+    document.getElementById('curso-container').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⚠️</div>Error al cargar lecciones.<br><code style="font-size:11px;color:var(--muted2);">' + escapeHtml(errLec.message) + '</code></div>';
+    return;
+  }
 
   const { data: myProgress } = await supabase
     .from('lesson_progress')
@@ -155,7 +167,7 @@ export async function cargarCurso(courseId) {
 
   // Abrir la primera lección no completada (o la primera)
   const primera = flattened.find(l => !myDone.has(l.id)) || flattened[0];
-  abrirLeccion(primera.id);
+  if (primera) abrirLeccion(primera.id);
 }
 
 function renderCursoLayout(course, modules, lessons, myDone) {
