@@ -6,6 +6,7 @@
 
 import { session, logout, esAdmin } from './auth.js';
 import { getNivel, iniciales, colorAvatar } from './utils.js';
+import { initChat } from './chat-ia.js';
 
 // Estructura de pestañas (id → ruta + label + icono)
 const PESTANAS = [
@@ -82,6 +83,12 @@ export function renderNavbar(activoId) {
 
   // Insertar la navbar al principio del body
   document.body.insertBefore(navbar, document.body.firstChild);
+
+  // Inicializar Alessandra (chat IA flotante) — una sola vez
+  if (!window.__chatInit) {
+    window.__chatInit = true;
+    initChat();
+  }
 
   window.__logout = logout;
 }
