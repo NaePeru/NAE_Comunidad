@@ -86,13 +86,17 @@ function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
                         completed ? '✓ Revisar' :
                         pct === 0 ? 'Comenzar →' : 'Continuar →';
 
+    const clickHandler = bloqueado
+      ? `window.__locked();`
+      : `window.location.href='curso.html?id=${c.id}';`;
+
     return `
-      <a class="course-card${bloqueado ? ' locked' : ''}${completed ? ' completed' : ''}"
+      <div class="course-card${bloqueado ? ' locked' : ''}${completed ? ' completed' : ''}"
          data-categoria="${c.categoria}"
          data-gratis="${c.requiere_pago ? 'no' : 'si'}"
+         data-course-id="${c.id}"
          style="--cat-accent:${cs.accent};--cat-accent-bg:${cs.bg};--cat-accent-border:${cs.border};"
-         href="${bloqueado ? '#' : 'curso.html?id=' + c.id}"
-         onclick="${bloqueado ? "window.__locked();return false;" : ''}">
+         onclick="${clickHandler}">
         <div class="course-thumb" style="background:${cs.thumb};">${c.icono || '📘'}</div>
         <div class="course-body">
           <div class="course-title">${escapeHtml(c.titulo)} ${pagoBadge}</div>
@@ -105,7 +109,7 @@ function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
           ${progressBar}
         </div>
         <div class="course-action">${actionLabel}</div>
-      </a>`;
+      </div>`;
   }).join('');
 }
 
