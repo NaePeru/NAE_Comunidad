@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seminarios — NAE</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/layout.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <link rel="stylesheet" href="../assets/css/eventos.css">
+</head>
+<body>
+
+      <div class="container" style="max-width:760px;margin-top:24px;">
+
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h1 class="page-title">Seminarios en vivo 📡</h1>
+            <p class="page-sub">Cada sábado nos juntamos para aprender juntos. ¡No te lo pierdas!</p>
+          </div>
+          <button class="btn btn-primary" id="btn-nuevo-evento" onclick="window.__openEventoModal()" style="display:none;">
+            + Nuevo seminario
+          </button>
+        </div>
+
+        <div id="eventos-list">
+          <div class="empty-state"><div class="empty-icon">⏳</div>Cargando seminarios...</div>
+        </div>
+
+      </div>
+
+  <!-- ════════ MODAL: CREAR/EDITAR EVENTO ════════ -->
+  <div class="modal-overlay" id="modal-evento">
+    <div class="modal">
+      <div class="modal-title" id="modal-evento-title">Nuevo seminario</div>
+      <p class="modal-sub">Programá un seminario en vivo.</p>
+
+      <div class="admin-form">
+        <input type="hidden" id="evento-id">
+        <div class="form-group">
+          <label class="form-label">Título *</label>
+          <input type="text" class="form-input" id="evento-titulo" placeholder="Ej: Seminario Excel — Dashboards">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo</label>
+            <select class="form-select" id="evento-tipo">
+              <option value="webinar">📡 Webinar</option>
+              <option value="clase">🎥 Clase en vivo</option>
+              <option value="qna">💬 Q&A</option>
+              <option value="otro">📌 Evento</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Categoría (referencia)</label>
+            <select class="form-select" id="evento-categoria">
+              <option value="">— General —</option>
+              <option value="excel">📊 Excel</option>
+              <option value="powerbi">⚡ Power BI</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Fecha *</label>
+            <input type="date" class="form-input" id="evento-fecha">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Hora</label>
+            <input type="time" class="form-input" id="evento-hora">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Link de la reunión (Zoom/Meet)</label>
+          <input type="text" class="form-input" id="evento-link" placeholder="https://meet.google.com/...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <textarea class="form-textarea" id="evento-desc" placeholder="¿De qué trata el seminario?"></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-ghost btn-block" onclick="window.__closeModal('modal-evento')">Cancelar</button>
+        <button class="btn btn-primary btn-block" onclick="window.__guardarEventoForm()">Guardar seminario</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabbar"></div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, esAdmin, session } from '../assets/js/auth.js';
+    import { renderNavbar } from '../assets/js/navbar.js';
+    import { cargarEventos, guardarEvento } from '../assets/js/eventos.js';
+
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) {
+      window.location.href = '../index.html';
+    } else {
+      await cargarPerfilCompleto();
+      inicializar();
+    }
+
+    async function inicializar() {
+      renderNavbar('eventos');
+      if (esAdmin()) document.getElementById('btn-nuevo-evento').style.display = 'inline-flex';
+      await cargarEventos();
+    }
+
+    // ── Abrir modal de evento ──
+    window.__openEventoModal = (id = null) => {
+      const modal = document.getElementById('modal-evento');
+      document.getElementById('evento-id').value = id || '';
+      if (id) {
+        document.getElementById('modal-evento-title').textContent = 'Editar seminario';
+        // Por simplicidad, dejamos campos en blanco para edición (se podrían precargar)
+      } else {
+        document.getElementById('modal-evento-title').textContent = 'Nuevo seminario';
+      }
+      // Limpiar campos
+      ['evento-titulo','evento-link','evento-desc','evento-hora'].forEach(i => document.getElementById(i).value = '');
+      document.getElementById('evento-tipo').value = 'webinar';
+      // Fecha por defecto: próximo sábado
+      const proxSabado = new Date();
+      const diasHastaSabado = (6 - proxSabado.getDay() + 7) % 7 || 7;
+      proxSabado.setDate(proxSabado.getDate() + diasHastaSabado);
+      document.getElementById('evento-fecha').value = proxSabado.toISOString().split('T')[0];
+
+      modal.classList.add('open');
+    };
+
+    window.__guardarEventoForm = async () => {
+      const data = {
+        id: document.getElementById('evento-id').value || null,
+        titulo: document.getElementById('evento-titulo').value,
+        tipo: document.getElementById('evento-tipo').value,
+        fecha: document.getElementById('evento-fecha').value,
+        hora: document.getElementById('evento-hora').value,
+        link: document.getElementById('evento-link').value,
+        descripcion: document.getElementById('evento-desc').value,
+      };
+      const { error } = await guardarEvento(data);
+      if (!error) window.__closeModal('modal-evento');
+    };
+
+    window.__closeModal = (id) => document.getElementById(id).classList.remove('open');
+  </script>
+</body>
+</html>
