@@ -1,27 +1,34 @@
 // ============================================================================
-// PROYECTO Z — cursos.js  (v3 — Layout estilo Skool)
-// Sidebar de módulos/lecciones colapsable + reproductor grande + siguiente lección.
+// PROYECTO Z — cursos.js  (v4 — Una sola página, cambio de vista)
+// El catálogo y el curso viven en la MISMA página. Click = cambio de vista.
+// Sin navegación entre URLs, sin onclick que se pierda, sin bugs de caché.
 // ============================================================================
 
 import { supabase } from './supabase-client.js';
 import { session, tieneAcceso } from './auth.js';
 import { escapeHtml, toast } from './utils.js';
 
-// Estado del catálogo
+// Estado
 window.__coursesData = [];
+let cursoState = null;
 
-// ── CATALOGO ─────────────────────────────────────────────────────────────────
+// Colores por categoría
 const CAT_COLORS = {
   excel:   { accent: '#217346', bg: 'rgba(33,115,70,0.12)',  border: 'rgba(33,115,70,0.35)',  label: '📊 Excel',    thumb: 'linear-gradient(135deg,#0d2818,#217346)' },
   powerbi: { accent: '#E05C2A', bg: 'rgba(224,92,42,0.12)',  border: 'rgba(224,92,42,0.35)',  label: '⚡ Power BI', thumb: 'linear-gradient(135deg,#2a1200,#c4480a)' },
   general: { accent: '#F2A900', bg: 'rgba(242,169,0,0.12)',  border: 'rgba(242,169,0,0.35)',  label: '📚 General',  thumb: 'linear-gradient(135deg,#1a1d2e,#2a2e44)' },
+  sql:     { accent: '#E05C2A', bg: 'rgba(224,92,42,0.12)',  border: 'rgba(224,92,42,0.35)',  label: '🗄️ SQL',       thumb: 'linear-gradient(135deg,#2a1200,#c4480a)' },
 };
 function catStyle(cat) { return CAT_COLORS[cat] || CAT_COLORS.general; }
 
+
+// ============================================================================
+// VISTA 1: CATÁLOGO
+// ============================================================================
 export async function cargarCatalogo() {
   const { data: courses, error } = await supabase
     .from('courses')
-    .select('id, slug, titulo, descripcion, categoria, icono, color_tema, requiere_pago, orden')
+    .select('id, titulo, descripcion, categoria, icono, color_tema, requiere_pago, orden')
     .eq('publicado', true)
     .order('orden', { ascending: true });
 
@@ -55,7 +62,7 @@ export async function cargarCatalogo() {
 function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
   const list = document.getElementById('courses-list');
   if (!courses || courses.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div>No hay cursos publicados aún.</div>';
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div>No hay cursos publicados.</div>';
     return;
   }
 
@@ -86,17 +93,14 @@ function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
                         completed ? '✓ Revisar' :
                         pct === 0 ? 'Comenzar →' : 'Continuar →';
 
-    const clickHandler = bloqueado
-      ? `window.__locked();`
-      : `window.location.href='curso.html?id=${c.id}';`;
-
+    // SIN onclick ni href. Usamos data-course-id y un event listener global.
     return `
       <div class="course-card${bloqueado ? ' locked' : ''}${completed ? ' completed' : ''}"
-         data-categoria="${c.categoria}"
-         data-gratis="${c.requiere_pago ? 'no' : 'si'}"
-         data-course-id="${c.id}"
-         style="--cat-accent:${cs.accent};--cat-accent-bg:${cs.bg};--cat-accent-border:${cs.border};"
-         onclick="${clickHandler}">
+           data-course-id="${c.id}"
+           data-bloqueado="${bloqueado ? '1' : '0'}"
+           data-categoria="${c.categoria}"
+           data-gratis="${c.requiere_pago ? 'no' : 'si'}"
+           style="--cat-accent:${cs.accent};--cat-accent-bg:${cs.bg};--cat-accent-border:${cs.border};cursor:pointer;">
         <div class="course-thumb" style="background:${cs.thumb};">${c.icono || '📘'}</div>
         <div class="course-body">
           <div class="course-title">${escapeHtml(c.titulo)} ${pagoBadge}</div>
@@ -111,25 +115,54 @@ function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
         <div class="course-action">${actionLabel}</div>
       </div>`;
   }).join('');
+
+  // ── EVENT LISTENER GLOBAL (delegación de eventos) ──
+  // En vez de onclick inline, usamos delegación. 100% confiable.
+  // Se asigna UNA sola vez a la lista contenedora.
+}
+
+// Listener global para clicks en tarjetas (delegación de eventos)
+// Se llama desde cursos.html después de renderizar.
+export function bindClicksCatalogo() {
+  const list = document.getElementById('courses-list');
+  if (!list) return;
+  // Evitar duplicar listeners
+  list.replaceWith(list.cloneNode(true));
+  const newList = document.getElementById('courses-list');
+  newList.addEventListener('click', async (e) => {
+    const card = e.target.closest('.course-card');
+    if (!card) return;
+    const courseId = card.dataset.courseId;
+    const bloqueado = card.dataset.bloqueado === '1';
+    if (!courseId) return;
+    if (bloqueado) { toast('🔒 Necesitas membresía para este curso'); return; }
+    // Cambiar a vista de curso
+    await abrirCurso(courseId);
+  });
 }
 
 
 // ============================================================================
-// VISTA DE CURSO INDIVIDUAL (sidebar + reproductor)
+// CAMBIO DE VISTA: catálogo → curso
 // ============================================================================
-let cursoState = null;   // { course, modules, lessons, myDone, flattened }
+async function abrirCurso(courseId) {
+  // Ocultar catálogo, mostrar contenedor de curso
+  document.getElementById('vista-catalogo').classList.add('hidden');
+  document.getElementById('vista-curso').classList.remove('hidden');
+  document.getElementById('vista-curso').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-export async function cargarCurso(courseId) {
+  document.getElementById('curso-container').innerHTML =
+    '<div class="empty-state"><div class="empty-icon">⏳</div>Cargando curso...</div>';
+
   const { data: course, error: cErr } = await supabase
     .from('courses').select('*').eq('id', courseId).single();
 
   if (cErr || !course) {
     document.getElementById('curso-container').innerHTML =
-      '<div class="empty-state"><div class="empty-icon">❌</div>Curso no encontrado.<br><code style="font-size:11px;color:var(--muted2);">' + escapeHtml(cErr?.message || 'ID inválido') + '</code></div>';
+      '<div class="empty-state"><div class="empty-icon">❌</div>Curso no encontrado.</div>';
     return;
   }
 
-  // ¿Bloqueado?
   const bloqueado = course.requiere_pago && !tieneAcceso();
   if (bloqueado) { renderCursoBloqueado(course); return; }
 
@@ -138,15 +171,9 @@ export async function cargarCurso(courseId) {
   const { data: lessons, error: errLec } = await supabase
     .from('lessons').select('*').eq('course_id', courseId).order('orden', { ascending: true });
 
-  // Logs de diagnóstico (visibles en consola)
-  console.log('🔍 cargarCurso — courseId:', courseId);
-  console.log('🔍 módulos:', modules, 'error:', errMod);
-  console.log('🔍 lecciones:', lessons, 'error:', errLec);
-
-  // Si la consulta de lecciones da error (ej: RLS bloquea), mostrar mensaje claro
   if (errLec) {
     document.getElementById('curso-container').innerHTML =
-      '<div class="empty-state"><div class="empty-icon">⚠️</div>Error al cargar lecciones.<br><code style="font-size:11px;color:var(--muted2);">' + escapeHtml(errLec.message) + '</code></div>';
+      '<div class="empty-state"><div class="empty-icon">⚠️</div>Error al cargar lecciones.</div>';
     return;
   }
 
@@ -157,51 +184,50 @@ export async function cargarCurso(courseId) {
     .in('lesson_id', (lessons || []).map(l => l.id));
   const myDone = new Set((myProgress || []).filter(p => p.completado).map(p => p.lesson_id));
 
-  // Lista aplanada de TODAS las lecciones (tengan o no módulo asignado)
   const flattened = (lessons || []).slice();
-
   cursoState = { course, modules: modules || [], lessons: lessons || [], myDone, flattened };
 
-  if (flattened.length === 0) {
-    renderCursoSinLecciones(course);
-    return;
-  }
+  if (flattened.length === 0) { renderCursoSinLecciones(course); return; }
 
   renderCursoLayout(course, modules || [], lessons || [], myDone);
-
-  // Abrir la primera lección no completada (o la primera)
   const primera = flattened.find(l => !myDone.has(l.id)) || flattened[0];
   if (primera) abrirLeccion(primera.id);
 }
 
+
+// ============================================================================
+// VOLVER AL CATÁLOGO
+// ============================================================================
+function volverAlCatalogo() {
+  document.getElementById('vista-curso').classList.add('hidden');
+  document.getElementById('vista-catalogo').classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+
+// ============================================================================
+// RENDER DEL CURSO (sidebar + reproductor)
+// ============================================================================
 function renderCursoLayout(course, modules, lessons, myDone) {
   const total = lessons.length;
   const done = lessons.filter(l => myDone.has(l.id)).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const cs = catStyle(course.categoria);
 
-  // Construir el sidebar de módulos.
-  // Lógica robusta: muestra TODAS las lecciones, tengan o no módulo asignado.
+  // Agrupar lecciones: módulos reales + las que no tienen módulo
   const leccionesSinModulo = lessons.filter(l => !l.module_id);
   let modsParaSidebar = modules.length > 0 ? [...modules] : [];
-
-  // Si hay lecciones sin módulo, agregarlas como grupo "Lecciones"
   if (leccionesSinModulo.length > 0) {
     modsParaSidebar.push({ id: null, titulo: 'Lecciones', descripcion: '' });
   }
-  // Fallback por si no hay nada
   if (modsParaSidebar.length === 0) {
     modsParaSidebar.push({ id: null, titulo: 'Lecciones', descripcion: '' });
   }
 
   const modsHtml = modsParaSidebar.map(mod => {
-    // Lecciones de este módulo (si mod.id es null → las que no tienen módulo)
-    let modLessons;
-    if (mod.id === null) {
-      modLessons = lessons.filter(l => !l.module_id);
-    } else {
-      modLessons = lessons.filter(l => l.module_id === mod.id);
-    }
+    let modLessons = (mod.id === null)
+      ? lessons.filter(l => !l.module_id)
+      : lessons.filter(l => l.module_id === mod.id);
     const modDone = modLessons.filter(l => myDone.has(l.id)).length;
     const modKey = mod.id || 'nomod';
     return `
@@ -224,10 +250,9 @@ function renderCursoLayout(course, modules, lessons, myDone) {
   }).join('');
 
   document.getElementById('curso-container').innerHTML = `
-    <div class="curso-back" onclick="history.back()">← Volver al catálogo</div>
+    <div class="course-back" onclick="window.__volverCatalogo()">← Volver al catálogo</div>
 
     <div class="curso-layout">
-      <!-- SIDEBAR -->
       <aside class="curso-sidebar" id="curso-sidebar">
         <div class="sidebar-course-info">
           <div class="sidebar-course-thumb" style="background:${cs.thumb};">${course.icono || '📘'}</div>
@@ -242,7 +267,6 @@ function renderCursoLayout(course, modules, lessons, myDone) {
         ${modsHtml}
       </aside>
 
-      <!-- MAIN -->
       <div class="curso-main">
         <div class="curso-main-header">
           <div class="curso-breadcrumb" id="player-breadcrumb">
@@ -261,60 +285,53 @@ function renderCursoLayout(course, modules, lessons, myDone) {
 
 function renderCursoBloqueado(course) {
   document.getElementById('curso-container').innerHTML = `
-    <div class="course-back" onclick="history.back()">← Volver al catálogo</div>
+    <div class="course-back" onclick="window.__volverCatalogo()">← Volver al catálogo</div>
     <div class="card locked-msg">
       <div class="lock-icon">🔒</div>
       <h3>Este curso es Premium</h3>
       <p>Para acceder a <strong>${escapeHtml(course.titulo)}</strong> necesitás una membresía activa.</p>
-      <a href="perfil.html" class="btn btn-primary">Ver opciones de membresía</a>
     </div>
   `;
 }
 
 function renderCursoSinLecciones(course) {
   document.getElementById('curso-container').innerHTML = `
-    <div class="course-back" onclick="history.back()">← Volver al catálogo</div>
+    <div class="course-back" onclick="window.__volverCatalogo()">← Volver al catálogo</div>
     <div class="card no-lessons-msg">
       <div class="icon">📦</div>
       <h3 style="font-size:18px;margin-bottom:8px;">Aún no hay lecciones</h3>
-      <p style="color:var(--muted);font-size:14px;">Este curso todavía no tiene contenido. Volvé pronto.</p>
+      <p style="color:var(--muted);font-size:14px;">Este curso todavía no tiene contenido.</p>
     </div>
   `;
 }
 
 
-// ── ABRIR LECCIÓN (render reproductor) ──────────────────────────────────────
+// ── ABRIR LECCIÓN ───────────────────────────────────────────────────────────
 function abrirLeccion(lessonId) {
   if (!cursoState) return;
   const { lessons, myDone, flattened, course, modules } = cursoState;
   const l = lessons.find(x => x.id === lessonId);
   if (!l) return;
 
-  // Marcar activa en sidebar
   document.querySelectorAll('.sb-lesson').forEach(el => el.classList.remove('active'));
   const sbItem = document.getElementById(`sb-l-${lessonId}`);
   if (sbItem) sbItem.classList.add('active');
 
-  // Breadcrumb: Curso > Módulo > Lección
   const mod = modules.find(m => m.id === l.module_id);
   document.getElementById('player-breadcrumb').innerHTML = `
-    <span>${escapeHtml(course.titulo)}</span>
-    <span>›</span>
-    <span>${mod ? escapeHtml(mod.titulo) : 'Lecciones'}</span>
-    <span>›</span>
+    <span>${escapeHtml(course.titulo)}</span><span>›</span>
+    <span>${mod ? escapeHtml(mod.titulo) : 'Lecciones'}</span><span>›</span>
     <span class="crumb-active">${escapeHtml(l.titulo)}</span>
   `;
 
-  // Video
   const videoHtml = (l.tipo === 'video' && l.url_contenido)
     ? `<div class="video-wrap"><iframe src="${l.url_contenido}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe></div>`
-    : `<div class="empty-state" style="padding:40px;"><div class="empty-icon">📄</div>Sin video. Lección de texto.</div>`;
+    : `<div class="empty-state" style="padding:40px;"><div class="empty-icon">📄</div>Sin video.</div>`;
 
-  // ¿Hay siguiente lección?
   const idx = flattened.findIndex(x => x.id === lessonId);
   const siguiente = idx >= 0 && idx < flattened.length - 1 ? flattened[idx + 1] : null;
-
   const isDone = myDone.has(lessonId);
+
   document.getElementById('player-area').innerHTML = `
     <div class="player-card">
       ${videoHtml}
@@ -336,10 +353,7 @@ function abrirLeccion(lessonId) {
       </div>
     </div>
   `;
-
-  // En móvil, cerrar el sidebar al elegir lección
   cerrarSidebarMovil();
-  // Scroll arriba
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -358,14 +372,10 @@ async function completarLeccion(lessonId) {
     completado_en: nuevoEstado ? new Date().toISOString() : null,
   });
 
-  if (nuevoEstado) {
-    myDone.add(lessonId);
-    toast('✅ Lección completada');
-  } else {
-    myDone.delete(lessonId);
-  }
+  if (nuevoEstado) { myDone.add(lessonId); toast('✅ Lección completada'); }
+  else { myDone.delete(lessonId); }
 
-  // Recalcular progreso del sidebar
+  // Recalcular progreso
   const total = lessons.length;
   const done = lessons.filter(l => myDone.has(l.id)).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -374,54 +384,41 @@ async function completarLeccion(lessonId) {
   if (fill) fill.style.width = pct + '%';
   if (txt) txt.textContent = pct + '%';
 
-  // Actualizar el check del sidebar para esta lección
+  // Actualizar check del sidebar
   const sbItem = document.getElementById(`sb-l-${lessonId}`);
   if (sbItem) {
     const check = sbItem.querySelector('.sb-lesson-check');
-    if (nuevoEstado) {
-      check.classList.add('done');
-      check.textContent = '✓';
-      sbItem.classList.add('done-item');
-    } else {
-      check.classList.remove('done');
-      check.textContent = '';
-      sbItem.classList.remove('done-item');
-    }
+    if (nuevoEstado) { check.classList.add('done'); check.textContent = '✓'; sbItem.classList.add('done-item'); }
+    else { check.classList.remove('done'); check.textContent = ''; sbItem.classList.remove('done-item'); }
   }
-
-  // Actualizar el botón del reproductor
+  // Actualizar botón
   const btn = document.querySelector('.lesson-complete-btn');
   if (btn) {
     if (nuevoEstado) { btn.classList.add('done'); btn.innerHTML = '✓ Completada'; }
     else { btn.classList.remove('done'); btn.innerHTML = 'Marcar como completada'; }
   }
-
-  // Actualizar el conteo del módulo
+  // Actualizar conteo del módulo
   const l = lessons.find(x => x.id === lessonId);
   if (l) {
-    const modId = l.module_id || 'nomod';
-    const modLessons = lessons.filter(x => (modules.length > 0 ? x.module_id === l.module_id : !x.module_id));
+    const modKey = l.module_id || 'nomod';
+    const modLessons = lessons.filter(x => (modules.length > 0 ? x.module_id === l.module_id : true));
     const modDone = modLessons.filter(x => myDone.has(x.id)).length;
-    const modHeader = document.querySelector(`#sb-mod-${modId} .sb-module-count`);
+    const modHeader = document.querySelector(`#sb-mod-${modKey} .sb-module-count`);
     if (modHeader) modHeader.textContent = `${modDone}/${modLessons.length}`;
   }
 }
 
 
-// ── TOGGLE MÓDULO (colapsar/expandir) ──────────────────────────────────────
+// ── TOGGLES ─────────────────────────────────────────────────────────────────
 function toggleModulo(modId) {
   const mod = document.getElementById(`sb-mod-${modId}`);
   if (mod) mod.classList.toggle('collapsed');
 }
-
-// ── SIDEBAR MÓVIL ───────────────────────────────────────────────────────────
 function toggleSidebar() {
   const sb = document.getElementById('curso-sidebar');
   const ov = document.getElementById('sidebar-overlay');
-  if (sb && ov) {
-    sb.classList.toggle('open');
-    ov.classList.toggle('open');
-  }
+  if (sb) sb.classList.toggle('open');
+  if (ov) ov.classList.toggle('open');
 }
 function cerrarSidebarMovil() {
   const sb = document.getElementById('curso-sidebar');
@@ -436,4 +433,4 @@ window.__abrirLeccion = abrirLeccion;
 window.__completarLeccion = completarLeccion;
 window.__toggleModulo = toggleModulo;
 window.__toggleSidebar = toggleSidebar;
-window.__locked = () => toast('🔒 Necesitas membresía para este curso');
+window.__volverCatalogo = volverAlCatalogo;

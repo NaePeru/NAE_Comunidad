@@ -16,26 +16,35 @@
 </head>
 <body>
 
-      <div class="container courses-page" style="max-width:840px;margin-top:24px;">
-
-        <div class="page-header">
-          <h1 class="page-title">Cursos 📚</h1>
-          <p class="page-sub">Aprende a tu ritmo. Empieza gratis y avanza cuando estés listo.</p>
-        </div>
-
-        <!-- Filtros -->
-        <div class="course-filters">
-          <button class="pill active" onclick="filtrarCursos('todo', this)">Todo</button>
-          <button class="pill" onclick="filtrarCursos('gratis', this)">🎁 Gratis</button>
-          <button class="pill" onclick="filtrarCursos('excel', this)">📊 Excel</button>
-          <button class="pill" onclick="filtrarCursos('powerbi', this)">⚡ Power BI</button>
-        </div>
-
-        <div id="courses-list">
-          <div class="empty-state"><div class="empty-icon">⏳</div>Cargando cursos...</div>
-        </div>
-
+  <!-- ════════ VISTA CATÁLOGO ════════ -->
+  <div id="vista-catalogo">
+    <div class="container courses-page" style="max-width:840px;margin-top:24px;">
+      <div class="page-header">
+        <h1 class="page-title">Cursos 📚</h1>
+        <p class="page-sub">Aprende a tu ritmo. Empieza gratis y avanza cuando estés listo.</p>
       </div>
+
+      <div class="course-filters">
+        <button class="pill active" onclick="filtrarCursos('todo', this)">Todo</button>
+        <button class="pill" onclick="filtrarCursos('gratis', this)">🎁 Gratis</button>
+        <button class="pill" onclick="filtrarCursos('excel', this)">📊 Excel</button>
+        <button class="pill" onclick="filtrarCursos('powerbi', this)">⚡ Power BI</button>
+      </div>
+
+      <div id="courses-list">
+        <div class="empty-state"><div class="empty-icon">⏳</div>Cargando cursos...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ VISTA CURSO (oculta por defecto) ════════ -->
+  <div id="vista-curso" class="hidden">
+    <div class="container" style="max-width:1100px;margin-top:24px;">
+      <div id="curso-container">
+        <div class="empty-state"><div class="empty-icon">⏳</div>Cargando curso...</div>
+      </div>
+    </div>
+  </div>
 
   <div class="tabbar"></div>
 
@@ -43,7 +52,7 @@
     import { supabase } from '../assets/js/supabase-client.js';
     import { cargarPerfilCompleto, session } from '../assets/js/auth.js';
     import { renderNavbar } from '../assets/js/navbar.js';
-    import { cargarCatalogo } from '../assets/js/cursos.js';
+    import { cargarCatalogo, bindClicksCatalogo } from '../assets/js/cursos.js';
 
     const { data: { session: sess } } = await supabase.auth.getSession();
     if (!sess) {
@@ -56,12 +65,13 @@
     async function inicializar() {
       renderNavbar('cursos');
       await cargarCatalogo();
+      // Conectar el listener de clicks después de renderizar el catálogo
+      bindClicksCatalogo();
     }
 
     function filtrarCursos(filtro, btn) {
-      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('#vista-catalogo .pill').forEach(p => p.classList.remove('active'));
       if (btn) btn.classList.add('active');
-
       document.querySelectorAll('.course-card').forEach(c => {
         const cat = c.dataset.categoria;
         const gratis = c.dataset.gratis;
