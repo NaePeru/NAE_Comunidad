@@ -266,7 +266,8 @@
 .chat-speak:hover { color: var(--gold); }
 
 /* ── RESPONSIVE ───────────────────────────────────────────────────────────── */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  /* Chat en pantalla completa en móvil */
   .chat-window {
     bottom: 0; right: 0;
     width: 100%;
@@ -274,5 +275,12 @@
     max-height: 100%;
     border-radius: 0;
   }
-  .chat-fab { bottom: 80px; right: 16px; }  /* encima del tabbar móvil */
+  /* FAB arriba de la tabbar para que no se superponga */
+  .chat-fab {
+    bottom: 84px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
 }

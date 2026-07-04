@@ -420,27 +420,29 @@
   .tabbar { display: flex; }
   .container { padding: 20px 16px 100px; }
   .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  /* En tablet, el layout de comunidad pasa a 1 columna */
+  .community-layout { grid-template-columns: 1fr !important; }
+  .community-panel { position: static !important; order: 1; margin-top: 24px; }
 }
 
-@media (max-width: 760px) {
-  /* En tablet chico, ocultar nombre y mostrar solo iconos + avatar */
-  .navbar-user-info { display: none; }
+@media (max-width: 768px) {
+  /* MOBILE: navbar minimalista (solo logo + avatar) */
+  .navbar-icon-btn,
+  .navbar-user .nivel-chip,
+  .navbar-user-info,
+  .navbar-user .btn-sm {
+    display: none !important;
+  }
+  .navbar-top { padding: 10px 16px; }
+  .navbar-actions { gap: 8px; }
+  .navbar-user .avatar { width: 32px; height: 32px; }
+  .container { padding: 16px 14px 100px; }
+  .page-header { margin-bottom: 18px; }
+  .page-title { font-size: 22px; }
 }
 
 @media (max-width: 560px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .page-title { font-size: 22px; }
-  .navbar-top { padding: 8px 14px; }
-  /* En móvil: ocultar nombre y chip de nivel (queda muy apretado) */
-  .navbar-user-info { display: none; }
-  .navbar-user .nivel-chip { display: none; }
-  /* Buscador y campana más chicos */
-  .navbar-icon-btn { width: 32px; height: 32px; font-size: 13px; }
-  .navbar-actions { gap: 6px; }
-  /* Avatar más chico */
-  .navbar-user .avatar { width: 28px; height: 28px; font-size: 10px; }
-  /* Botón logout más chico */
-  .navbar-user .btn-sm { padding: 4px 8px; font-size: 12px; }
-  /* Resultados de búsqueda ocupan todo el ancho */
-  .navbar-search-results { left: 8px; right: 8px; }
+  .navbar-search-results { left: 8px; right: 8px; max-width: none; }
+  .panel-card { padding: 16px; }
 }
