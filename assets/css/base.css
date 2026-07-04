@@ -5,8 +5,9 @@
    ============================================================================ */
 
 :root {
-  /* ── Paleta principal (igual a tu Index.html) ── */
-  --gold:      #F2A900;
+  /* ── Paleta principal (dorado más oscuro y elegante) ── */
+  --gold:      #D4940A;
+  --gold-light:#F2A900;
   --orange:    #E05C2A;
   --bg:        #0F1117;
   --panel:     #171B26;

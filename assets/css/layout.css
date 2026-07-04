@@ -422,9 +422,25 @@
   .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
 }
 
+@media (max-width: 760px) {
+  /* En tablet chico, ocultar nombre y mostrar solo iconos + avatar */
+  .navbar-user-info { display: none; }
+}
+
 @media (max-width: 560px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .page-title { font-size: 22px; }
-  .navbar-top { padding: 8px 16px; }
+  .navbar-top { padding: 8px 14px; }
+  /* En móvil: ocultar nombre y chip de nivel (queda muy apretado) */
   .navbar-user-info { display: none; }
+  .navbar-user .nivel-chip { display: none; }
+  /* Buscador y campana más chicos */
+  .navbar-icon-btn { width: 32px; height: 32px; font-size: 13px; }
+  .navbar-actions { gap: 6px; }
+  /* Avatar más chico */
+  .navbar-user .avatar { width: 28px; height: 28px; font-size: 10px; }
+  /* Botón logout más chico */
+  .navbar-user .btn-sm { padding: 4px 8px; font-size: 12px; }
+  /* Resultados de búsqueda ocupan todo el ancho */
+  .navbar-search-results { left: 8px; right: 8px; }
 }

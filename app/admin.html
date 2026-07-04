@@ -177,6 +177,11 @@
           <div class="form-hint">💡 Usá el formato /embed/. Si tu link es normal, lo convertimos solo.</div>
         </div>
         <div class="form-group">
+          <label class="form-label">Link de material descargable (opcional)</label>
+          <input type="text" class="form-input" id="leccion-descarga" placeholder="https://drive.google.com/...">
+          <div class="form-hint">💡 Subí el archivo a Google Drive/Dropbox y pegá el link acá.</div>
+        </div>
+        <div class="form-group">
           <label class="form-label">Descripción</label>
           <textarea class="form-textarea" id="leccion-desc" placeholder="¿Qué se aprende en esta lección?"></textarea>
         </div>
@@ -309,6 +314,7 @@
           document.getElementById('leccion-desc').value = l.descripcion || '';
           document.getElementById('leccion-duracion').value = l.duracion_min || 10;
           document.getElementById('leccion-orden').value = l.orden || 1;
+          document.getElementById('leccion-descarga').value = l.link_descarga || '';
         }
       } else {
         document.getElementById('modal-leccion-title').textContent = 'Nueva lección';
@@ -317,6 +323,7 @@
         document.getElementById('leccion-desc').value = '';
         document.getElementById('leccion-duracion').value = '10';
         document.getElementById('leccion-orden').value = '1';
+        document.getElementById('leccion-descarga').value = '';
       }
 
       modal.classList.add('open');
@@ -336,6 +343,7 @@
         descripcion: document.getElementById('leccion-desc').value,
         duracion_min: document.getElementById('leccion-duracion').value,
         orden: document.getElementById('leccion-orden').value,
+        link_descarga: document.getElementById('leccion-descarga').value || null,
       };
       const { error } = await guardarLeccion(data);
       if (!error) window.__closeModal('modal-leccion');

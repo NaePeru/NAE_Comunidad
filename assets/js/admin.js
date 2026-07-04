@@ -263,6 +263,7 @@ async function _guardarLeccion(formData) {
     descripcion: formData.descripcion?.trim() || null,
     tipo: 'video',
     url_contenido: formData.url_contenido?.trim() || null,
+    link_descarga: formData.link_descarga?.trim() || null,
     duracion_min: parseInt(formData.duracion_min) || 0,
     orden: parseInt(formData.orden) || 1,
   };

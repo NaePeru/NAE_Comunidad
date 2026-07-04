@@ -134,14 +134,15 @@
 
 .chat-msg.bot {
   align-self: flex-start;
-  background: var(--card2);
+  background: var(--bg);
   color: var(--text);
+  border: 1px solid var(--border);
   border-bottom-left-radius: 4px;
 }
 .chat-msg.user {
   align-self: flex-end;
   background: linear-gradient(135deg, var(--gold), var(--orange));
-  color: #1a1208;
+  color: #fff;
   border-bottom-right-radius: 4px;
 }
 

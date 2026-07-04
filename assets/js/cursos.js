@@ -344,6 +344,7 @@ function abrirLeccion(lessonId) {
             <button class="lesson-complete-btn ${isDone ? 'done' : ''}" onclick="window.__completarLeccion('${lessonId}')">
               ${isDone ? '✓ Completada' : 'Marcar como completada'}
             </button>
+            ${l.link_descarga ? `<a href="${escapeHtml(l.link_descarga)}" target="_blank" rel="noopener" class="lesson-next-btn">📥 Descargar material</a>` : ''}
           </div>
           ${siguiente ? `
             <button class="lesson-next-btn" onclick="window.__abrirLeccion('${siguiente.id}')">
