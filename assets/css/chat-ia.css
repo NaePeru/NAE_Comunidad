@@ -8,22 +8,22 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold), var(--orange));
-  color: #1a1208;
-  font-size: 26px;
+  background: linear-gradient(135deg, #2a2e44, #1a1d2e);
+  color: var(--gold);
+  font-size: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 6px 24px rgba(242,169,0,0.4);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  border: 1px solid var(--border2);
   z-index: 95;
-  transition: transform 0.2s;
-  border: none;
+  transition: all 0.2s;
 }
-.chat-fab:hover { transform: scale(1.08); }
+.chat-fab:hover { transform: scale(1.06); border-color: var(--gold); }
 .chat-fab.hidden { display: none; }
 
 /* Badge de notificación */
@@ -45,11 +45,11 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 380px;
+  width: 340px;
   max-width: calc(100vw - 32px);
-  height: 560px;
+  height: 480px;
   max-height: calc(100vh - 48px);
-  background: var(--panel);
+  background: var(--bg);
   border: 1px solid var(--border2);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -279,8 +279,8 @@
   .chat-fab {
     bottom: 84px;
     right: 16px;
-    width: 52px;
-    height: 52px;
-    font-size: 22px;
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
   }
 }
