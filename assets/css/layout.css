@@ -416,33 +416,50 @@
 
 /* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .navbar-tabs { display: none; }
-  .tabbar { display: flex; }
-  .container { padding: 20px 16px 100px; }
+  .container { padding: 20px 16px 80px; }
   .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
   /* En tablet, el layout de comunidad pasa a 1 columna */
-  .community-layout { grid-template-columns: 1fr !important; }
-  .community-panel { position: static !important; order: 1; margin-top: 24px; }
+  .community-layout { grid-template-columns: 1fr; }
+  .community-panel { display: none !important; }
+  /* Ocultar tabbar inferior (pasamos a menú superior con texto) */
+  .tabbar { display: none !important; }
 }
 
 @media (max-width: 768px) {
-  /* MOBILE: navbar minimalista (solo logo + avatar) */
+  /* MOBILE: menú horizontal superior con TEXTO (estilo Skool) */
+  .navbar-tabs {
+    display: flex !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 0 12px;
+  }
+  .navbar-tabs::-webkit-scrollbar { display: none; }
+  .navbar-tab {
+    padding: 10px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .navbar-tab .nav-icon { display: none; }  /* ocultar iconos, solo texto */
+
+  /* Ocultar el título de página (ya lo marca el menú superior) */
+  .page-header { display: none !important; }
+
+  /* Navbar minimalista (solo logo) */
   .navbar-icon-btn,
   .navbar-user .nivel-chip,
   .navbar-user-info,
   .navbar-user .btn-sm {
     display: none !important;
   }
-  .navbar-top { padding: 10px 16px; }
-  .navbar-actions { gap: 8px; }
-  .navbar-user .avatar { width: 32px; height: 32px; }
-  .container { padding: 16px 14px 100px; }
-  .page-header { margin-bottom: 18px; }
-  .page-title { font-size: 22px; }
+  .navbar-top { padding: 8px 16px; }
+  .navbar-user .avatar { width: 30px; height: 30px; }
+  .container { padding: 16px 14px 80px; }
 }
 
 @media (max-width: 560px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .navbar-search-results { left: 8px; right: 8px; max-width: none; }
   .panel-card { padding: 16px; }
+  .navbar-brand { font-size: 13px; }
+  .navbar-tab { padding: 10px 10px; font-size: 12.5px; }
 }

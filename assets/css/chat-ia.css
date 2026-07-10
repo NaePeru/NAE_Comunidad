@@ -275,9 +275,9 @@
     max-height: 100%;
     border-radius: 0;
   }
-  /* FAB arriba de la tabbar para que no se superponga */
+  /* FAB abajo a la derecha (ya no hay tabbar inferior) */
   .chat-fab {
-    bottom: 84px;
+    bottom: 20px;
     right: 16px;
     width: 46px;
     height: 46px;
