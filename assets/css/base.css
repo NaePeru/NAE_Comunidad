@@ -5,33 +5,34 @@
    ============================================================================ */
 
 :root {
-  /* ── Paleta principal (dorado más oscuro y elegante) ── */
-  --gold:      #D4940A;
-  --gold-light:#F2A900;
-  --orange:    #E05C2A;
-  --bg:        #0F1117;
-  --panel:     #171B26;
-  --card:      #1E2333;
-  --card2:     #242A3A;
-  --border:    rgba(255,255,255,0.08);
-  --border2:   rgba(255,255,255,0.12);
-  --text:      #F0F0F5;
-  --muted:     rgba(240,240,245,0.72);
-  --muted2:    rgba(240,240,245,0.5);
-  --green:     #3DD68C;
-  --red:       #FF6B6B;
-  --blue:      #6ba3f2;
-  --purple:    #c46bf2;
+  /* ── Paleta principal (azul moderno, según referencia) ── */
+  --gold:      #3B82F6;
+  --gold-light:#60A5FA;
+  --orange:    #F97316;
+  --bg:        #0B0F19;
+  --panel:     #111827;
+  --card:      #111827;
+  --card2:     #1F2937;
+  --border:    #1E293B;
+  --border2:   #374151;
+  --text:      #E2E8F0;
+  --muted:     #94A3B8;
+  --muted2:    #64748B;
+  --green:     #10B981;
+  --red:       #EF4444;
+  --blue:      #3B82F6;
+  --purple:    #8B5CF6;
 
   /* ── Niveles NAE ── */
-  --lvl1:      #6B7280;  /* Aprendiz       🌱 */
-  --lvl2:      #3B82F6;  /* Analista Jr.   📊 */
-  --lvl3:      #8B5CF6;  /* Analista Datos ⚡ */
-  --lvl4:      #F59E0B;  /* Analista Sr.   🏆 */
-  --lvl5:      #f2c244;  /* Experto NAE    🌟 */
+  --lvl1:      #6B7280;
+  --lvl2:      #3B82F6;
+  --lvl3:      #8B5CF6;
+  --lvl4:      #F59E0B;
+  --lvl5:      #10B981;
 
   /* ── Tipografías ── */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 
   /* ── Espaciado y radios ── */
@@ -42,11 +43,11 @@
 
   /* ── Sombras ── */
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.18);
-  --shadow:    0 8px 24px rgba(0,0,0,0.28);
+  --shadow:    0 4px 12px -4px rgba(59,130,246,0.1);
   --shadow-lg: 0 16px 40px rgba(0,0,0,0.4);
 
   /* ── Layout ── */
-  --topbar-h: 64px;
+  --topbar-h: 56px;
   --maxw:     1200px;
 }
 
@@ -62,7 +63,12 @@ body {
   min-height: 100vh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
+}
+h1, h2, h3, h4, h5, h6, .page-title, .navbar-brand, .navbar-tab, .brand {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
 
 img { max-width: 100%; display: block; }
