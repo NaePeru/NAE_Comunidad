@@ -136,11 +136,21 @@ Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
     async function inicializar() {
       renderNavbar('comunidad');
 
+      // Si es móvil, eliminar el panel lateral del HTML directamente (sin depender de CSS)
+      if (window.innerWidth <= 900) {
+        const panel = document.querySelector('.community-panel');
+        if (panel) panel.remove();
+        const layout = document.querySelector('.community-layout');
+        if (layout) layout.style.gridTemplateColumns = '1fr';
+        const header = document.querySelector('.page-header');
+        if (header) header.style.display = 'none';
+      }
+
       // Cargar feed + realtime
       await cargarFeed();
       iniciarRealtime();
 
-      // Cargar panel lateral derecho
+      // Cargar panel lateral derecho (solo si existe en PC)
       cargarPanelComunidad();
 
       // Refrescar navbar cuando cambian los puntos
