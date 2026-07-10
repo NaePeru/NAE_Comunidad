@@ -324,8 +324,18 @@ function abrirLeccion(lessonId) {
     <span class="crumb-active">${escapeHtml(l.titulo)}</span>
   `;
 
-  const videoHtml = (l.tipo === 'video' && l.url_contenido)
-    ? `<div class="video-wrap"><iframe src="${l.url_contenido}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe></div>`
+  // Construir URL del video con protecciones anti-copia
+  let videoUrl = l.url_contenido || '';
+  if (videoUrl.includes('youtube.com/embed/') || videoUrl.includes('youtube-nocookie.com/embed/')) {
+    // Agregar parámetros que ocultan controles innecesarios y refuerzos de privacidad
+    const sep = videoUrl.includes('?') ? '&' : '?';
+    videoUrl += sep + 'rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1';
+    // Usar youtube-nocookie para mayor privacidad
+    videoUrl = videoUrl.replace('youtube.com/embed/', 'youtube-nocookie.com/embed/');
+  }
+
+  const videoHtml = (l.tipo === 'video' && videoUrl)
+    ? `<div class="video-wrap" oncontextmenu="return false;"><iframe src="${escapeHtml(videoUrl)}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe></div>`
     : `<div class="empty-state" style="padding:40px;"><div class="empty-icon">📄</div>Sin video.</div>`;
 
   const idx = flattened.findIndex(x => x.id === lessonId);
