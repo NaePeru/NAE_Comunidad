@@ -410,7 +410,7 @@
 
 @media (max-width: 900px) {
   .community-layout { grid-template-columns: 1fr; }
-  .community-panel { position: static; order: -1; }
+  .community-panel { display: none !important; }
 }
 
 

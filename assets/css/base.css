@@ -31,7 +31,7 @@
   --lvl5:      #f2c244;  /* Experto NAE    🌟 */
 
   /* ── Tipografías ── */
-  --font-sans: 'Sora', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 
   /* ── Espaciado y radios ── */
