@@ -32,7 +32,7 @@ async function cargarPerfiles(ids) {
   if (faltantes.length === 0) return;
   const { data } = await supabase
     .from('profiles')
-    .select('id, nombre, puntos, color, avatar_url')
+    .select('id, nombre, puntos, color, avatar_url, rol')
     .in('id', faltantes);
   data?.forEach(p => { cachePerfiles[p.id] = p; });
 }
@@ -81,9 +81,17 @@ function renderFeed() {
   const list = document.getElementById('feed-list');
   if (!list) return;
 
-  const visibles = filtroActual === 'todo'
-    ? cachePosts
-    : cachePosts.filter(p => p.categoria === filtroActual);
+  // Filtrar por categoría
+  let visibles = cachePosts.filter(p => p.categoria === filtroActual);
+
+  // Ordenar: posts del ADMIN primero (fijos arriba), después el resto por fecha
+  visibles.sort((a, b) => {
+    const adminA = cachePerfiles[a.autor_id]?.rol === 'admin' ? 0 : 1;
+    const adminB = cachePerfiles[b.autor_id]?.rol === 'admin' ? 0 : 1;
+    if (adminA !== adminB) return adminA - adminB;  // admin (0) va primero
+    // Si ambos son admin o ambos no-admin, ordenar por fecha (desc)
+    return new Date(b.creado_en) - new Date(a.creado_en);
+  });
 
   if (visibles.length === 0) {
     list.innerHTML = `
@@ -106,6 +114,8 @@ function renderPost(p, myId) {
   const cat = catInfo(p.categoria);
   const likedByMe = p.likedByMe;
   const esMio = p.autor_id === myId;
+  const esAdmin = perfil.rol === 'admin';
+  const pinnedBadge = esAdmin ? '<span class="badge badge-gold" style="font-size:9px;">📌 FIJO</span>' : '';
   const liveBadge = p.es_live ? '<span class="badge badge-live">🔴 LIVE</span>' : '';
 
   return `
@@ -116,8 +126,9 @@ function renderPost(p, myId) {
           <div class="feed-name">
             ${escapeHtml(perfil.nombre)}
             <span class="nivel-badge" style="background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};">
-              ${nivel.emoji} ${nivel.nombre}
+              ${nivel.emoji} ${nivel.nombre} · ${perfil.puntos || 0} pts
             </span>
+            ${pinnedBadge}
             ${liveBadge}
             ${esMio ? '<span class="badge badge-muted" style="font-size:9px;">TÚ</span>' : ''}
           </div>
