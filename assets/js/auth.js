@@ -14,43 +14,29 @@ export const session = {
   membership: null,  // membresía (public.memberships)
 };
 
-// ── REGISTRO / LOGIN CON CÓDIGO OTP (estilo WhatsApp/LinkedIn) ─────────────
-// El usuario pone nombre + email → recibe un CÓDIGO de 6 dígitos por correo
-// → lo escribe en la app → entra directo. Sin links, sin salir de la app.
+// ── REGISTRO / LOGIN CON MAGIC LINK (estilo Skool) ─────────────────────────
+// El usuario solo pone nombre + email. Le llega un link al correo,
+// hace click y entra. SIN contraseña.
 
-// ── Enviar código OTP al email ──────────────────────────────────────────────
-export async function enviarCodigoOTP({ nombre, email }) {
+// ── Enviar magic link (sirve para registro Y para login) ────────────────────
+export async function enviarMagicLink({ nombre, email }) {
   if (!esEmailValido(email))
     return { error: 'Email no válido.' };
 
-  const options = {};
+  const options = {
+    emailRedirectTo: window.location.origin + '/app/comunidad.html',
+  };
   if (nombre && nombre.trim().length >= 2) {
-    options.data = { nombre: nombre.trim() };   // metadata → trigger crea el perfil
+    options.data = { nombre: nombre.trim() };
   }
 
   const { data, error } = await supabase.auth.signInWithOtp({
     email,
     options,
-    // NO pasamos emailRedirectTo → forzamos modo código (no link)
   });
 
   if (error) return { error: traducirErrorAuth(error.message) };
   return { data, error: null, enviado: true };
-}
-
-// ── Verificar el código OTP de 6 dígitos ────────────────────────────────────
-export async function verificarCodigoOTP(email, token) {
-  if (!esEmailValido(email)) return { error: 'Email no válido.' };
-  if (!token || token.trim().length < 6) return { error: 'Ingresá el código de 6 dígitos.' };
-
-  const { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token: token.trim(),
-    type: 'email',
-  });
-
-  if (error) return { error: traducirErrorAuth(error.message) };
-  return { data, error: null };
 }
 
 // ── MÉTODOS LEGADOS (por si se necesitan después) ───────────────────────────

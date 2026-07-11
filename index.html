@@ -186,10 +186,10 @@
     <div class="auth-form-side">
       <div class="auth-card">
 
-        <!-- ACCESO CON CÓDIGO OTP (estilo WhatsApp/LinkedIn) -->
+        <!-- ACCESO CON MAGIC LINK (igual que Skool) -->
         <div id="panel-login">
           <h2>Accede a tu plataforma 🚀</h2>
-          <p class="sub">Ingresá tu nombre y email. Te enviaremos un código de 6 dígitos.</p>
+          <p class="sub">Ingresa tu nombre y email. Te enviaremos un link mágico para entrar, sin contraseña.</p>
 
           <form id="form-login">
             <div class="field">
@@ -211,34 +211,36 @@
             <span class="field-error" id="login-error"></span>
 
             <button type="submit" class="btn btn-primary btn-block" id="login-btn">
-              Enviar código →
+              Enviar link mágico →
             </button>
           </form>
 
           <p class="muted center" style="font-size:11.5px;margin-top:14px;line-height:1.6;">
-            🔒 Sin contraseñas. Recibirás un código por email.
+            🔒 Sin contraseñas. Recibirás un email con un enlace seguro.<br>
+            ¿Ya tienes cuenta? Solo pon tu email y te enviaremos el link.
           </p>
         </div>
 
-        <!-- PANEL: Ingresar el código OTP -->
-        <div id="panel-otp" class="hidden">
-          <h2>Ingresá el código 🔢</h2>
-          <p class="sub">Enviamos un código de 6 dígitos a:<br><strong id="otp-email" style="color:var(--gold);"></strong></p>
-
-          <form id="form-otp">
-            <div class="field">
-              <label class="field-label">Código de 6 dígitos</label>
-              <input type="text" id="otp-token" placeholder="123456" maxlength="6" inputmode="numeric" pattern="[0-9]{6}"
-                     style="text-align:center;font-size:28px;letter-spacing:12px;font-family:var(--font-mono);font-weight:800;">
+        <!-- Mensaje de éxito (se muestra al enviar el link) -->
+        <div id="panel-enviado" class="hidden">
+          <div style="text-align:center;padding:10px 0;">
+            <div style="font-size:56px;margin-bottom:16px;">📨</div>
+            <h2 style="font-size:22px;font-weight:800;margin-bottom:8px;">¡Revisa tu correo!</h2>
+            <p class="sub" style="margin-bottom:24px;">
+              Enviamos un link mágico a:<br>
+              <strong id="email-enviado" style="color:var(--gold);"></strong>
+            </p>
+            <div class="card" style="background:rgba(61,214,140,0.06);border-color:rgba(61,214,140,0.2);text-align:left;font-size:13px;line-height:1.7;color:var(--muted);">
+              <strong style="color:var(--green);">Pasos:</strong><br>
+              1. Abrí tu email<br>
+              2. Buscá el mensaje de NAE<br>
+              3. Hacé click en el enlace del correo<br>
+              4. ¡Vas a entrar automáticamente!
             </div>
-            <span class="field-error" id="otp-error"></span>
-            <button type="submit" class="btn btn-primary btn-block" id="otp-btn">
-              Verificar y entrar →
+            <button type="button" class="btn btn-ghost btn-block" style="margin-top:18px;" onclick="volverLogin()">
+              ← Volver
             </button>
-          </form>
-          <button type="button" class="btn btn-ghost btn-block" style="margin-top:14px;font-size:12px;" onclick="volverLogin()">
-            ← Usar otro email
-          </button>
+          </div>
         </div>
 
         <!-- AVISO DE CONFIGURACIÓN (solo si no se configuró Supabase) -->
@@ -253,7 +255,7 @@
 
   <script type="module">
     import { supabase, supabaseConfigured } from './assets/js/supabase-client.js';
-    import { enviarCodigoOTP, verificarCodigoOTP } from './assets/js/auth.js';
+    import { enviarMagicLink } from './assets/js/auth.js';
     import { toast } from './assets/js/utils.js';
 
     // Mostrar aviso si no está configurado
@@ -261,24 +263,25 @@
       document.getElementById('config-warning').classList.remove('hidden');
     }
 
-    // Si ya hay sesión activa, ir directo a la app
+    // Si ya hay sesión activa (vienen del magic link), ir directo a la app
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         window.location.href = 'app/comunidad.html';
       }
     });
 
-    // Email que se usa en el flujo OTP
-    let emailActivo = '';
+    // Detectar si viene de un magic link (URL con tokens)
+    if (window.location.hash.includes('access_token') || window.location.search.includes('code')) {
+      toast('✅ Verificando acceso...');
+    }
 
-    // ── Volver al formulario ──
+    // ── Volver al formulario desde el panel de "email enviado" ──
     window.volverLogin = function() {
-      document.getElementById('panel-otp').classList.add('hidden');
+      document.getElementById('panel-enviado').classList.add('hidden');
       document.getElementById('panel-login').classList.remove('hidden');
-      document.getElementById('login-error').textContent = '';
     };
 
-    // ── Enviar código OTP ──
+    // ── Enviar magic link ──
     document.getElementById('form-login').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('login-btn');
@@ -289,46 +292,20 @@
       const email = document.getElementById('login-email').value.trim();
 
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Enviando código...';
+      btn.innerHTML = '<span class="spinner"></span> Enviando link...';
 
-      const { error, enviado } = await enviarCodigoOTP({ nombre, email });
+      const { error, enviado } = await enviarMagicLink({ nombre, email });
 
       btn.disabled = false;
-      btn.innerHTML = 'Enviar código →';
+      btn.innerHTML = 'Enviar link mágico →';
 
       if (error) {
         errEl.textContent = error;
       } else if (enviado) {
-        emailActivo = email;
-        document.getElementById('otp-email').textContent = email;
+        // Mostrar pantalla de "revisa tu correo"
+        document.getElementById('email-enviado').textContent = email;
         document.getElementById('panel-login').classList.add('hidden');
-        document.getElementById('panel-otp').classList.remove('hidden');
-        setTimeout(() => document.getElementById('otp-token').focus(), 100);
-      }
-    });
-
-    // ── Verificar código OTP ──
-    document.getElementById('form-otp').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('otp-btn');
-      const errEl = document.getElementById('otp-error');
-      errEl.textContent = '';
-
-      const token = document.getElementById('otp-token').value.trim();
-
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Verificando...';
-
-      const { error } = await verificarCodigoOTP(emailActivo, token);
-
-      btn.disabled = false;
-      btn.innerHTML = 'Verificar y entrar →';
-
-      if (error) {
-        errEl.textContent = error;
-      } else {
-        toast('✅ ¡Bienvenido!');
-        setTimeout(() => window.location.href = 'app/comunidad.html', 600);
+        document.getElementById('panel-enviado').classList.remove('hidden');
       }
     });
   </script>
