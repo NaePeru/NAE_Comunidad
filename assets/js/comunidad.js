@@ -329,6 +329,8 @@ export function filtrar(cat) {
   filtroActual = cat;
   renderFeed();
 }
+// Exponer el filtro actual para que comunidad.html lo pueda leer al publicar
+export function getFiltroActual() { return filtroActual; }
 
 // ── EXPORTAR acciones ───────────────────────────────────────────────────────
 window.__like = toggleLike;

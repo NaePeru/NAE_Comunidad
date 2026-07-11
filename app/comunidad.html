@@ -33,25 +33,14 @@
 
         <!-- COMPOSER (caja para crear post) -->
         <div class="composer" id="composer">
-          <textarea id="composer-text" placeholder="¿Qué quieres compartir?
-
-Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
-          <div class="composer-footer">
-            <select id="composer-cat">
-              <option value="general">💬 General</option>
-              <option value="excel">📊 MS Excel</option>
-              <option value="powerbi">⚡ Power BI</option>
-            </select>
+          <textarea id="composer-text" placeholder="Escribí algo..."></textarea>
+          <div class="composer-footer" id="composer-footer">
             <button type="button" class="btn btn-live" id="live-btn" onclick="toggleLive()">
               🔴 LIVE
             </button>
             <button class="btn btn-primary" id="composer-btn" onclick="publicar()">
               Publicar →
             </button>
-          </div>
-          <div class="composer-hint">
-            ❤️ Gana puntos cuando otros le den like a tus aportes ·
-            <span id="live-status"></span>
           </div>
         </div>
 
@@ -121,7 +110,7 @@ Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
     import { cargarPerfilCompleto, session } from '../assets/js/auth.js';
     import { toast } from '../assets/js/utils.js';
     import { renderNavbar } from '../assets/js/navbar.js';
-    import { cargarFeed, crearPost, filtrar, iniciarRealtime } from '../assets/js/comunidad.js';
+    import { cargarFeed, crearPost, filtrar, iniciarRealtime, getFiltroActual } from '../assets/js/comunidad.js';
 
     // ── Verificar sesión ──
     const { data: { session: sess } } = await supabase.auth.getSession();
@@ -207,22 +196,33 @@ Usa **negrita**, *cursiva*, `código` o # títulos."></textarea>
     function toggleLive() {
       liveActivo = !liveActivo;
       const btn = document.getElementById('live-btn');
-      const status = document.getElementById('live-status');
       if (liveActivo) {
         btn.classList.add('active');
-        status.innerHTML = '<strong style="color:#ff5b5b;">🔴 Modo LIVE activo (+5 pts bonus)</strong>';
       } else {
         btn.classList.remove('active');
-        status.innerHTML = '';
       }
     }
     window.toggleLive = toggleLive;
 
+    // ── Expandir composer al hacer focus (móvil) ──
+    const composerText = document.getElementById('composer-text');
+    const composerEl = document.getElementById('composer');
+    if (composerText && composerEl) {
+      composerText.addEventListener('focus', () => composerEl.classList.add('expanded'));
+      // Opcional: contraer si se hace click fuera y está vacío
+      document.addEventListener('click', (e) => {
+        if (!composerEl.contains(e.target) && !composerText.value.trim()) {
+          composerEl.classList.remove('expanded');
+        }
+      });
+    }
+
     // ── Publicar nuevo post ──
     async function publicar() {
       const txt = document.getElementById('composer-text').value;
-      const cat = document.getElementById('composer-cat').value;
       const btn = document.getElementById('composer-btn');
+      // La categoría se toma del filtro activo (general, excel, powerbi)
+      const cat = getFiltroActual ? getFiltroActual() : 'general';
 
       if (!txt.trim()) { toast('⚠️ Escribe algo primero'); return; }
 

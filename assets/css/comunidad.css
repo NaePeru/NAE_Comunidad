@@ -346,14 +346,34 @@
     background: #111827;
     border: 1px solid #1E293B;
     border-radius: 12px;
-    padding: 12px;
+    padding: 4px 12px;
     margin-bottom: 12px;
   }
   .composer textarea {
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    min-height: 44px;
+    padding: 10px 0;
+    resize: none;
+  }
+  .composer textarea:focus { outline: none; border: none; }
+
+  /* Footer del composer: oculto por defecto, se muestra al enfocar */
+  .composer-footer {
+    display: none;
+    padding: 8px 0 6px;
+    border-top: 1px solid #1E293B;
+    gap: 8px;
+  }
+  .composer.expanded .composer-footer { display: flex; }
+  .composer.expanded { padding: 12px; }
+  .composer.expanded textarea {
+    min-height: 80px;
     background: #0B0F19;
     border: 1px solid #1E293B;
-    font-size: 15px;  /* >=16 evita zoom en iOS */
-    min-height: 70px;
+    padding: 10px;
+    border-radius: 8px;
   }
 
   /* Filtros (pills): más compactos */
