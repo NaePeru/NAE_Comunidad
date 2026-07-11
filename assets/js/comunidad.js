@@ -125,27 +125,22 @@ function renderPost(p, myId) {
         <div style="flex:1;min-width:0;">
           <div class="feed-name">
             ${escapeHtml(perfil.nombre)}
-            <span class="nivel-badge" style="background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};">
-              ${nivel.emoji} ${nivel.nombre} · ${perfil.puntos || 0} pts
-            </span>
-            ${pinnedBadge}
             ${liveBadge}
-            ${esMio ? '<span class="badge badge-muted" style="font-size:9px;">TÚ</span>' : ''}
           </div>
           <div class="feed-time">
-            ${tiempoRelativo(p.creado_en)} · <span class="cat-tag">${cat.emoji} ${cat.label}</span>
+            ${tiempoRelativo(p.creado_en)}${esAdmin ? ' · <span class="cat-tag">📌 FIJO</span>' : ''}
           </div>
         </div>
       </div>
       <div class="feed-body">${parseMarkdown(p.contenido)}</div>
       <div class="feed-actions">
         <button class="feed-action ${likedByMe ? 'liked' : ''}" onclick="window.__like('${p.id}')">
-          ${likedByMe ? '❤️' : '🤍'} ${p.likes_count || 0}
+          ${likedByMe ? '👍' : '👍🏻'} ${p.likes_count || 0}
         </button>
         <button class="feed-action" onclick="window.__toggleComentarios('${p.id}')">
           💬 ${p.comentarios_count || 0}
         </button>
-        ${esMio ? `<button class="feed-action" style="margin-left:auto;color:#ff6b6b;" onclick="window.__borrarPost('${p.id}')">🗑️</button>` : ''}
+        ${esMio ? `<button class="feed-action" style="margin-left:auto;color:#64748B;" onclick="window.__borrarPost('${p.id}')">🗑️</button>` : ''}
       </div>
       <div class="comments-section" id="comments-${p.id}"></div>
     </div>`;

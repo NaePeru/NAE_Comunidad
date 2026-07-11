@@ -323,7 +323,7 @@
     line-height: 1.6;
   }
 
-  /* Acciones (likes/comentarios): como texto simple, sin botones */
+  /* Acciones (likes/comentarios): texto simple, color oscuro discreto */
   .feed-actions {
     margin-top: 12px;
     padding-top: 10px;
@@ -333,12 +333,13 @@
   .feed-action {
     background: none;
     border: none;
-    font-size: 12.5px;
-    color: #64748B;
+    font-size: 13px;
+    color: #475569;  /* gris oscuro, discreto */
     padding: 2px 0;
     border-radius: 0;
+    font-weight: 500;
   }
-  .feed-action:hover { color: #3B82F6; background: none; }
+  .feed-action:hover { color: #64748B; background: none; }
   .feed-action.liked { color: #3B82F6; background: none; border: none; }
 
   /* Composer: limpio y compacto */
