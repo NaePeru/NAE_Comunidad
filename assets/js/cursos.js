@@ -68,34 +68,15 @@ function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
 
   const acceso = tieneAcceso();
   list.innerHTML = courses.map(c => {
-    const total = lessonCounts[c.id] || 0;
-    const lessonIds = lessonsByCourse[c.id] || [];
-    const done = lessonIds.filter(id => myDone.has(id)).length;
-    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
     const bloqueado = c.requiere_pago && !acceso;
-    const completed = pct === 100 && total > 0;
     const cs = catStyle(c.categoria);
 
     const pagoBadge = c.requiere_pago
       ? (bloqueado ? '<span class="badge badge-muted">🔒 PREMIUM</span>' : '<span class="badge badge-gold">PREMIUM</span>')
       : '<span class="badge badge-green">GRATIS</span>';
 
-    const progressBar = total > 0 ? `
-      <div class="course-progress">
-        <div class="course-progress-bar"><div class="course-progress-fill" style="width:${pct}%"></div></div>
-        <span class="course-progress-text">${pct}%</span>
-      </div>` : `
-      <div class="course-meta" style="margin-top:auto;">
-        <span>${total} leccion${total === 1 ? '' : 'es'}</span>
-      </div>`;
-
-    const actionLabel = bloqueado ? '🔒' :
-                        completed ? '✓ Revisar' :
-                        pct === 0 ? 'Comenzar →' : 'Continuar →';
-
-    // SIN onclick ni href. Usamos data-course-id y un event listener global.
     return `
-      <div class="course-card${bloqueado ? ' locked' : ''}${completed ? ' completed' : ''}"
+      <div class="course-card${bloqueado ? ' locked' : ''}"
            data-course-id="${c.id}"
            data-bloqueado="${bloqueado ? '1' : '0'}"
            data-categoria="${c.categoria}"
@@ -105,24 +86,15 @@ function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
         <div class="course-body">
           <div class="course-title">${escapeHtml(c.titulo)} ${pagoBadge}</div>
           ${c.descripcion ? `<div class="course-desc">${escapeHtml(c.descripcion)}</div>` : ''}
-          <div class="course-meta">
-            <span>${cs.label}</span>
-            <span class="meta-dot">·</span>
-            <span>${total} leccion${total === 1 ? '' : 'es'}</span>
-          </div>
-          ${progressBar}
         </div>
-        <div class="course-action">${actionLabel}</div>
       </div>`;
   }).join('');
 
-  // ── EVENT LISTENER GLOBAL (delegación de eventos) ──
-  // En vez de onclick inline, usamos delegación. 100% confiable.
-  // Se asigna UNA sola vez a la lista contenedora.
+  // Event listener global
+  bindClicksCatalogo();
 }
 
 // Listener global para clicks en tarjetas (delegación de eventos)
-// Se llama desde cursos.html después de renderizar.
 export function bindClicksCatalogo() {
   const list = document.getElementById('courses-list');
   if (!list) return;
