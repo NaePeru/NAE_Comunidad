@@ -21,7 +21,7 @@ function catInfo(id) {
 }
 
 // ── ESTADO ──────────────────────────────────────────────────────────────────
-let filtroActual = 'todo';
+let filtroActual = 'general';
 let cachePosts = [];
 let cachePerfiles = {};
 let subscription = null;

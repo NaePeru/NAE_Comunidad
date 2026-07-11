@@ -128,6 +128,20 @@
           </div>
         </div>
 
+        <!-- Editar datos -->
+        <div class="card" style="margin-top:20px;">
+          <div style="font-weight:700;margin-bottom:16px;font-size:15px;">✏️ Editar mis datos</div>
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-input" id="edit-nombre" placeholder="Tu nombre">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Biografía</label>
+            <textarea class="form-input" id="edit-bio" placeholder="Contá algo sobre vos..." style="min-height:80px;resize:vertical;"></textarea>
+          </div>
+          <button class="btn btn-primary btn-block" id="btn-guardar-perfil" onclick="window.__guardarPerfil()">Guardar cambios</button>
+        </div>
+
         <!-- Barra de progreso al siguiente nivel -->
         <div class="card">
           <div id="p-progress-label" style="font-size:13px;margin-bottom:10px;"></div>
@@ -144,7 +158,7 @@
 
   <script type="module">
     import { supabase } from '../assets/js/supabase-client.js';
-    import { cargarPerfilCompleto, esAdmin, session, diasRestantes } from '../assets/js/auth.js';
+    import { cargarPerfilCompleto, refrescarPerfil, esAdmin, session, diasRestantes } from '../assets/js/auth.js';
     import { getNivel, getSiguienteNivel, iniciales, colorAvatar, formatNum, toast } from '../assets/js/utils.js';
     import { renderNavbar } from '../assets/js/navbar.js';
     import { subirAvatar } from '../assets/js/storage.js';
@@ -182,6 +196,10 @@
       document.getElementById('st-nivel').textContent = nivel.num;
       const dias = diasRestantes();
       document.getElementById('st-dias').textContent = dias != null ? dias : '∞';
+
+      // Cargar datos editables
+      document.getElementById('edit-nombre').value = p.nombre || '';
+      document.getElementById('edit-bio').value = p.bio || '';
 
       // Progreso de nivel
       const lbl = document.getElementById('p-progress-label');
@@ -223,6 +241,31 @@
       }
     }
     window.__subirFoto = subirFoto;
+
+    // ── Guardar datos del perfil ──
+    window.__guardarPerfil = async () => {
+      const btn = document.getElementById('btn-guardar-perfil');
+      const nombre = document.getElementById('edit-nombre').value.trim();
+      const bio = document.getElementById('edit-bio').value.trim();
+      if (!nombre) { toast('⚠️ El nombre no puede estar vacío'); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Guardando...';
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ nombre, bio })
+        .eq('id', session.user.id);
+
+      btn.disabled = false;
+      btn.innerHTML = 'Guardar cambios';
+
+      if (error) { toast('⚠️ No se pudo guardar'); return; }
+      toast('✅ Datos actualizados');
+      await refrescarPerfil();
+      renderNavbar('perfil');
+      inicializar();
+    };
   </script>
 </body>
 </html>
