@@ -522,6 +522,10 @@
 
 /* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
+  /* MOBILE: limpiar cursos, solo mostrar las tarjetas */
+  .courses-page .page-header { display: none !important; }
+  .course-filters { display: none !important; }
+
   .curso-layout {
     grid-template-columns: 1fr;
   }
