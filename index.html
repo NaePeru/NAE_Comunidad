@@ -263,9 +263,18 @@
       document.getElementById('config-warning').classList.remove('hidden');
     }
 
-    // Si ya hay sesión activa (vienen del magic link), ir directo a la app
+    // Si ya hay sesión activa, ir directo a la app
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
+        window.location.href = 'app/comunidad.html';
+      }
+    });
+
+    // Escuchar el evento de login (cuando viene del Magic Link)
+    // Esto es más confiable que solo getSession(), porque espera a que
+    // Supabase termine de procesar el token de la URL.
+    supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
         window.location.href = 'app/comunidad.html';
       }
     });
