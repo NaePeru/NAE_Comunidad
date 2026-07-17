@@ -469,7 +469,7 @@ window.__adminEditarLeccion = (id, modId) => abrirModalLeccion(id, modId);
 window.__adminBorrarLeccion = borrarLeccion;
 window.__adminActivar = activarAlumno;
 window.__adminSuspender = suspenderAlumno;
-window.__editarFaq = (id) => abrirModalFaq(id);
+window.__editarFaq = (id) => { if (typeof window.__openFaqModal === 'function') window.__openFaqModal(id); };
 window.__borrarFaq = borrarFaq;
 
 // Importar funciones de modales desde admin.html (se definen ahí)
