@@ -27,57 +27,56 @@ REGLAS:
 const KB = [
   {
     keys: ['curso','cursos','que cursos hay','que tienen','disponible','niveles','temario','excel','power bi','sql','tablas dinamicas','tablas dinámicas'],
-    content: `Cursos disponibles en NAE:
-📊 MS Excel: Fundamental, Intermedio, Avanzado y BI (4 niveles)
-⚡ Power BI: Transformación, Visualizaciones y DAX (3 niveles)
-🗄️ SQL Consultas
-📋 Tablas y Gráficos Dinámicos: curso GRATIS para empezar
-Todos los cursos pagados se acceden con un solo plan mensual — no se paga por curso individual.`
+    content: `Cursos disponibles AHORA:
+📋 Tablas y Gráficos Dinámicos (GRATIS): acceso libre apenas te registras.
+
+PRÓXIMAMENTE (premium):
+📊 MS Excel (4 niveles: Básico, Intermedio, Avanzado, BI)
+⚡ Power BI (3 niveles: Transformación, Visualizaciones, DAX)
+
+Cuando se habiliten los cursos premium, se accederá a todos con un solo plan mensual.`
   },
   {
     keys: ['gratis','prueba','gratuito','sin pagar','tablas dinamicas gratis','trial'],
-    content: `Curso GRATIS: Tablas y Gráficos Dinámicos en Excel — acceso libre apenas te registras.
-Además, al registrarte tienes acceso de prueba para explorar la plataforma.`
+    content: `El curso de Tablas y Gráficos Dinámicos es TOTALMENTE GRATIS.
+Solo tenés que registrarte con tu email y ya podés empezar a aprender.`
   },
   {
     keys: ['precio','costo','cuanto cuesta','cuanto es','plan','mensualidad','pagar','pago','suscripcion','tarifa','membresia'],
-    content: `Plan completo NAE: acceso a TODOS los cursos (Excel completo + Power BI completo + SQL).
-Se paga por mes. No es suscripción automática: cada mes decides si renuevas.
-Para saber el precio exacto y promociones, escribe al WhatsApp 974 688 863.`
+    content: `Por ahora el curso de Tablas Dinámicas es 100% GRATIS.
+Cuando lancemos los cursos premium de Excel y Power BI, anunciaremos los precios.
+Para consultas anticipadas, escribinos al WhatsApp 974 688 863.`
   },
   {
     keys: ['como pago','yape','plin','como pagar','transferencia','boucher','voucher','comprobante','como activo','matricula','matricularme'],
-    content: `Para activar tu plan:
-1️⃣ Yape o Plin al número 974 688 863
-2️⃣ Envía la captura/comprobante por WhatsApp al mismo número
-3️⃣ En cuanto se verifica el pago, se habilita tu acceso completo
-Todo se coordina directo por WhatsApp.`
+    content: `Hoy todos los cursos disponibles son GRATIS, no necesitas pagar nada.
+Cuando lancemos los cursos premium (Excel y Power BI), el pago será por Yape/Plin al WhatsApp 974 688 863.`
   },
   {
-    keys: ['vencio','vencimiento','renovar','se vence','cuando vence','cuantos dias','30 dias'],
-    content: `El plan dura 30 días desde que se activa. Al vencer se pierde el acceso a cursos pagados (el curso gratis sigue disponible).
-Para renovar: mismo proceso — Yape/Plin + comprobante por WhatsApp al 974 688 863. No hay cobro automático.`
+    keys: ['excel','power bi','premium','cuando','pronto','proximamente','cuando salen'],
+    content: `Los cursos de MS Excel y Power BI (premium) están en desarrollo.
+¡Muy pronto los tendremos disponibles! Mantente atento a los anuncios en la comunidad.`
   },
   {
     keys: ['certificado','certificacion','diploma','constancia','analista de datos'],
-    content: `Certificado "Analista de Datos" — se obtiene al completar TODOS los niveles de Excel Y TODOS los de Power BI.
-No hay certificados parciales por nivel individual.`
+    content: `El certificado "Analista de Datos" se entregará cuando estén disponibles TODOS los cursos y el alumno los complete.
+Por ahora, solo está disponible el curso gratuito de Tablas Dinámicas.`
   },
   {
     keys: ['whatsapp','contacto','profesor','asesor','duda','escribir','telefono','numero'],
-    content: `Para consultas personalizadas, coordinación de pago o soporte: WhatsApp 974 688 863.
-También puedes escribir a solucionew@gmail.com.`
+    content: `Para consultas personalizadas o soporte: WhatsApp 974 688 863.
+También podés escribir a solucionew@gmail.com.`
   },
   {
     keys: ['seminario','webinar','sabado','en vivo','calendario','evento'],
     content: `Cada sábado hay seminarios en vivo, alternando entre Excel y Power BI.
-Revisa la pestaña "Eventos" en la plataforma para ver las próximas fechas y unirte.`
+Revisá la pestaña "Eventos" en la plataforma para ver las próximas fechas.`
   },
   {
-    keys: ['comunidad','skool','foro','participar','puntos','nivel','ranking'],
-    content: `NAE tiene una comunidad activa: comparte avances, resuelve dudas y gana puntos.
-Ganas puntos cuando otros le dan like a tus aportes. Hay 9 niveles, desde Novato hasta Leyenda NAE.
-Mira el ranking en la pestaña "Miembros".`
+    keys: ['comunidad','foro','participar','puntos','nivel','ranking'],
+    content: `En NAE podés compartir avances, resolver dudas y ganar puntos.
+Ganás puntos cuando otros le dan like a tus aportes. Hay 8 niveles, desde Novato hasta Leyenda NAE.
+Mirá el ranking en la pestaña "Miembros".`
   }
 ];
 
@@ -173,8 +172,8 @@ export function initChat() {
   `;
   document.body.appendChild(win);
 
-  // Mensaje de bienvenida
-  addBotMsg(`¡Hola! 👋 Soy <strong style="color:var(--gold);">Alessandra</strong>, tu asistente de NAE. ¿En qué te puedo ayudar?`);
+  // Mensaje de bienvenida (limpio y central, como pediste)
+  addBotMsg(`Hola, soy <strong style="color:var(--gold);">Alessandra</strong> 🙋‍♀️ ¿En qué te ayudo hoy?`);
 }
 
 function toggleChat() {
