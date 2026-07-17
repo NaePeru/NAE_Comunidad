@@ -292,7 +292,73 @@ async function borrarLeccion(id) {
 
 
 // ============================================================================
-// ALUMNOS — listar y gestionar membresías
+// CHATBOT — gestionar base de conocimiento (FAQs)
+// ============================================================================
+export async function cargarFaqsAdmin() {
+  const { data, error } = await supabase
+    .from('chatbot_faqs')
+    .select('*')
+    .order('creado_en', { ascending: false });
+
+  if (error) { console.error(error); return; }
+  renderFaqsAdmin(data || []);
+}
+
+function renderFaqsAdmin(faqs) {
+  const list = document.getElementById('admin-faqs-list');
+  if (!list) return;
+
+  if (faqs.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🤖</div>No hay respuestas cargadas. Creá la primera.</div>';
+    return;
+  }
+
+  list.innerHTML = faqs.map(f => `
+    <div class="admin-course-row">
+      <div class="admin-course-icon" style="background:#1F2937;">💬</div>
+      <div class="admin-course-info">
+        <div class="admin-course-title" style="font-size:13px;color:var(--muted);">${escapeHtml(f.palabras_clave)}</div>
+        <div class="admin-course-meta">${escapeHtml(f.respuesta.substring(0, 80))}...</div>
+      </div>
+      <div class="admin-course-actions">
+        <button class="icon-btn" title="Editar" onclick="window.__editarFaq('${f.id}')">✏️</button>
+        <button class="icon-btn danger" title="Eliminar" onclick="window.__borrarFaq('${f.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+export async function guardarFaq(formData) {
+  const datos = {
+    palabras_clave: formData.palabras_clave.trim(),
+    respuesta: formData.respuesta.trim(),
+  };
+  if (!datos.palabras_clave || !datos.respuesta) { toast('⚠️ Completa todos los campos'); return { error: true }; }
+
+  let result;
+  if (formData.id) {
+    result = await supabase.from('chatbot_faqs').update(datos).eq('id', formData.id);
+  } else {
+    result = await supabase.from('chatbot_faqs').insert(datos);
+  }
+
+  if (result.error) { toast('⚠️ Error: ' + result.error.message); return { error: true }; }
+  toast(formData.id ? '✅ Respuesta actualizada' : '✅ Respuesta agregada');
+  await cargarFaqsAdmin();
+  return { error: null };
+}
+
+export async function borrarFaq(id) {
+  if (!confirm('¿Eliminar esta respuesta del bot?')) return;
+  const { error } = await supabase.from('chatbot_faqs').delete().eq('id', id);
+  if (error) { toast('⚠️ No se pudo eliminar'); return; }
+  toast('🗑️ Respuesta eliminada');
+  await cargarFaqsAdmin();
+}
+
+export async function getFaqById(id) {
+  const { data } = await supabase.from('chatbot_faqs').select('*').eq('id', id).single();
+  return data;
+}
 // ============================================================================
 export async function cargarAlumnos() {
   const { data: profiles, error } = await supabase
@@ -375,7 +441,7 @@ async function suspenderAlumno(uid) {
 // NAVEGACIÓN ENTRE SECCIONES
 // ============================================================================
 export function mostrarSeccion(seccion) {
-  ['dashboard', 'cursos', 'lecciones', 'alumnos'].forEach(s => {
+  ['dashboard', 'cursos', 'lecciones', 'alumnos', 'chatbot'].forEach(s => {
     const el = document.getElementById('admin-section-' + s);
     if (el) el.classList.toggle('hidden', s !== seccion);
   });
@@ -386,6 +452,7 @@ export function mostrarSeccion(seccion) {
   if (seccion === 'dashboard') cargarDashboard();
   if (seccion === 'cursos') cargarCursosAdmin();
   if (seccion === 'alumnos') cargarAlumnos();
+  if (seccion === 'chatbot') cargarFaqsAdmin();
 }
 
 
@@ -402,6 +469,8 @@ window.__adminEditarLeccion = (id, modId) => abrirModalLeccion(id, modId);
 window.__adminBorrarLeccion = borrarLeccion;
 window.__adminActivar = activarAlumno;
 window.__adminSuspender = suspenderAlumno;
+window.__editarFaq = (id) => abrirModalFaq(id);
+window.__borrarFaq = borrarFaq;
 
 // Importar funciones de modales desde admin.html (se definen ahí)
 async function abrirModalCurso(id) {

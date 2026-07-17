@@ -28,6 +28,7 @@
           <button class="admin-tab active" data-tab="dashboard" onclick="window.__adminMostrar('dashboard')">📊 Dashboard</button>
           <button class="admin-tab" data-tab="cursos" onclick="window.__adminMostrar('cursos')">📚 Cursos</button>
           <button class="admin-tab" data-tab="alumnos" onclick="window.__adminMostrar('alumnos')">👥 Alumnos</button>
+          <button class="admin-tab" data-tab="chatbot" onclick="window.__adminMostrar('chatbot')">🤖 Chatbot</button>
         </div>
 
         <!-- SECCIÓN DASHBOARD -->
@@ -67,6 +68,17 @@
             <div class="section-title" id="lecciones-curso-titulo">🎬 Lecciones</div>
           </div>
           <div id="admin-lecciones-panel"></div>
+        </section>
+
+        <!-- SECCIÓN CHATBOT -->
+        <section id="admin-section-chatbot" class="hidden">
+          <div class="section-header">
+            <div class="section-title">Base de conocimiento del Chatbot</div>
+            <button class="btn btn-primary" onclick="window.__openFaqModal()">+ Nueva respuesta</button>
+          </div>
+          <div id="admin-faqs-list">
+            <div class="empty-state"><div class="empty-icon">⏳</div>Cargando...</div>
+          </div>
         </section>
 
         <!-- SECCIÓN ALUMNOS -->
@@ -158,6 +170,32 @@
     </div>
   </div>
 
+  <!-- ════════ MODAL: CREAR/EDITAR FAQ CHATBOT ════════ -->
+  <div class="modal-overlay" id="modal-faq">
+    <div class="modal">
+      <div class="modal-title" id="modal-faq-title">Nueva respuesta</div>
+      <p class="modal-sub">Alessandra usará esta info para responder.</p>
+
+      <div class="admin-form">
+        <input type="hidden" id="faq-id">
+        <div class="form-group">
+          <label class="form-label">Palabras clave (separadas por coma)</label>
+          <input type="text" class="form-input" id="faq-keys" placeholder="precio, costo, cuanto cuesta, plan">
+          <div class="form-hint">💡 Si el usuario escribe alguna de estas palabras, el bot responde esto.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Respuesta del bot</label>
+          <textarea class="form-textarea" id="faq-respuesta" placeholder="Ej: El plan completo cuesta S/50 por mes..." style="min-height:100px;"></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-ghost btn-block" onclick="window.__closeModal('modal-faq')">Cancelar</button>
+        <button class="btn btn-primary btn-block" onclick="window.__guardarFaqForm()">Guardar respuesta</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ════════ MODAL: CREAR/EDITAR LECCIÓN ════════ -->
   <div class="modal-overlay" id="modal-leccion">
     <div class="modal">
@@ -210,7 +248,8 @@
     import { renderNavbar } from '../assets/js/navbar.js';
     import {
       cargarDashboard, cargarCursosAdmin, cargarAlumnos, mostrarSeccion,
-      guardarCurso, borrarCurso, guardarLeccion, getCursosCache, getCursoById, getLeccionById
+      guardarCurso, borrarCurso, guardarLeccion, getCursosCache, getCursoById, getLeccionById,
+      cargarFaqsAdmin, guardarFaq, getFaqById
     } from '../assets/js/admin.js';
 
     // ── Verificar sesión y admin ──
@@ -351,6 +390,35 @@
 
     // ── Cerrar modales ──
     window.__closeModal = (id) => document.getElementById(id).classList.remove('open');
+
+    // ── Abrir modal FAQ (Chatbot) ──
+    window.__openFaqModal = async (id = null) => {
+      const modal = document.getElementById('modal-faq');
+      document.getElementById('faq-id').value = id || '';
+      if (id) {
+        document.getElementById('modal-faq-title').textContent = 'Editar respuesta';
+        const f = await getFaqById(id);
+        if (f) {
+          document.getElementById('faq-keys').value = f.palabras_clave || '';
+          document.getElementById('faq-respuesta').value = f.respuesta || '';
+        }
+      } else {
+        document.getElementById('modal-faq-title').textContent = 'Nueva respuesta';
+        document.getElementById('faq-keys').value = '';
+        document.getElementById('faq-respuesta').value = '';
+      }
+      modal.classList.add('open');
+    };
+
+    window.__guardarFaqForm = async () => {
+      const data = {
+        id: document.getElementById('faq-id').value || null,
+        palabras_clave: document.getElementById('faq-keys').value,
+        respuesta: document.getElementById('faq-respuesta').value,
+      };
+      const { error } = await guardarFaq(data);
+      if (!error) window.__closeModal('modal-faq');
+    };
   </script>
 </body>
 </html>
