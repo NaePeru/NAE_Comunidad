@@ -194,7 +194,11 @@ export function initChat() {
   document.body.appendChild(win);
 
   // Mensaje de bienvenida (limpio y central)
-  addBotMsg(`Hola, soy <strong style="color:var(--gold);">Alessandra</strong> 🙋‍♀️ ¿En qué te puedo ayudar hoy?`);
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg bot';
+  div.innerHTML = `Hola, soy <strong style="color:var(--gold);">Alessandra</strong> 🙋‍♀️ ¿En qué te puedo ayudar hoy?`;
+  msgs.appendChild(div);
 }
 
 function toggleChat() {
