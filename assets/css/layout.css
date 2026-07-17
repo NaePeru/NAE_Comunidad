@@ -95,6 +95,12 @@
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(10px);
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Ocultar navbar al hacer scroll hacia abajo */
+.navbar.hidden-nav {
+  transform: translateY(-100%);
 }
 
 /* Fila 1: Logo + perfil */

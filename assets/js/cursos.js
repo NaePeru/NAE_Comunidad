@@ -296,18 +296,19 @@ function abrirLeccion(lessonId) {
     <span class="crumb-active">${escapeHtml(l.titulo)}</span>
   `;
 
-  // Construir URL del video con protecciones anti-copia
+  // Construir URL del video con protecciones anti-copia y mayor tamaño
   let videoUrl = l.url_contenido || '';
   if (videoUrl.includes('youtube.com/embed/') || videoUrl.includes('youtube-nocookie.com/embed/')) {
-    // Agregar parámetros que ocultan controles innecesarios y refuerzos de privacidad
     const sep = videoUrl.includes('?') ? '&' : '?';
-    videoUrl += sep + 'rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1';
-    // Usar youtube-nocookie para mayor privacidad
+    videoUrl += sep + 'rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&playsinline=1';
     videoUrl = videoUrl.replace('youtube.com/embed/', 'youtube-nocookie.com/embed/');
   }
 
   const videoHtml = (l.tipo === 'video' && videoUrl)
-    ? `<div class="video-wrap" oncontextmenu="return false;"><iframe src="${escapeHtml(videoUrl)}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe></div>`
+    ? `<div class="video-wrap" oncontextmenu="return false;">
+         <iframe src="${escapeHtml(videoUrl)}" frameborder="0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen style="width:100%; height:100%; position:absolute; top:0; left:0; min-height:400px;"></iframe>
+         <div class="yt-logo-cover" style="position:absolute; top:0; left:0; width:100px; height:60px; background:linear-gradient(to bottom right, var(--bg, #0B0F19) 50%, transparent 50%); z-index:10; pointer-events:none;"></div>
+       </div>`
     : `<div class="empty-state" style="padding:40px;"><div class="empty-icon">📄</div>Sin video.</div>`;
 
   const idx = flattened.findIndex(x => x.id === lessonId);
