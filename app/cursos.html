@@ -67,8 +67,24 @@
 
     async function inicializar() {
       renderNavbar('cursos');
+
+      // Si el alumno está suspendido, no le mostramos nada de cursos
+      if (session.membership?.estado === 'suspendida') {
+        document.getElementById('vista-catalogo').innerHTML = `
+          <div class="container" style="margin-top:40px;text-align:center;">
+            <div style="font-size:60px;margin-bottom:20px;">🔒</div>
+            <h2 style="font-size:22px;font-weight:800;margin-bottom:12px;">Acceso suspendido</h2>
+            <p class="muted" style="font-size:14px;max-width:400px;margin:0 auto 24px;">
+              Tu acceso a los cursos está suspendido temporalmente.
+              Si creés que es un error, contactate con soporte.
+            </p>
+            <a href="https://wa.me/51974688863" target="_blank" class="btn btn-primary">💬 Contactar soporte</a>
+          </div>
+        `;
+        return;
+      }
+
       await cargarCatalogo();
-      // Conectar el listener de clicks después de renderizar el catálogo
       bindClicksCatalogo();
     }
 

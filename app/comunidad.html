@@ -134,6 +134,22 @@
         if (header) header.style.display = 'none';
       }
 
+      // Si el alumno está suspendido, no le mostramos el feed
+      if (session.membership?.estado === 'suspendida') {
+        document.querySelector('.container').innerHTML = `
+          <div style="margin-top:40px;text-align:center;max-width:500px;margin-left:auto;margin-right:auto;">
+            <div style="font-size:60px;margin-bottom:20px;">🔒</div>
+            <h2 style="font-size:22px;font-weight:800;margin-bottom:12px;">Acceso suspendido</h2>
+            <p class="muted" style="font-size:14px;max-width:400px;margin:0 auto 24px;">
+              Tu acceso a la comunidad está suspendido temporalmente.
+              Si creés que es un error, contactate con soporte.
+            </p>
+            <a href="https://wa.me/51974688863" target="_blank" class="btn btn-primary">💬 Contactar soporte</a>
+          </div>
+        `;
+        return;
+      }
+
       // Cargar feed + realtime
       await cargarFeed();
       iniciarRealtime();
