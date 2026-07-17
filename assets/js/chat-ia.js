@@ -185,12 +185,6 @@ export function initChat() {
       <button class="chat-close" onclick="window.__closeChat()">✕</button>
     </div>
     <div class="chat-messages" id="chat-messages"></div>
-    <div class="chat-suggestions" id="chat-suggestions">
-      <div class="chat-suggestion" onclick="window.__quickAsk('¿Qué cursos hay?')">📚 ¿Qué cursos hay?</div>
-      <div class="chat-suggestion" onclick="window.__quickAsk('¿Cuánto cuesta?')">💰 ¿Cuánto cuesta?</div>
-      <div class="chat-suggestion" onclick="window.__quickAsk('¿Cómo pago?')">💳 ¿Cómo pago?</div>
-      <div class="chat-suggestion" onclick="window.__quickAsk('¿Hay curso gratis?')">🎁 ¿Hay gratis?</div>
-    </div>
     <div class="chat-input-wrap">
       <button class="chat-mic" id="chat-mic" onclick="window.__toggleMic()" title="Hablar">🎤</button>
       <input type="text" class="chat-input" id="chat-input" placeholder="Escribí tu consulta..." onkeydown="if(event.key==='Enter') window.__sendChat()">
@@ -199,8 +193,8 @@ export function initChat() {
   `;
   document.body.appendChild(win);
 
-  // Mensaje de bienvenida (limpio y central, como pediste)
-  addBotMsg(`Hola, soy <strong style="color:var(--gold);">Alessandra</strong> 🙋‍♀️ ¿En qué te ayudo hoy?`);
+  // Mensaje de bienvenida (limpio y central)
+  addBotMsg(`Hola, soy <strong style="color:var(--gold);">Alessandra</strong> 🙋‍♀️ ¿En qué te puedo ayudar hoy?`);
 }
 
 function toggleChat() {
