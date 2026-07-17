@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { supabase } from './supabase-client.js';
-import { session, refrescarPerfil } from './auth.js';
+import { session, refrescarPerfil, esAdmin } from './auth.js';
 import { escapeHtml, iniciales, colorAvatar, tiempoRelativo, getNivel, toast } from './utils.js';
 import { parseMarkdown } from './markdown.js';
 import { renderAvatarFeed } from './storage.js';
@@ -114,8 +114,8 @@ function renderPost(p, myId) {
   const cat = catInfo(p.categoria);
   const likedByMe = p.likedByMe;
   const esMio = p.autor_id === myId;
-  const esAdmin = perfil.rol === 'admin';
-  const pinnedBadge = esAdmin ? '<span class="badge badge-gold" style="font-size:9px;">📌 FIJO</span>' : '';
+  const esAdminPost = perfil.rol === 'admin';
+  const pinnedBadge = esAdminPost ? '<span class="badge badge-gold" style="font-size:9px;">📌 FIJO</span>' : '';
   const liveBadge = p.es_live ? '<span class="badge badge-live">🔴 LIVE</span>' : '';
 
   return `
@@ -140,7 +140,7 @@ function renderPost(p, myId) {
         <button class="feed-action" onclick="window.__toggleComentarios('${p.id}')">
           💬 ${p.comentarios_count || 0}
         </button>
-        ${esMio ? `<button class="feed-action" style="margin-left:auto;color:#64748B;" onclick="window.__borrarPost('${p.id}')">🗑️</button>` : ''}
+        ${(esMio || esAdmin()) ? `<button class="feed-action" style="margin-left:auto;color:#64748B;" onclick="window.__borrarPost('${p.id}')" title="Eliminar">🗑️</button>` : ''}
       </div>
       <div class="comments-section" id="comments-${p.id}"></div>
     </div>`;
