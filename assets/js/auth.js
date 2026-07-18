@@ -117,8 +117,15 @@ export function tieneAcceso() {
   if (!m) return false;
   if (m.estado === 'suspendida') return false;
   if (m.estado === 'vencida') return false;
+  if (m.estado === 'pendiente') return false;
+  if (m.estado === 'rechazada') return false;
   if (m.fecha_vence && new Date(m.fecha_vence) < new Date()) return false;
   return true;
+}
+
+// ── ESTADO DE LA MEMBRESÍA (para mostrar mensajes claros) ──────────────────
+export function estadoMembresia() {
+  return session.membership?.estado || 'pendiente';
 }
 
 // ── DÍAS RESTANTES DE LA MEMBRESÍA ──────────────────────────────────────────

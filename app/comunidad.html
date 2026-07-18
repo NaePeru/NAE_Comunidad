@@ -110,6 +110,7 @@
     import { cargarPerfilCompleto, session } from '../assets/js/auth.js';
     import { toast } from '../assets/js/utils.js';
     import { renderNavbar } from '../assets/js/navbar.js';
+    import { verificarAcceso } from '../assets/js/guard.js';
     import { cargarFeed, crearPost, filtrar, iniciarRealtime, getFiltroActual } from '../assets/js/comunidad.js';
 
     // ── Verificar sesión ──
@@ -122,6 +123,9 @@
     }
 
     async function inicializar() {
+      // Verificar si el usuario está aprobado. Si no, bloquear pantalla.
+      if (!verificarAcceso()) return;
+
       renderNavbar('comunidad');
 
       // Si es móvil, eliminar el panel lateral del HTML directamente (sin depender de CSS)

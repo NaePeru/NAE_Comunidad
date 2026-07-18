@@ -385,7 +385,7 @@ export async function cargarAlumnos() {
 
   tbody.innerHTML = profiles.map(p => {
     const mem = memMap[p.id];
-    const estado = mem?.estado || 'trial';
+    const estado = mem?.estado || 'pendiente';
     const nivel = getNivel(p.puntos || 0);
     const [c1, c2] = p.color || colorAvatar(p.nombre);
     const avatarHtml = p.avatar_url
@@ -410,13 +410,24 @@ export async function cargarAlumnos() {
           ${new Date(p.creado_en).toLocaleDateString('es-PE')}
         </td>
         <td>
-          ${soy ? '' : `
-            <button class="icon-btn" title="Activar" onclick="window.__adminActivar('${p.id}')">✅</button>
-            <button class="icon-btn" title="Suspender" onclick="window.__adminSuspender('${p.id}')">⏸️</button>
+          ${soy ? '<span style="color:var(--muted2);font-size:12px;">—</span>' : `
+            <div style="display:flex;gap:6px;">
+              <button class="icon-btn" title="Aprobar / Activar" onclick="window.__adminActivar('${p.id}')" style="color:#3DD68C;">✅</button>
+              <button class="icon-btn" title="Rechazar / Suspender" onclick="window.__adminSuspender('${p.id}')" style="color:#EF4444;">❌</button>
+            </div>
           `}
         </td>
       </tr>`;
   }).join('');
+}
+
+// ── APROBAR ALUMNO (Pasa a trial/activo) ──
+async function aprobarAlumno(uid) {
+  const { error } = await supabase.from('memberships')
+    .update({ estado: 'trial', fecha_vence: null }).eq('user_id', uid);
+  if (error) { toast('⚠️ Error al aprobar'); return; }
+  toast('✅ Alumno aprobado');
+  await cargarAlumnos();
 }
 
 async function activarAlumno(uid) {
@@ -428,11 +439,11 @@ async function activarAlumno(uid) {
 }
 
 async function suspenderAlumno(uid) {
-  if (!confirm('¿Suspender el acceso de este alumno?')) return;
+  if (!confirm('¿Rechazar/Suspender el acceso de este alumno?')) return;
   const { error } = await supabase.from('memberships')
-    .update({ estado: 'suspendida' }).eq('user_id', uid);
+    .update({ estado: 'rechazada' }).eq('user_id', uid);
   if (error) { toast('⚠️ Error'); return; }
-  toast('⏸️ Alumno suspendido');
+  toast('🚫 Alumno rechazado/suspendido');
   await cargarAlumnos();
 }
 
@@ -467,7 +478,7 @@ window.__adminBorrarModulo = borrarModulo;
 window.__adminCrearLeccion = (modId) => abrirModalLeccion(null, modId);
 window.__adminEditarLeccion = (id, modId) => abrirModalLeccion(id, modId);
 window.__adminBorrarLeccion = borrarLeccion;
-window.__adminActivar = activarAlumno;
+window.__adminActivar = aprobarAlumno;
 window.__adminSuspender = suspenderAlumno;
 window.__editarFaq = (id) => { if (typeof window.__openFaqModal === 'function') window.__openFaqModal(id); };
 window.__borrarFaq = borrarFaq;
