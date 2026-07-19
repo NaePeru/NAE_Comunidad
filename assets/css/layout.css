@@ -154,13 +154,103 @@
 .navbar-badge {
   position: absolute;
   top: -3px; right: -3px;
-  width: 8px; height: 8px;
+  min-width: 16px; height: 16px;
   background: #ff5b5b;
-  border-radius: 50%;
+  border-radius: 20px;
   border: 2px solid var(--panel);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
   display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  padding: 0 4px;
 }
-.navbar-badge.show { display: block; }
+.navbar-badge.show { display: flex; }
+
+/* Panel de Notificaciones */
+.notif-panel {
+  position: fixed;
+  top: 60px; right: 16px;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 150;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideDown 0.2s ease;
+}
+.notif-panel.open { display: flex; }
+
+.notif-header {
+  padding: 14px 18px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.notif-mark-all {
+  font-size: 11px;
+  color: var(--gold);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+.notif-mark-all:hover { text-decoration: underline; }
+
+.notif-list { max-height: 400px; overflow-y: auto; }
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.notif-item:hover { background: var(--card); }
+.notif-item.unread { background: rgba(59,130,246,0.05); }
+.notif-item:last-child { border-bottom: none; }
+
+.notif-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.notif-content { flex: 1; min-width: 0; }
+.notif-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.notif-time {
+  font-size: 11px;
+  color: var(--muted2);
+  margin-top: 4px;
+}
+.notif-icon { font-size: 14px; opacity: 0.7; flex-shrink: 0; }
+
+.notif-loading, .notif-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
 
 /* Barra de búsqueda desplegable */
 .navbar-search-bar {

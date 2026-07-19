@@ -7,6 +7,7 @@
 import { session, logout, esAdmin } from './auth.js';
 import { getNivel, iniciales, colorAvatar } from './utils.js';
 import { initChat } from './chat-ia.js';
+import { initNotificaciones, togglePanelNotificaciones } from './notificaciones.js';
 
 // Estructura de pestañas (id → ruta + label + icono)
 const PESTANAS = [
@@ -51,8 +52,8 @@ export function renderNavbar(activoId) {
         <button class="navbar-icon-btn" id="navbar-search-btn" title="Buscar" onclick="window.__toggleSearch()">
           🔍
         </button>
-        <button class="navbar-icon-btn" id="navbar-bell-btn" title="Notificaciones">
-          🔔<span class="navbar-badge"></span>
+        <button class="navbar-icon-btn" id="navbar-bell-btn" title="Notificaciones" onclick="window.__toggleNotif()">
+          🔔<span class="navbar-badge" id="navbar-badge"></span>
         </button>
         <span class="nivel-chip" style="background:${nivel.color}18;border:1px solid ${nivel.color}40;color:${nivel.color};">
           ${nivel.emoji} ${nivel.nombre}
@@ -115,6 +116,9 @@ export function renderNavbar(activoId) {
     window.__chatInit = true;
     initChat();
   }
+
+  // Inicializar notificaciones
+  initNotificaciones();
 
   window.__logout = logout;
 }
