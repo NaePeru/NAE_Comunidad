@@ -307,7 +307,9 @@ function abrirLeccion(lessonId) {
   const videoHtml = (l.tipo === 'video' && videoUrl)
     ? `<div class="video-wrap" oncontextmenu="return false;">
          <iframe src="${escapeHtml(videoUrl)}" frameborder="0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen style="width:100%; height:100%; position:absolute; top:0; left:0; min-height:400px;"></iframe>
-         <div class="yt-logo-cover" style="position:absolute; top:0; left:0; width:100px; height:60px; background:linear-gradient(to bottom right, var(--bg, #0B0F19) 50%, transparent 50%); z-index:10; pointer-events:none;"></div>
+         <div style="position:absolute; bottom:0; right:0; width:140px; height:50px; background:#0B0F19; z-index:10; pointer-events:none; display:flex; align-items:center; justify-content:center; border-top-left-radius:8px;">
+           <span style="font-family: var(--font-display); font-weight:700; font-size:16px; color:#3B82F6; letter-spacing:1px;">◆ NAE</span>
+         </div>
        </div>`
     : `<div class="empty-state" style="padding:40px;"><div class="empty-icon">📄</div>Sin video.</div>`;
 
