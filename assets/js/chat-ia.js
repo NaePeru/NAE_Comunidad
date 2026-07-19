@@ -215,17 +215,31 @@ function toggleChat() {
   }
 }
 
-// ── AÑADIR MENSAJES ─────────────────────────────────────────────────────────
+// ── AÑADIR MENSAJES (SEGURIDAD XSS: SIEMPRE ESCAPA HTML) ───────────────────
 function addBotMsg(text, isHtml = false) {
   const msgs = document.getElementById('chat-messages');
   if (!msgs) return;
   const div = document.createElement('div');
   div.className = 'chat-msg bot';
-  // Agregar botón de "escuchar"
-  const speakable = !isHtml;
-  const cleanText = speakable ? text.replace(/[*#`>]/g, '') : '';
-  div.innerHTML = (isHtml ? text : escapeHtml(text).replace(/\n/g, '<br>')) +
-    (speakable ? `<br><button class="chat-speak" onclick="window.__speak('${cleanText.replace(/'/g, "\\'").slice(0, 200)}')">🔊 Escuchar</button>` : '');
+
+  // 1. Escapar SIEMPRE el HTML para evitar XSS
+  //    (incluso si viene de la IA o la base de datos)
+  let safeHtml = escapeHtml(text).replace(/\n/g, '<br>');
+
+  // 2. Aplicar formato seguro (negritas, listas, etc.) DESPUÉS de escapar
+  // Reemplazar **texto** por <strong>texto</strong>
+  safeHtml = safeHtml.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+  // Reemplazar *texto* o _texto_ por <em>texto</em>
+  safeHtml = safeHtml.replace(/(^|\s)\*([^\*]+)\*(?!\*)/g, '$1<em>$2</em>');
+  safeHtml = safeHtml.replace(/(^|\s)_([^_]+)_(?!\*)/g, '$1<em>$2</em>');
+
+  // 3. Texto limpio para el botón "Escuchar" (sin HTML ni markdown)
+  const cleanText = text.replace(/[*#`>_]/g, '').replace(/\n/g, ' ');
+
+  // 4. Render final
+  div.innerHTML = safeHtml + 
+    `<br><button class="chat-speak" onclick="window.__speak(\`${cleanText.substring(0, 200).replace(/`/g, '')}\`)">🔊 Escuchar</button>`;
+  
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
@@ -278,7 +292,7 @@ async function sendMsg(text) {
   const reply = await llamarIA(text);
 
   removeTyping();
-  addBotMsg(reply, true);
+  addBotMsg(reply); // Sin 'true', forzamos el escape seguro
   chatHistory.push({ role: 'assistant', content: reply });
 
   isLoading = false;
