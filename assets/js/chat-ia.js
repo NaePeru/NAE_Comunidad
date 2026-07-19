@@ -289,6 +289,9 @@ async function sendMsg(text) {
   document.getElementById('chat-send').disabled = true;
   addTyping();
 
+  // Retraso de 5 segundos para simular que está "pensando"
+  await new Promise(resolve => setTimeout(resolve, 5000));
+
   const reply = await llamarIA(text);
 
   removeTyping();
