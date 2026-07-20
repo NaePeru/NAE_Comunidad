@@ -119,6 +119,9 @@
   <!-- Tabbar móvil (lo rellena navbar.js) -->
   <div class="tabbar"></div>
 
+  <!-- Librería de compresión de imágenes -->
+  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.min.js"></script>
+
   <script type="module">
     import { supabase } from '../assets/js/supabase-client.js';
     import { cargarPerfilCompleto, session } from '../assets/js/auth.js';
@@ -211,10 +214,10 @@
 
     // ── Estado LIVE ──
     let liveActivo = false;
-    let imagenPendiente = null; // File object directo
+    let imagenPendiente = null; // File object comprimido
 
-    // ── Manejo de imágenes en el composer ──
-    window.__manejarImagen = (event) => {
+    // ── Manejo de imágenes en el composer (CON COMPRESIÓN) ──
+    window.__manejarImagen = async (event) => {
       const file = event.target.files[0];
       if (!file) return;
 
@@ -222,20 +225,38 @@
         toast('⚠️ Debe ser una imagen');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) { // Máx 5MB
-        toast('⚠️ La imagen pesa más de 5MB');
+      if (file.size > 10 * 1024 * 1024) { // Máx original 10MB
+        toast('⚠️ La imagen pesa más de 10MB');
         return;
       }
 
-      imagenPendiente = file; // Guardamos el archivo directo
-      
-      // Mostrar preview usando URL.createObjectURL (mucho más rápido que Base64)
-      const previewUrl = URL.createObjectURL(file);
-      const prev = document.getElementById('image-preview');
-      const prevImg = document.getElementById('preview-img');
-      if (prevImg) {
-        prevImg.src = previewUrl;
-        prev.style.display = 'block';
+      // Mostrar aviso de comprimiendo
+      const btnImg = event.target.parentElement.querySelector('.composer-tool');
+      if (btnImg) btnImg.innerHTML = '⏳';
+
+      try {
+        // COMPRIMIR con la librería profesional
+        const compressedFile = await imageCompression(file, {
+          maxSizeMB: 0.5,            // Máximo 500 KB
+          maxWidthOrHeight: 1080,    // Máximo 1080px
+          useWebWorker: true         // Hacerlo en segundo plano (no congela la web)
+        });
+
+        imagenPendiente = compressedFile;
+
+        // Mostrar preview
+        const previewUrl = URL.createObjectURL(compressedFile);
+        const prev = document.getElementById('image-preview');
+        const prevImg = document.getElementById('preview-img');
+        if (prevImg) {
+          prevImg.src = previewUrl;
+          prev.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error compresión:', error);
+        toast('⚠️ Error al procesar la imagen');
+      } finally {
+        if (btnImg) btnImg.innerHTML = '🖼️';
       }
     };
 
