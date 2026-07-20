@@ -1,8 +1,7 @@
 // ============================================================================
 // PROYECTO Z — storage.js
-// Subida y gestión de avatares (fotos de perfil) en Supabase Storage.
+// Subida y gestión de avatares y imágenes de comunidad en Supabase Storage.
 // ============================================================================
-
 import { supabase } from './supabase-client.js';
 import { session } from './auth.js';
 
@@ -51,6 +50,39 @@ export async function subirAvatar(file) {
 // ── AVATAR HELPERS (para el render) ─────────────────────────────────────────
 // Devuelve el HTML de un avatar: si tiene foto → <img>, si no → iniciales.
 import { iniciales, colorAvatar } from './utils.js';
+
+// ── SUBIR IMAGEN A LA COMUNIDAD ─────────────────────────────────────────────
+export async function subirImagenComunidad(base64Image) {
+  if (!session.user) return { error: 'No hay sesión.' };
+
+  try {
+    // Convertir Base64 a Blob para subirlo
+    const response = await fetch(base64Image);
+    const blob = await response.blob();
+
+    // Validar tamaño final (después de compresión)
+    if (blob.size > 2 * 1024 * 1024) {
+      return { error: 'La imagen comprimida sigue siendo muy pesada (>2MB).' };
+    }
+
+    // Generar ruta única: comunidad-img/<uid>/<timestamp>.jpg
+    const ruta = `${session.user.id}/${Date.now()}.jpg`;
+
+    const { error: upErr } = await supabase.storage
+      .from('comunidad-img')
+      .upload(ruta, blob, { contentType: 'image/jpeg', upsert: false });
+
+    if (upErr) return { error: 'No se pudo subir la imagen.' };
+
+    // Obtener URL pública
+    const { data: pub } = supabase.storage.from('comunidad-img').getPublicUrl(ruta);
+    const url = `${pub.publicUrl}?t=${Date.now()}`; // Cache-buster
+
+    return { url, error: null };
+  } catch (e) {
+    return { error: 'Error inesperado procesando la imagen.' };
+  }
+}
 
 export function renderAvatar(perfil, sizeClass = 'avatar-md') {
   const nombre = perfil?.nombre || '?';

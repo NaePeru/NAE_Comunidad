@@ -42,7 +42,7 @@ export async function cargarFeed() {
   const { data, error } = await supabase
     .from('posts')
     .select(`
-      id, contenido, categoria, es_live,
+      id, contenido, categoria, es_live, imagen_url,
       likes_count, comentarios_count, creado_en, autor_id
     `)
     .order('creado_en', { ascending: false })
@@ -133,6 +133,7 @@ function renderPost(p, myId) {
         </div>
       </div>
       <div class="feed-body">${parseMarkdown(p.contenido)}</div>
+      ${p.imagen_url ? `<img src="${p.imagen_url}" class="feed-image" alt="Imagen del post" onclick="window.__abrirImagen('${p.imagen_url}')">` : ''}
       <div class="feed-actions">
         <button class="feed-action ${likedByMe ? 'liked' : ''}" onclick="window.__like('${p.id}')">
           ${likedByMe ? '👍' : '👍🏻'} ${p.likes_count || 0}
@@ -147,7 +148,7 @@ function renderPost(p, myId) {
 }
 
 // ── CREAR POST (ahora con flag es_live) ─────────────────────────────────────
-export async function crearPost(contenido, categoria, esLive = false) {
+export async function crearPost(contenido, categoria, esLive = false, imagenUrl = null) {
   if (!contenido || !contenido.trim()) {
     toast('⚠️ Escribe algo primero');
     return { error: true };
@@ -158,6 +159,7 @@ export async function crearPost(contenido, categoria, esLive = false) {
       contenido: contenido.trim(),
       categoria,
       es_live: esLive,
+      imagen_url: imagenUrl,
       autor_id: session.user.id,
     });
 
@@ -353,3 +355,9 @@ window.__toggleComentarios = toggleComentarios;
 window.__comentar = comentar;
 window.__borrarPost = borrarPost;
 window.__likeComment = likeComment;
+window.__abrirImagen = (url) => {
+  const w = window.open('', '_blank');
+  if (w) {
+    w.document.write(`<title>Imagen</title><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${url}" style="max-width:100%;max-height:100%;"></body>`);
+  }
+};
