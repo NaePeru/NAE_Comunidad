@@ -235,8 +235,8 @@
       if (btnImg) btnImg.innerHTML = '⏳';
 
       try {
-        // COMPRIMIR con la librería profesional
-        const compressedFile = await imageCompression(file, {
+        // COMPRIMIR con la librería profesional (vía window porque estamos en un módulo ES)
+        const compressedFile = await window.imageCompression(file, {
           maxSizeMB: 0.5,            // Máximo 500 KB
           maxWidthOrHeight: 1080,    // Máximo 1080px
           useWebWorker: true         // Hacerlo en segundo plano (no congela la web)
