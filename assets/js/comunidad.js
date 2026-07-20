@@ -183,14 +183,23 @@ async function toggleLike(postId) {
   if (!post) return;
 
   if (post.likedByMe) {
-    await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId);
+    // QUITAR LIKE
+    const { error } = await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId);
+    if (error) {
+      toast('⚠️ No se pudo quitar el like');
+      return;
+    }
     post.likedByMe = false;
     post.likes_count = Math.max(0, (post.likes_count || 0) - 1);
   } else {
-    await supabase.from('post_likes').insert({ post_id: postId, user_id: myId });
+    // DAR LIKE
+    const { error } = await supabase.from('post_likes').insert({ post_id: postId, user_id: myId });
+    if (error) {
+      toast('⚠️ No se pudo registrar el like');
+      return;
+    }
     post.likedByMe = true;
     post.likes_count = (post.likes_count || 0) + 1;
-    toast('❤️ +1 punto para ' + (cachePerfiles[post.autor_id]?.nombre || 'el autor'));
   }
   const el = document.getElementById(`post-${postId}`);
   if (el) el.outerHTML = renderPost(post, myId);
