@@ -211,60 +211,40 @@
 
     // ── Estado LIVE ──
     let liveActivo = false;
-    let imagenPendiente = null; // Base64 string de la imagen a subir
+    let imagenPendiente = null; // File object directo
 
     // ── Manejo de imágenes en el composer ──
     window.__manejarImagen = (event) => {
       const file = event.target.files[0];
       if (!file) return;
 
-      // Validar tipo
       if (!file.type.startsWith('image/')) {
-        toast('⚠️ El archivo debe ser una imagen');
+        toast('⚠️ Debe ser una imagen');
         return;
       }
-      // Validar tamaño (máx 4MB antes de comprimir)
-      if (file.size > 4 * 1024 * 1024) {
-        toast('⚠️ La imagen es muy grande (máx 4MB)');
+      if (file.size > 5 * 1024 * 1024) { // Máx 5MB
+        toast('⚠️ La imagen pesa más de 5MB');
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          // COMPRIMIR automáticamente
-          const canvas = document.createElement('canvas');
-          const maxW = 1080; // Resolución web óptima
-          let w = img.width;
-          let h = img.height;
-          if (w > maxW) {
-            h = Math.round((h * maxW) / w);
-            w = maxW;
-          }
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-
-          // Convertir a Base64 (formato JPEG para ahorrar espacio)
-          imagenPendiente = canvas.toDataURL('image/jpeg', 0.75);
-          
-          // Mostrar preview
-          const prev = document.getElementById('image-preview');
-          const prevImg = document.getElementById('preview-img');
-          prevImg.src = imagenPendiente;
-          prev.style.display = 'block';
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+      imagenPendiente = file; // Guardamos el archivo directo
+      
+      // Mostrar preview usando URL.createObjectURL (mucho más rápido que Base64)
+      const previewUrl = URL.createObjectURL(file);
+      const prev = document.getElementById('image-preview');
+      const prevImg = document.getElementById('preview-img');
+      if (prevImg) {
+        prevImg.src = previewUrl;
+        prev.style.display = 'block';
+      }
     };
 
     window.__quitarImagen = () => {
       imagenPendiente = null;
-      document.getElementById('image-preview').style.display = 'none';
-      document.getElementById('image-input').value = '';
+      const prev = document.getElementById('image-preview');
+      if (prev) prev.style.display = 'none';
+      const input = document.getElementById('image-input');
+      if (input) input.value = '';
     };
     function toggleLive() {
       liveActivo = !liveActivo;
@@ -303,16 +283,24 @@
 
       let urlImagen = null;
 
+      // Si hay imagen, subirla directamente como File
       if (imagenPendiente) {
-        const { subirImagenComunidad } = await import('../assets/js/storage.js');
-        const { url, error: errSub } = await subirImagenComunidad(imagenPendiente);
-        if (errSub) {
-          toast('⚠️ Error al subir imagen');
+        try {
+          const { subirImagenComunidad } = await import('../assets/js/storage.js');
+          const { url, error: errSub } = await subirImagenComunidad(imagenPendiente);
+          if (errSub) {
+            toast('⚠️ Error al subir imagen: ' + errSub);
+            btn.disabled = false;
+            btn.innerHTML = 'Publicar →';
+            return;
+          }
+          urlImagen = url;
+        } catch (e) {
+          toast('⚠️ Error inesperado con la imagen');
           btn.disabled = false;
           btn.innerHTML = 'Publicar →';
           return;
         }
-        urlImagen = url;
       }
 
       const { error } = await crearPost(txt, cat, liveActivo, urlImagen);

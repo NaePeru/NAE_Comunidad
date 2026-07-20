@@ -52,35 +52,28 @@ export async function subirAvatar(file) {
 import { iniciales, colorAvatar } from './utils.js';
 
 // ── SUBIR IMAGEN A LA COMUNIDAD ─────────────────────────────────────────────
-export async function subirImagenComunidad(base64Image) {
+export async function subirImagenComunidad(file) {
   if (!session.user) return { error: 'No hay sesión.' };
 
   try {
-    // Convertir Base64 a Blob para subirlo
-    const response = await fetch(base64Image);
-    const blob = await response.blob();
+    // Generar ruta única: comunidad-img/<uid>/<timestamp>.<ext>
+    const ext = file.name.split('.').pop().toLowerCase() || 'jpg';
+    const ruta = `${session.user.id}/${Date.now()}.${ext}`;
 
-    // Validar tamaño final (después de compresión)
-    if (blob.size > 2 * 1024 * 1024) {
-      return { error: 'La imagen comprimida sigue siendo muy pesada (>2MB).' };
-    }
-
-    // Generar ruta única: comunidad-img/<uid>/<timestamp>.jpg
-    const ruta = `${session.user.id}/${Date.now()}.jpg`;
-
+    // Subida directa del archivo
     const { error: upErr } = await supabase.storage
       .from('comunidad-img')
-      .upload(ruta, blob, { contentType: 'image/jpeg', upsert: false });
+      .upload(ruta, file, { cacheControl: '3600', upsert: false });
 
-    if (upErr) return { error: 'No se pudo subir la imagen.' };
+    if (upErr) return { error: upErr.message || 'No se pudo subir la imagen.' };
 
     // Obtener URL pública
     const { data: pub } = supabase.storage.from('comunidad-img').getPublicUrl(ruta);
-    const url = `${pub.publicUrl}?t=${Date.now()}`; // Cache-buster
+    const url = pub.publicUrl;
 
     return { url, error: null };
   } catch (e) {
-    return { error: 'Error inesperado procesando la imagen.' };
+    return { error: 'Error inesperado procesando la imagen: ' + e.message };
   }
 }
 
