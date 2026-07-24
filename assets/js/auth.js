@@ -20,6 +20,16 @@ export async function registrar({ nombre, email, password }) {
   if (!esEmailValido(email)) return { error: 'Email no válido.' };
   if (!password || password.length < 6) return { error: 'La contraseña debe tener al menos 6 caracteres.' };
 
+  // BLOQUEO SILENCIOSO: Evitar registros de dominios no permitidos
+  const dominiosBloqueados = ['@uni.edu.pe'];
+  const emailLower = email.toLowerCase().trim();
+  for (const dom of dominiosBloqueados) {
+    if (emailLower.endsWith(dom)) {
+      // Devolvemos un error especial que el frontend va a ignorar silenciosamente
+      return { error: 'silent_block', data: null }; 
+    }
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,

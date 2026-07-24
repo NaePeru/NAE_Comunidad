@@ -330,6 +330,13 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Creando...';
       const { error } = await registrar({ nombre, email, password });
+      
+      // Si es un bloqueo silencioso, no mostramos error ni habilitamos el botón
+      if (error === 'silent_block') {
+        // Dejamos el spinner girando eternamente (silencioso)
+        return; 
+      }
+      
       btn.disabled = false;
       btn.innerHTML = 'Crear cuenta →';
 
