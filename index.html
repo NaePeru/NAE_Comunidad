@@ -191,20 +191,12 @@
     <div class="auth-form-side">
       <div class="auth-card">
 
-        <!-- ACCESO CON MAGIC LINK (igual que Skool) -->
+        <!-- LOGIN (Email + Contraseña) -->
         <div id="panel-login">
-          <h2>Accede a tu plataforma 🚀</h2>
-          <p class="sub">Ingresa tu nombre y email. Te enviaremos un link mágico para entrar, sin contraseña.</p>
+          <h2>Bienvenido de nuevo 👋</h2>
+          <p class="sub">Ingresá para continuar aprendiendo.</p>
 
           <form id="form-login">
-            <div class="field">
-              <label class="field-label">Nombre</label>
-              <div class="input-group">
-                <span class="input-icon">👤</span>
-                <input type="text" id="login-nombre" placeholder="Tu nombre" autocomplete="name">
-              </div>
-            </div>
-
             <div class="field">
               <label class="field-label">Email</label>
               <div class="input-group">
@@ -212,39 +204,57 @@
                 <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="email" required>
               </div>
             </div>
-
+            <div class="field">
+              <label class="field-label">Contraseña</label>
+              <div class="input-group">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
+                <button type="button" class="toggle-eye" onclick="toggleEye('login-password', this)">👁️</button>
+              </div>
+            </div>
             <span class="field-error" id="login-error"></span>
-
-            <button type="submit" class="btn btn-primary btn-block" id="login-btn">
-              Enviar link mágico →
-            </button>
+            <button type="submit" class="btn btn-primary btn-block" id="login-btn">Ingresar →</button>
           </form>
 
-          <p class="muted center" style="font-size:11.5px;margin-top:14px;line-height:1.6;">
-            🔒 Sin contraseñas. Recibirás un email con un enlace seguro.<br>
-            ¿Ya tienes cuenta? Solo pon tu email y te enviaremos el link.
-          </p>
+          <div class="auth-toggle">
+            ¿No tienes cuenta? <button type="button" onclick="mostrar('registro')">Crear cuenta gratis</button>
+          </div>
         </div>
 
-        <!-- Mensaje de éxito (se muestra al enviar el link) -->
-        <div id="panel-enviado" class="hidden">
-          <div style="text-align:center;padding:10px 0;">
-            <div style="font-size:56px;margin-bottom:16px;">📨</div>
-            <h2 style="font-size:22px;font-weight:800;margin-bottom:8px;">¡Revisa tu correo!</h2>
-            <p class="sub" style="margin-bottom:24px;">
-              Enviamos un link mágico a:<br>
-              <strong id="email-enviado" style="color:var(--gold);"></strong>
-            </p>
-            <div class="card" style="background:rgba(61,214,140,0.06);border-color:rgba(61,214,140,0.2);text-align:left;font-size:13px;line-height:1.7;color:var(--muted);">
-              <strong style="color:var(--green);">Pasos:</strong><br>
-              1. Abrí tu email<br>
-              2. Buscá el mensaje de NAE<br>
-              3. Hacé click en el enlace del correo<br>
-              4. ¡Vas a entrar automáticamente!
+        <!-- REGISTRO -->
+        <div id="panel-registro" class="hidden">
+          <h2>Crea tu cuenta 🚀</h2>
+          <p class="sub">Registrate para solicitar acceso a la comunidad.</p>
+
+          <form id="form-registro">
+            <div class="field">
+              <label class="field-label">Nombre</label>
+              <div class="input-group">
+                <span class="input-icon">👤</span>
+                <input type="text" id="reg-nombre" placeholder="Tu nombre" autocomplete="name" required>
+              </div>
             </div>
-            <button type="button" class="btn btn-ghost btn-block" style="margin-top:18px;" onclick="volverLogin()">
-              ← Volver
-            </button>
+            <div class="field">
+              <label class="field-label">Email</label>
+              <div class="input-group">
+                <span class="input-icon">✉️</span>
+                <input type="email" id="reg-email" placeholder="tu@email.com" autocomplete="email" required>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Contraseña</label>
+              <div class="input-group">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required>
+                <button type="button" class="toggle-eye" onclick="toggleEye('reg-password', this)">👁️</button>
+              </div>
+            </div>
+            <span class="field-error" id="reg-error"></span>
+            <button type="submit" class="btn btn-primary btn-block" id="reg-btn">Crear cuenta →</button>
+          </form>
+
+          <div class="auth-toggle">
+            ¿Ya tienes cuenta? <button type="button" onclick="mostrar('login')">Iniciar sesión</button>
           </div>
         </div>
 
@@ -260,66 +270,74 @@
 
   <script type="module">
     import { supabase, supabaseConfigured } from './assets/js/supabase-client.js';
-    import { enviarMagicLink } from './assets/js/auth.js';
+    import { login, registrar } from './assets/js/auth.js';
     import { toast } from './assets/js/utils.js';
 
-    // Mostrar aviso si no está configurado
     if (!supabaseConfigured) {
       document.getElementById('config-warning').classList.remove('hidden');
     }
 
-    // Si ya hay sesión activa, ir directo a la app
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        window.location.href = 'app/comunidad.html';
-      }
+      if (data.session) window.location.href = 'app/comunidad.html';
     });
 
-    // Escuchar el evento de login (cuando viene del Magic Link)
-    // Esto es más confiable que solo getSession(), porque espera a que
-    // Supabase termine de procesar el token de la URL.
-    supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-        window.location.href = 'app/comunidad.html';
-      }
-    });
-
-    // Detectar si viene de un magic link (URL con tokens)
-    if (window.location.hash.includes('access_token') || window.location.search.includes('code')) {
-      toast('✅ Verificando acceso...');
-    }
-
-    // ── Volver al formulario desde el panel de "email enviado" ──
-    window.volverLogin = function() {
-      document.getElementById('panel-enviado').classList.add('hidden');
-      document.getElementById('panel-login').classList.remove('hidden');
+    window.mostrar = (cual) => {
+      document.getElementById('panel-login').classList.toggle('hidden', cual !== 'login');
+      document.getElementById('panel-registro').classList.toggle('hidden', cual !== 'registro');
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('reg-error').textContent = '';
     };
 
-    // ── Enviar magic link ──
+    window.toggleEye = (inputId, btn) => {
+      const inp = document.getElementById(inputId);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      btn.textContent = inp.type === 'password' ? '👁️' : '🙈';
+    };
+
     document.getElementById('form-login').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('login-btn');
       const errEl = document.getElementById('login-error');
       errEl.textContent = '';
 
-      const nombre = document.getElementById('login-nombre').value.trim();
       const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
 
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Enviando link...';
-
-      const { error, enviado } = await enviarMagicLink({ nombre, email });
-
+      btn.innerHTML = '<span class="spinner"></span> Ingresando...';
+      const { error } = await login(email, password);
       btn.disabled = false;
-      btn.innerHTML = 'Enviar link mágico →';
+      btn.innerHTML = 'Ingresar →';
 
       if (error) {
         errEl.textContent = error;
-      } else if (enviado) {
-        // Mostrar pantalla de "revisa tu correo"
-        document.getElementById('email-enviado').textContent = email;
-        document.getElementById('panel-login').classList.add('hidden');
-        document.getElementById('panel-enviado').classList.remove('hidden');
+      } else {
+        toast('✅ Bienvenido de nuevo');
+        setTimeout(() => window.location.href = 'app/comunidad.html', 600);
+      }
+    });
+
+    document.getElementById('form-registro').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('reg-btn');
+      const errEl = document.getElementById('reg-error');
+      errEl.textContent = '';
+
+      const nombre = document.getElementById('reg-nombre').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Creando...';
+      const { error } = await registrar({ nombre, email, password });
+      btn.disabled = false;
+      btn.innerHTML = 'Crear cuenta →';
+
+      if (error) {
+        errEl.textContent = error;
+      } else {
+        toast('🎉 Cuenta creada. Redirigiendo...');
+        setTimeout(() => window.location.href = 'app/comunidad.html', 800);
       }
     });
   </script>

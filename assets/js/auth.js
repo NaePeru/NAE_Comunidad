@@ -14,29 +14,31 @@ export const session = {
   membership: null,  // membresía (public.memberships)
 };
 
-// ── REGISTRO / LOGIN CON MAGIC LINK (estilo Skool) ─────────────────────────
-// El usuario solo pone nombre + email. Le llega un link al correo,
-// hace click y entra. SIN contraseña.
+// ── REGISTRO CON CONTRASEÑA ─────────────────────────────────────────────────
+export async function registrar({ nombre, email, password }) {
+  if (!nombre || nombre.trim().length < 2) return { error: 'Ingresa tu nombre.' };
+  if (!esEmailValido(email)) return { error: 'Email no válido.' };
+  if (!password || password.length < 6) return { error: 'La contraseña debe tener al menos 6 caracteres.' };
 
-// ── Enviar magic link (sirve para registro Y para login) ────────────────────
-export async function enviarMagicLink({ nombre, email }) {
-  if (!esEmailValido(email))
-    return { error: 'Email no válido.' };
-
-  const options = {
-    emailRedirectTo: window.location.origin + '/app/comunidad.html',
-  };
-  if (nombre && nombre.trim().length >= 2) {
-    options.data = { nombre: nombre.trim() };
-  }
-
-  const { data, error } = await supabase.auth.signInWithOtp({
+  const { data, error } = await supabase.auth.signUp({
     email,
-    options,
+    password,
+    options: { data: { nombre: nombre.trim() } },
   });
 
   if (error) return { error: traducirErrorAuth(error.message) };
-  return { data, error: null, enviado: true };
+  return { data, error: null };
+}
+
+// ── LOGIN CON CONTRASEÑA ────────────────────────────────────────────────────
+export async function login(email, password) {
+  if (!esEmailValido(email)) return { error: 'Email no válido.' };
+  if (!password) return { error: 'Ingresa tu contraseña.' };
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) return { error: traducirErrorAuth(error.message) };
+  return { data, error: null };
 }
 
 // ── MÉTODOS LEGADOS (por si se necesitan después) ───────────────────────────
