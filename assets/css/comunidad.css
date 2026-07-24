@@ -90,11 +90,11 @@
 
 /* Imagen del Post */
 .feed-image {
-  width: 140px;
-  height: 140px;
+  width: 100px;
+  height: 100px;
   object-fit: cover;
-  border-radius: 12px;
-  margin: 0 0 12px 0; /* Abajo del todo, antes de los botones */
+  border-radius: 8px;
+  margin: 0 0 12px 0;
   cursor: pointer;
   transition: transform 0.2s;
   border: 1px solid var(--border);
@@ -107,8 +107,8 @@
 /* En móvil, imagen más pequeña */
 @media (max-width: 768px) {
   .feed-image {
-    width: 100px;
-    height: 100px;
+    width: 70px;
+    height: 70px;
   }
 }
 .feed-actions {
