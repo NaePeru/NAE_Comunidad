@@ -132,8 +132,12 @@ function renderPost(p, myId) {
           </div>
         </div>
       </div>
-      <div class="feed-body">${parseMarkdown(p.contenido)}</div>
-      ${p.imagen_url ? `<img src="${p.imagen_url}" class="feed-image" alt="Imagen del post" onclick="window.__abrirImagen('${p.imagen_url}')">` : ''}
+      ${p.imagen_url ? `
+        <div style="display:flex; gap:14px; margin-bottom:12px;">
+          <img src="${p.imagen_url}" class="feed-image" alt="Imagen del post" onclick="window.__abrirImagen('${p.imagen_url}')" style="margin:0; flex-shrink:0;">
+          <div class="feed-body" style="flex:1; min-width:0; margin:0;">${parseMarkdown(p.contenido)}</div>
+        </div>
+      ` : `<div class="feed-body">${parseMarkdown(p.contenido)}</div>`}
       <div class="feed-actions">
         <button class="feed-action ${likedByMe ? 'liked' : ''}" onclick="window.__like('${p.id}')">
           ${likedByMe ? '👍' : '👍🏻'} ${p.likes_count || 0}

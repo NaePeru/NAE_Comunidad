@@ -90,31 +90,25 @@
 
 /* Imagen del Post */
 .feed-image {
-  float: left;
-  width: 150px;
-  height: 150px;
+  width: 140px;
+  height: 140px;
   object-fit: cover;
   border-radius: 12px;
-  margin: 4px 16px 8px 0;
+  margin: 0 0 12px 0; /* Abajo del todo, antes de los botones */
   cursor: pointer;
   transition: transform 0.2s;
   border: 1px solid var(--border);
+  display: block;
 }
 .feed-image:active {
   transform: scale(0.98);
 }
-.feed-body::after {
-  content: "";
-  display: table;
-  clear: both;
-}
 
-/* En móvil, hacer la imagen un poco más grande pero con límite */
+/* En móvil, imagen más pequeña */
 @media (max-width: 768px) {
   .feed-image {
-    width: 110px;
-    height: 110px;
-    margin-right: 12px;
+    width: 100px;
+    height: 100px;
   }
 }
 .feed-actions {
