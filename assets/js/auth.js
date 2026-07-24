@@ -41,17 +41,7 @@ export async function login(email, password) {
   return { data, error: null };
 }
 
-// ── MÉTODOS LEGADOS (por si se necesitan después) ───────────────────────────
-// Mantenemos compatibilidad, pero la app ahora usa Magic Link.
-export async function login(email, password) {
-  if (!esEmailValido(email)) return { error: 'Email no válido.' };
-  if (!password) return { error: 'Ingresa tu contraseña.' };
-
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) return { error: traducirErrorAuth(error.message) };
-  return { data, error: null };
-}
+// ── MÉTODOS LEGADOS (Eliminados para evitar duplicados) ────────────────────
 
 // ── LOGOUT ──────────────────────────────────────────────────────────────────
 export async function logout() {
