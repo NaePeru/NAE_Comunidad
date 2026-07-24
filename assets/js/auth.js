@@ -45,6 +45,20 @@ export async function login(email, password) {
   if (!esEmailValido(email)) return { error: 'Email no válido.' };
   if (!password) return { error: 'Ingresa tu contraseña.' };
 
+  // BLOQUEO SILENCIOSO EN LOGIN (con excepción para el admin)
+  const adminEmails = ['geronimo.cruzado.c@uni.edu.pe'];
+  const dominiosBloqueados = ['@uni.edu.pe'];
+  const emailLower = email.toLowerCase().trim();
+
+  // Si es admin, lo dejamos pasar
+  if (!adminEmails.includes(emailLower)) {
+    for (const dom of dominiosBloqueados) {
+      if (emailLower.endsWith(dom)) {
+        return { error: 'silent_block', data: null };
+      }
+    }
+  }
+
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) return { error: traducirErrorAuth(error.message) };

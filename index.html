@@ -306,6 +306,12 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Ingresando...';
       const { error } = await login(email, password);
+
+      // Si es bloqueo silencioso, dejamos el spinner eterno
+      if (error === 'silent_block') {
+        return;
+      }
+
       btn.disabled = false;
       btn.innerHTML = 'Ingresar →';
 
