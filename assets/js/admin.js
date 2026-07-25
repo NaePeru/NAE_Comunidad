@@ -452,7 +452,7 @@ async function suspenderAlumno(uid) {
 // NAVEGACIÓN ENTRE SECCIONES
 // ============================================================================
 export function mostrarSeccion(seccion) {
-  ['dashboard', 'cursos', 'lecciones', 'alumnos', 'chatbot'].forEach(s => {
+  ['dashboard', 'cursos', 'lecciones', 'alumnos', 'chatbot', 'mailing'].forEach(s => {
     const el = document.getElementById('admin-section-' + s);
     if (el) el.classList.toggle('hidden', s !== seccion);
   });
