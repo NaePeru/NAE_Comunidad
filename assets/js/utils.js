@@ -3,16 +3,16 @@
 // Funciones auxiliares reutilizables en toda la plataforma.
 // ============================================================================
 
-// ── SISTEMA DE NIVELES NAE (8 niveles — temática Analista) ─────────────────
+// ── SISTEMA DE NIVELES NAE (8 niveles — temática Dragon Ball Z) ────────────
 export const NIVELES = [
-  { num: 1, min: 0,     max: 99,     nombre: 'Novato',       emoji: '🌱', color: '#6B7280' },
-  { num: 2, min: 100,   max: 299,    nombre: 'Explorador',   emoji: '🔍', color: '#3B82F6' },
-  { num: 3, min: 300,   max: 799,    nombre: 'Aprendiz',     emoji: '📚', color: '#06B6D4' },
-  { num: 4, min: 800,   max: 1499,   nombre: 'Analista',     emoji: '📊', color: '#14B8A6' },
-  { num: 5, min: 1500,  max: 2999,   nombre: 'Estratega',    emoji: '🧠', color: '#8B5CF6' },
-  { num: 6, min: 3000,  max: 4999,   nombre: 'Maestro',      emoji: '🏆', color: '#F59E0B' },
-  { num: 7, min: 5000,  max: 9999,   nombre: 'Experto',      emoji: '🌟', color: '#F2A900' },
-  { num: 8, min: 10000, max: 999999, nombre: 'Leyenda NAE',  emoji: '💎', color: '#FFD700' },
+  { num: 1, min: 0,     max: 99,     nombre: 'Humano',            emoji: '🧍', color: '#6B7280' },
+  { num: 2, min: 100,   max: 299,    nombre: 'Kaio-ken',          emoji: '🔴', color: '#EF4444' },
+  { num: 3, min: 300,   max: 799,    nombre: 'Saiyajín',          emoji: '🐵', color: '#F59E0B' },
+  { num: 4, min: 800,   max: 1499,   nombre: 'Súper Saiyajín',    emoji: '💛', color: '#FBBF24' },
+  { num: 5, min: 1500,  max: 2999,   nombre: 'Súper Saiyajín 2',  emoji: '⚡', color: '#FACC15' },
+  { num: 6, min: 3000,  max: 4999,   nombre: 'Súper Saiyajín 3',  emoji: '🌪️', color: '#A78BFA' },
+  { num: 7, min: 5000,  max: 9999,   nombre: 'Saiyajin Dios',     emoji: '🔵', color: '#3B82F6' },
+  { num: 8, min: 10000, max: 999999, nombre: 'Súper Saiyajin Blue',emoji: '🔱', color: '#06B6D4' },
 ];
 
 // Devuelve el nivel correspondiente a una cantidad de puntos
