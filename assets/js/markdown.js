@@ -13,6 +13,42 @@ export function parseMarkdown(raw = '') {
   // 1. Escapar TODO el HTML primero (previene inyección XSS)
   let text = escapeHtml(raw);
 
+  // 1.5 EXTRAER YOUTUBE LINKS ANTES DE QUE EL PARSER LOS ROMPA
+  // Guardamos los embeds en un array y los reemplazamos por placeholders únicos
+  const ytEmbeds = [];
+  
+  // Formato 1: https://www.youtube.com/watch?v=VIDEO_ID
+  text = text.replace(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([\w-]{11})(?:[^\s<]*)?/g, (match, videoId) => {
+    const embed = `<div class="video-wrap" oncontextmenu="return false;" style="margin:12px 0; position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:12px; border:1px solid var(--border);">
+      <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1" 
+        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen></iframe>
+      <div style="position:absolute; bottom:0; right:0; width:140px; height:50px; background:var(--bg); z-index:10; pointer-events:none; display:flex; align-items:center; justify-content:center; border-top-left-radius:8px;">
+        <span style="font-family:var(--font-display); font-weight:700; font-size:16px; color:#3B82F6;">◆ NAE</span>
+      </div>
+    </div>`;
+    ytEmbeds.push(embed);
+    return `__YT_EMBED_${ytEmbeds.length - 1}__`;
+  });
+
+  // Formato 2: https://youtu.be/VIDEO_ID
+  text = text.replace(/(?:https?:\/\/)?(?:www\.)?youtu\.be\/([\w-]{11})(?:[^\s<]*)?/g, (match, videoId) => {
+    const embed = `<div class="video-wrap" oncontextmenu="return false;" style="margin:12px 0; position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:12px; border:1px solid var(--border);">
+      <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1" 
+        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen></iframe>
+      <div style="position:absolute; bottom:0; right:0; width:140px; height:50px; background:var(--bg); z-index:10; pointer-events:none; display:flex; align-items:center; justify-content:center; border-top-left-radius:8px;">
+        <span style="font-family:var(--font-display); font-weight:700; font-size:16px; color:#3B82F6;">◆ NAE</span>
+      </div>
+    </div>`;
+    ytEmbeds.push(embed);
+    return `__YT_EMBED_${ytEmbeds.length - 1}__`;
+  });
+
   // 2. Bloques de código ``` ... ``` (se procesan antes que todo)
   text = text.replace(/```([\s\S]*?)```/g, (_, code) =>
     `<pre class="md-codeblock"><code>${code.trim()}</code></pre>`
@@ -80,6 +116,14 @@ export function parseMarkdown(raw = '') {
 
   // Cursiva *
   html = html.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+
+  // 5. Reemplazar placeholders de YouTube por los embeds reales
+  ytEmbeds.forEach((embed, i) => {
+    // El placeholder puede estar dentro de un <p> (en una línea de párrafo)
+    // Lo reemplazamos y limpiamos etiquetas <p> vacías que puedan quedar
+    html = html.replace(new RegExp(`<p class="md-p">__YT_EMBED_${i}__</p>`, 'g'), embed);
+    html = html.replace(new RegExp(`__YT_EMBED_${i}__`, 'g'), embed);
+  });
 
   return html;
 }
