@@ -256,30 +256,52 @@ function renderCursoLayout(course, modules, lessons, myDone) {
 function renderCursoBloqueado(course) {
   document.getElementById('curso-container').innerHTML = `
     <div class="course-back" onclick="window.__volverCatalogo()">← Volver al catálogo</div>
-    <div class="card locked-msg" style="text-align:center; padding: 40px 20px; max-width: 480px; margin: 20px auto;">
-      <div class="lock-icon" style="font-size: 60px; margin-bottom: 20px;">🔒</div>
-      <h3 style="font-size: 22px; font-weight: 800; margin-bottom: 12px; color: #fff;">Curso Premium</h3>
-      <p style="color: var(--muted); font-size: 15px; margin-bottom: 24px; line-height: 1.6;">
-        Para acceder a <strong style="color: var(--gold);">${escapeHtml(course.titulo)}</strong>, necesitás activar tu acceso premium.
+    <div class="card" style="text-align:center; padding: 40px 24px; max-width: 480px; margin: 20px auto; border-color: rgba(59,130,246,0.2);">
+      
+      <div style="width: 56px; height: 56px; background: rgba(59,130,246,0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+
+      <span style="display: inline-block; font-family: var(--font-display); font-size: 11px; font-weight: 600; color: #3B82F6; background: rgba(59,130,246,0.1); padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; letter-spacing: 0.5px;">
+        ACCESO PREMIUM
+      </span>
+
+      <h3 style="font-family: var(--font-display); font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #fff; letter-spacing: -0.5px;">
+        ${escapeHtml(course.titulo)}
+      </h3>
+      <p style="color: var(--muted); font-size: 15px; margin-bottom: 28px; line-height: 1.6;">
+        Este curso requiere acceso premium. Activá tu cuenta para desbloquear todo el contenido.
       </p>
       
-      <div style="background: var(--card2); border: 1px solid var(--border2); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: left;">
-        <div style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #fff;">💳 Cómo acceder:</div>
-        <ol style="margin-left: 20px; font-size: 13.5px; color: var(--muted); line-height: 1.8;">
-          <li>Realizá el pago por <strong>Yape</strong> o <strong>Plin</strong> al número: <strong style="color: var(--gold);">974 688 863</strong></li>
-          <li>Enviá la captura o comprobante por <strong>WhatsApp</strong> al mismo número.</li>
-          <li>¡Listo! En cuanto verifiquemos el pago, se desbloqueará este curso para vos.</li>
-        </ol>
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: left;">
+        <div style="font-family: var(--font-display); font-size: 12px; font-weight: 600; margin-bottom: 16px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px;">Pasos para activar</div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 24px; height: 24px; background: rgba(59,130,246,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #3B82F6; flex-shrink: 0;">1</div>
+            <div style="font-size: 14px; color: var(--text); line-height: 1.5;">Pagá por <strong style="color:#fff;">Yape</strong> o <strong style="color:#fff;">Plin</strong> al <strong style="color: #3B82F6;">974 688 863</strong></div>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 24px; height: 24px; background: rgba(59,130,246,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #3B82F6; flex-shrink: 0;">2</div>
+            <div style="font-size: 14px; color: var(--text); line-height: 1.5;">Enviá el comprobante por <strong style="color:#fff;">WhatsApp</strong> al mismo número</div>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 24px; height: 24px; background: rgba(59,130,246,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #3B82F6; flex-shrink: 0;">3</div>
+            <div style="font-size: 14px; color: var(--text); line-height: 1.5;">¡Listo! Verificado el pago, se desbloquea al instante</div>
+          </div>
+        </div>
       </div>
 
       <a href="https://wa.me/51974688863?text=Hola!%20Quiero%20activar%20el%20curso%20${encodeURIComponent(course.titulo)}" 
          target="_blank" 
          rel="noopener" 
          class="btn btn-primary" 
-         style="width: 100%; font-size: 15px; padding: 14px; margin-bottom: 12px;">
-        💬 Escribir por WhatsApp
+         style="width: 100%; font-size: 15px; padding: 14px; margin-bottom: 10px; background: #3B82F6; border-color: #3B82F6;">
+        Solicitar acceso por WhatsApp
       </a>
-      <button onclick="window.__volverCatalogo()" class="btn btn-ghost" style="width: 100%;">
+      <button onclick="window.__volverCatalogo()" class="btn btn-ghost" style="width: 100%; font-size: 13px;">
         Volver al catálogo
       </button>
     </div>
