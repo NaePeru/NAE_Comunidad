@@ -258,10 +258,32 @@ function renderCursoLayout(course, modules, lessons, myDone) {
 function renderCursoBloqueado(course) {
   document.getElementById('curso-container').innerHTML = `
     <div class="course-back" onclick="window.__volverCatalogo()">← Volver al catálogo</div>
-    <div class="card locked-msg">
-      <div class="lock-icon">🔒</div>
-      <h3>Este curso es Premium</h3>
-      <p>Para acceder a <strong>${escapeHtml(course.titulo)}</strong> necesitás una membresía activa.</p>
+    <div class="card locked-msg" style="text-align:center; padding: 40px 20px; max-width: 480px; margin: 20px auto;">
+      <div class="lock-icon" style="font-size: 60px; margin-bottom: 20px;">🔒</div>
+      <h3 style="font-size: 22px; font-weight: 800; margin-bottom: 12px; color: #fff;">Curso Premium</h3>
+      <p style="color: var(--muted); font-size: 15px; margin-bottom: 24px; line-height: 1.6;">
+        Para acceder a <strong style="color: var(--gold);">${escapeHtml(course.titulo)}</strong>, necesitás activar tu acceso premium.
+      </p>
+      
+      <div style="background: var(--card2); border: 1px solid var(--border2); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: left;">
+        <div style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #fff;">💳 Cómo acceder:</div>
+        <ol style="margin-left: 20px; font-size: 13.5px; color: var(--muted); line-height: 1.8;">
+          <li>Realizá el pago por <strong>Yape</strong> o <strong>Plin</strong> al número: <strong style="color: var(--gold);">974 688 863</strong></li>
+          <li>Enviá la captura o comprobante por <strong>WhatsApp</strong> al mismo número.</li>
+          <li>¡Listo! En cuanto verifiquemos el pago, se desbloqueará este curso para vos.</li>
+        </ol>
+      </div>
+
+      <a href="https://wa.me/51974688863?text=Hola!%20Quiero%20activar%20el%20curso%20${encodeURIComponent(course.titulo)}" 
+         target="_blank" 
+         rel="noopener" 
+         class="btn btn-primary" 
+         style="width: 100%; font-size: 15px; padding: 14px; margin-bottom: 12px;">
+        💬 Escribir por WhatsApp
+      </a>
+      <button onclick="window.__volverCatalogo()" class="btn btn-ghost" style="width: 100%;">
+        Volver al catálogo
+      </button>
     </div>
   `;
 }
