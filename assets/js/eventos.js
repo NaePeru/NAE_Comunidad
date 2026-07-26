@@ -32,9 +32,16 @@ export async function cargarEventos() {
     return;
   }
 
-  const hoy = new Date().toISOString().split('T')[0];
-  const proximos = (data || []).filter(e => e.fecha >= hoy);
-  const pasados = (data || []).filter(e => e.fecha < hoy).reverse().slice(0, 3);
+  // Filtrar por fecha Y hora reales (para no cerrar un evento antes de hora)
+  const ahora = Date.now();
+  const proximos = (data || []).filter(e => {
+    const fechaCompleta = new Date(`${e.fecha}T${e.hora || '23:59:59'}`);
+    return fechaCompleta.getTime() >= ahora;
+  });
+  const pasados = (data || []).filter(e => {
+    const fechaCompleta = new Date(`${e.fecha}T${e.hora || '00:00:00'}`);
+    return fechaCompleta.getTime() < ahora;
+  }).reverse().slice(0, 3);
 
   if (proximos.length === 0 && pasados.length === 0) {
     list.innerHTML = `
