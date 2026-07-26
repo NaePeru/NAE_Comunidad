@@ -105,10 +105,8 @@ export function bindClicksCatalogo() {
     const card = e.target.closest('.course-card');
     if (!card) return;
     const courseId = card.dataset.courseId;
-    const bloqueado = card.dataset.bloqueado === '1';
     if (!courseId) return;
-    if (bloqueado) { toast('🔒 Necesitas membresía para este curso'); return; }
-    // Cambiar a vista de curso
+    // Abrir el curso (si está bloqueado, abrirCurso mostrará el mensaje de pago)
     await abrirCurso(courseId);
   });
 }
