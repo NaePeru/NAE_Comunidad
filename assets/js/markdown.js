@@ -13,38 +13,28 @@ export function parseMarkdown(raw = '') {
   // 1. Escapar TODO el HTML primero (previene inyección XSS)
   let text = escapeHtml(raw);
 
-  // 1.5 EXTRAER YOUTUBE LINKS ANTES DE QUE EL PARSER LOS ROMPA
-  // Guardamos los embeds en un array y los reemplazamos por placeholders únicos
+  // 1.5 EXTRAER YOUTUBE LINKS Y CONVERTIRLOS EN MINIATURAS (THUMBNAILS)
+  // Se muestra una imagen estática. Al hacer click, se carga el reproductor real.
   const ytEmbeds = [];
   
-  // Formato 1: https://www.youtube.com/watch?v=VIDEO_ID
-  text = text.replace(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([\w-]{11})(?:[^\s<]*)?/g, (match, videoId) => {
-    const embed = `<div class="video-wrap" oncontextmenu="return false;" style="margin:12px 0; position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:12px; border:1px solid var(--border);">
-      <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1" 
-        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
-        frameborder="0" 
-        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
-        allowfullscreen></iframe>
-      <div style="position:absolute; bottom:0; right:0; width:140px; height:50px; background:var(--bg); z-index:10; pointer-events:none; display:flex; align-items:center; justify-content:center; border-top-left-radius:8px;">
-        <span style="font-family:var(--font-display); font-weight:700; font-size:16px; color:#3B82F6;">◆ NAE</span>
+  // Función para generar el HTML de la miniatura
+  function makeYtThumb(videoId) {
+    const thumb = `<div class="yt-preview" data-video-id="${videoId}" onclick="window.__playYt(this)">
+      <img src="https://i.ytimg.com/vi/${videoId}/hqdefault.jpg" class="yt-thumb-img" alt="Video">
+      <div class="yt-play-btn">
+        <svg width="68" height="48" viewBox="0 0 68 48"><path class="yt-play-bg" d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="#f00"></path><path d="M45 24 27 14v20" fill="#fff"></path></svg>
       </div>
+      <div class="yt-nae-watermark">◆ NAE</div>
     </div>`;
-    ytEmbeds.push(embed);
+    ytEmbeds.push(thumb);
     return `__YT_EMBED_${ytEmbeds.length - 1}__`;
-  });
+  }
+
+  // Formato 1: https://www.youtube.com/watch?v=VIDEO_ID
+  text = text.replace(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([\w-]{11})(?:[^\s<]*)?/g, (match, videoId) => makeYtThumb(videoId));
 
   // Formato 2: https://youtu.be/VIDEO_ID
-  text = text.replace(/(?:https?:\/\/)?(?:www\.)?youtu\.be\/([\w-]{11})(?:[^\s<]*)?/g, (match, videoId) => {
-    const embed = `<div class="video-wrap" oncontextmenu="return false;" style="margin:12px 0; position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:12px; border:1px solid var(--border);">
-      <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1" 
-        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
-        frameborder="0" 
-        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
-        allowfullscreen></iframe>
-      <div style="position:absolute; bottom:0; right:0; width:140px; height:50px; background:var(--bg); z-index:10; pointer-events:none; display:flex; align-items:center; justify-content:center; border-top-left-radius:8px;">
-        <span style="font-family:var(--font-display); font-weight:700; font-size:16px; color:#3B82F6;">◆ NAE</span>
-      </div>
-    </div>`;
+  text = text.replace(/(?:https?:\/\/)?(?:www\.)?youtu\.be\/([\w-]{11})(?:[^\s<]*)?/g, (match, videoId) => makeYtThumb(videoId));
     ytEmbeds.push(embed);
     return `__YT_EMBED_${ytEmbeds.length - 1}__`;
   });
@@ -127,3 +117,18 @@ export function parseMarkdown(raw = '') {
 
   return html;
 }
+
+// ── FUNCIÓN GLOBAL: Expandir miniatura de YouTube al hacer click ────────────
+window.__playYt = function(el) {
+  const videoId = el.getAttribute('data-video-id');
+  if (!videoId) return;
+  
+  // Reemplazar el contenido por el iframe (reproductor real)
+  el.classList.add('playing');
+  el.innerHTML = `
+    <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1" 
+      frameborder="0" 
+      allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+      allowfullscreen></iframe>
+  `;
+};

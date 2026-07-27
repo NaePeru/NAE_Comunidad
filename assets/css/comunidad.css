@@ -3,6 +3,70 @@
    Estilos del feed de comunidad, posts, comentarios, composer y markdown.
    ============================================================================ */
 
+/* ── YOUTUBE PREVIEW (Miniatura clickeable) ───────────────────────────────── */
+.yt-preview {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 12px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: #000;
+  display: block;
+}
+.yt-thumb-img {
+  width: 100%;
+  display: block;
+  opacity: 0.9;
+  transition: opacity 0.2s;
+}
+.yt-preview:hover .yt-thumb-img { opacity: 1; }
+
+.yt-play-btn {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 68px; height: 48px;
+  pointer-events: none;
+}
+.yt-play-btn svg { width: 100%; height: 100%; }
+
+.yt-nae-watermark {
+  position: absolute;
+  bottom: 8px; right: 8px;
+  background: rgba(11, 15, 25, 0.8);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  color: #3B82F6;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
+/* Cuando se reproduce (iframe insertado) */
+.yt-preview.playing {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  overflow: hidden;
+  cursor: default;
+}
+.yt-preview.playing iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: 0;
+}
+.yt-preview.playing .yt-thumb-img,
+.yt-preview.playing .yt-play-btn,
+.yt-preview.playing .yt-nae-watermark {
+  display: none;
+}
+
 /* ── MARKDOWN (render de publicaciones) ──────────────────────────────────── */
 .md-p { margin: 0 0 8px; line-height: 1.7; }
 .md-p:last-child { margin-bottom: 0; }
