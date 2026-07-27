@@ -128,7 +128,7 @@ function renderPost(p, myId) {
             ${liveBadge}
           </div>
           <div class="feed-time">
-            ${tiempoRelativo(p.creado_en)}${esAdmin ? ' · <span class="cat-tag">📌 FIJO</span>' : ''}
+            ${tiempoRelativo(p.creado_en)}${esAdminPost ? ' · <span class="cat-tag">📌 FIJO</span>' : ''}
           </div>
         </div>
       </div>
