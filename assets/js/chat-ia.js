@@ -7,22 +7,15 @@
 
 import { escapeHtml } from './utils.js';
 import { supabase } from './supabase-client.js';
+import { SYSTEM_PROMPT } from './prompt.js';
 
 // ── ESTADO ──────────────────────────────────────────────────────────────────
 let chatHistory = [];
 let isLoading = false;
 let chatOpen = false;
 
-// ── PROMPT BASE (personalidad + reglas de Alessandra) ──────────────────────
-const PROMPT_BASE = `Eres Alessandra, asistente de matrícula y ventas de NAE (New Academy Excel). Tu ÚNICA función es dar información sobre los cursos, precios, planes y proceso de pago de esta plataforma. NO resuelves dudas técnicas de Excel, Power BI, DAX ni fórmulas — ni aunque insistan.
-
-REGLAS:
-1. Responde SIEMPRE en español, tono cercano y motivador.
-2. Tu función es EXCLUSIVAMENTE informar sobre cursos, planes, precios y proceso de matrícula.
-3. NUNCA resuelves dudas técnicas. Si insisten: "Esa parte la aprenderás dentro del curso 😊 ¿Te ayudo con la matrícula?"
-4. Máximo 100 palabras por respuesta. Sin introducciones largas.
-5. Los links como HTML clicable.
-6. Si el alumno duda del precio → reformulá el valor (acceso a TODOS los cursos) sin sonar agresivo.`;
+// ── PROMPT BASE (Importado desde prompt.js) ────────────────────────────────
+const PROMPT_BASE = SYSTEM_PROMPT;
 
 // ── BASE DE CONOCIMIENTO NAE (RAG) ─────────────────────────────────────────
 const KB = [
