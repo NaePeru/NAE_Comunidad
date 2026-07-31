@@ -17,78 +17,9 @@ let chatOpen = false;
 // ── PROMPT BASE (Importado desde prompt.js) ────────────────────────────────
 const PROMPT_BASE = SYSTEM_PROMPT;
 
-// ── BASE DE CONOCIMIENTO NAE (RAG) ─────────────────────────────────────────
-const KB = [
-  {
-    keys: ['curso','cursos','que cursos hay','que tienen','disponible','niveles','temario','excel','power bi','sql','tablas dinamicas','tablas dinámicas'],
-    content: `Cursos disponibles AHORA:
-📋 Tablas y Gráficos Dinámicos (GRATIS): acceso libre apenas te registras.
-
-PRÓXIMAMENTE (premium):
-📊 MS Excel (4 niveles: Básico, Intermedio, Avanzado, BI)
-⚡ Power BI (3 niveles: Transformación, Visualizaciones, DAX)
-
-Cuando se habiliten los cursos premium, se accederá a todos con un solo plan mensual.`
-  },
-  {
-    keys: ['gratis','prueba','gratuito','sin pagar','tablas dinamicas gratis','trial'],
-    content: `El curso de Tablas y Gráficos Dinámicos es TOTALMENTE GRATIS.
-Solo tenés que registrarte con tu email y ya podés empezar a aprender.`
-  },
-  {
-    keys: ['precio','costo','cuanto cuesta','cuanto es','plan','mensualidad','pagar','pago','suscripcion','tarifa','membresia'],
-    content: `Por ahora el curso de Tablas Dinámicas es 100% GRATIS.
-Cuando lancemos los cursos premium de Excel y Power BI, anunciaremos los precios.
-Para consultas anticipadas, escribinos al WhatsApp 974 688 863.`
-  },
-  {
-    keys: ['como pago','yape','plin','como pagar','transferencia','boucher','voucher','comprobante','como activo','matricula','matricularme'],
-    content: `Hoy todos los cursos disponibles son GRATIS, no necesitas pagar nada.
-Cuando lancemos los cursos premium (Excel y Power BI), el pago será por Yape/Plin al WhatsApp 974 688 863.`
-  },
-  {
-    keys: ['excel','power bi','premium','cuando','pronto','proximamente','cuando salen'],
-    content: `Los cursos de MS Excel y Power BI (premium) están en desarrollo.
-¡Muy pronto los tendremos disponibles! Mantente atento a los anuncios en la comunidad.`
-  },
-  {
-    keys: ['certificado','certificacion','diploma','constancia','analista de datos'],
-    content: `El certificado "Analista de Datos" se entregará cuando estén disponibles TODOS los cursos y el alumno los complete.
-Por ahora, solo está disponible el curso gratuito de Tablas Dinámicas.`
-  },
-  {
-    keys: ['whatsapp','contacto','profesor','asesor','duda','escribir','telefono','numero'],
-    content: `Para consultas personalizadas o soporte: WhatsApp 974 688 863.
-También podés escribir a solucionew@gmail.com.`
-  },
-  {
-    keys: ['seminario','webinar','sabado','en vivo','calendario','evento'],
-    content: `Cada sábado hay seminarios en vivo, alternando entre Excel y Power BI.
-Revisá la pestaña "Eventos" en la plataforma para ver las próximas fechas.`
-  },
-  {
-    keys: ['comunidad','foro','participar','puntos','nivel','ranking'],
-    content: `En NAE podés compartir avances, resolver dudas y ganar puntos.
-Ganás puntos cuando otros le dan like a tus aportes. Hay 8 niveles, desde Novato hasta Leyenda NAE.
-Mirá el ranking en la pestaña "Miembros".`
-  }
-];
-
-// ── RAG: busca contexto relevante según la pregunta ────────────────────────
-function ragContext(pregunta) {
-  const q = pregunta.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const matches = [];
-  for (const bloque of KB) {
-    const hit = bloque.keys.some(k => q.includes(k.normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
-    if (hit) matches.push(bloque.content);
-  }
-  if (matches.length === 0) return '';
-  return '\n\n════ CONTEXTO RELEVANTE ════\n' + matches.slice(0, 2).join('\n\n---\n');
-}
-
 // ── LLAMADA A POLLINATIONS (IA gratuita, sin API key) ──────────────────────
 async function llamarIA(pregunta) {
-  // 1. Buscar en la base de datos (RAG local) primero
+  // 1. Buscar en la base de datos (Admin -> Chatbot) primero
   try {
     const { data: faqs } = await supabase
       .from('chatbot_faqs')
@@ -118,8 +49,7 @@ async function llamarIA(pregunta) {
   }
 
   // 2. Si no hay match, intentar con la IA externa (Pollinations)
-  const contexto = ragContext(pregunta);
-  const systemPrompt = PROMPT_BASE + contexto;
+  const systemPrompt = PROMPT_BASE;
   const recentHistory = chatHistory.slice(-4);
 
   const messages = [
@@ -142,9 +72,9 @@ async function llamarIA(pregunta) {
     if (!response.ok) throw new Error('No se pudo conectar');
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || 'Lo siento, no entendí. ¿Podés reformular?';
+    return data.choices?.[0]?.message?.content || 'No pude procesar eso. Intentá de nuevo.';
   } catch (err) {
-    return 'No tengo información sobre eso todavía. Escribinos al WhatsApp 974 688 863 😊';
+    return 'No tengo información sobre eso todavía. Escribinos al WhatsApp 988502354 😊';
   }
 }
 
