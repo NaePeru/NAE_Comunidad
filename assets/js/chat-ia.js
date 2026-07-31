@@ -17,9 +17,8 @@ let chatOpen = false;
 // ── PROMPT BASE (Importado desde prompt.js) ────────────────────────────────
 const PROMPT_BASE = SYSTEM_PROMPT;
 
-// ── LLAMADA A POLLINATIONS (IA gratuita, sin API key) ──────────────────────
+// ── LLAMADA A OPENAI (Vía Edge Function de Supabase - Segura y Rápida) ─────
 async function llamarIA(pregunta) {
-  // Usar ÚNICAMENTE el prompt importado desde prompt.js
   const systemPrompt = PROMPT_BASE;
   const recentHistory = chatHistory.slice(-4);
 
@@ -30,22 +29,30 @@ async function llamarIA(pregunta) {
   ];
 
   try {
-    const response = await fetch('https://text.pollinations.ai/openai', {
+    // Obtener el token de sesión del usuario logueado
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('No hay sesión');
+
+    // Llamar a nuestra Edge Function en Supabase
+    const response = await fetch('https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/chat-ai', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'openai',
-        messages: messages,
-        temperature: 0.7,
-      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ messages }),
     });
 
-    if (!response.ok) throw new Error('No se pudo conectar');
+    if (!response.ok) throw new Error('Error en el servidor');
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || 'No pude procesar eso. Intentá de nuevo.';
+    
+    if (data.error) throw new Error(data.error);
+    
+    return data.reply || 'No pude procesar eso. Intentá de nuevo.';
   } catch (err) {
-    return 'No tengo información sobre eso. Escribinos al WhatsApp 988502354.';
+    console.error('Error IA:', err);
+    return 'Tengo un problema de conexión en este momento. Escribinos al WhatsApp 988502354.';
   }
 }
 
