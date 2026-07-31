@@ -319,9 +319,40 @@ async function likeComment(commentId) {
 // ── BORRAR POST ─────────────────────────────────────────────────────────────
 async function borrarPost(postId) {
   if (!confirm('¿Eliminar esta publicación? No se puede deshacer.')) return;
-  const { error } = await supabase.from('posts').delete().eq('id', postId);
-  if (error) { toast('⚠️ No se pudo eliminar'); return; }
-  toast('🗑️ Publicación eliminada');
+  
+  // 1. Borrar primero los likes de los comentarios asociados
+  // 2. Borrar los comentarios asociados
+  // 3. Borrar los likes del post
+  // 4. Finalmente, borrar el post
+  
+  try {
+    // Obtener IDs de comentarios del post
+    const { data: comments } = await supabase
+      .from('comments')
+      .select('id')
+      .eq('post_id', postId);
+    
+    // Borrar likes de esos comentarios (si hay comentarios)
+    if (comments && comments.length > 0) {
+      const commentIds = comments.map(c => c.id);
+      await supabase.from('comment_likes').delete().in('comment_id', commentIds);
+    }
+    
+    // Borrar comentarios del post
+    await supabase.from('comments').delete().eq('post_id', postId);
+    
+    // Borrar likes del post
+    await supabase.from('post_likes').delete().eq('post_id', postId);
+    
+    // Finalmente, borrar el post
+    const { error } = await supabase.from('posts').delete().eq('id', postId);
+    if (error) throw error;
+    
+    toast('🗑️ Publicación eliminada');
+  } catch (err) {
+    console.error('Error borrando post:', err);
+    toast('⚠️ No se pudo eliminar. Intentá de nuevo.');
+  }
 }
 
 // ── REALTIME ────────────────────────────────────────────────────────────────
