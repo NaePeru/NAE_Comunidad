@@ -5,10 +5,10 @@
 
 /* ── YOUTUBE PREVIEW (Miniatura clickeable) ───────────────────────────────── */
 .yt-preview {
-  position: relative;
-  width: 180px;
+  float: right; /* Flotar a la derecha del texto */
+  width: 130px; /* Tamaño más pequeño */
   max-width: 100%;
-  margin: 12px 0;
+  margin: 0 0 10px 16px; /* Espacio abajo y a la izquierda (para que el texto no se pegue) */
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -28,16 +28,25 @@
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 48px; height: 34px;
+  width: 40px; height: 28px; /* Botón de play más pequeño para coincidir */
   pointer-events: none;
   opacity: 0.9;
 }
 .yt-play-btn svg { width: 100%; height: 100%; }
 
+/* Clear floats inside feed-body so layout doesn't break */
+.feed-body::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
 /* Cuando se reproduce (iframe insertado) */
 .yt-preview.playing {
+  float: none; /* Dejar de flotar para que ocupe su espacio centrado */
   width: 100%;
-  max-width: 500px;
+  max-width: 400px;
+  margin: 12px auto; /* Centrado cuando se expande */
   cursor: default;
 }
 
@@ -91,10 +100,15 @@
 
 @media (max-width: 768px) {
   .yt-preview {
-    width: 140px;
+    width: 100px; /* Mucho más chica en celular */
+    margin: 0 0 8px 10px;
+  }
+  .yt-play-btn {
+    width: 32px; height: 22px;
   }
   .yt-preview.playing {
     max-width: 100%;
+    float: none;
   }
 }
 
