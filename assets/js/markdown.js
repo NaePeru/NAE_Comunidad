@@ -35,9 +35,6 @@ export function parseMarkdown(raw = '') {
 
   // Formato 2: https://youtu.be/VIDEO_ID
   text = text.replace(/(?:https?:\/\/)?(?:www\.)?youtu\.be\/([\w-]{11})(?:[^\s<]*)?/g, (match, videoId) => makeYtThumb(videoId));
-    ytEmbeds.push(embed);
-    return `__YT_EMBED_${ytEmbeds.length - 1}__`;
-  });
 
   // 2. Bloques de código ``` ... ``` (se procesan antes que todo)
   text = text.replace(/```([\s\S]*?)```/g, (_, code) =>
