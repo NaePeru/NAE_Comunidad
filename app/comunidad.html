@@ -155,15 +155,28 @@
         if (header) header.style.display = 'none';
       }
 
-      // Cargar feed + realtime
-      await cargarFeed();
-      iniciarRealtime();
+      // Cargar feed + realtime (con manejo de errores)
+      try {
+        await cargarFeed();
+      } catch (err) {
+        console.error('Error cargando feed:', err);
+        const list = document.getElementById('feed-list');
+        if (list) {
+          list.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">⚠️</div>
+              <p style="font-size:15px; color:var(--text); margin-bottom:8px;">No se pudo cargar la comunidad</p>
+              <p style="font-size:13px; color:var(--muted);">Tu sesión puede haber expirado. Probá recargar la página.</p>
+              <button onclick="location.reload()" class="btn btn-primary" style="margin-top:16px;">🔄 Recargar</button>
+            </div>`;
+        }
+      }
 
-      // Inicializar Presence (usuarios en línea)
-      initPresence();
+      try { iniciarRealtime(); } catch(e) { console.warn('Realtime no disponible:', e); }
+      try { initPresence(); } catch(e) { console.warn('Presence no disponible:', e); }
 
       // Cargar panel lateral derecho (solo si existe en PC)
-      cargarPanelComunidad();
+      try { cargarPanelComunidad(); } catch(e) { console.warn('Panel no disponible:', e); }
 
       // Refrescar navbar cuando cambian los puntos
       window.addEventListener('perfil-actualizado', () => {
