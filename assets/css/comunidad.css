@@ -6,10 +6,10 @@
 /* ── YOUTUBE PREVIEW (Miniatura clickeable) ───────────────────────────────── */
 .yt-preview {
   position: relative;
-  width: 100%;
+  width: 180px;
   max-width: 100%;
   margin: 12px 0;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
   border: 1px solid var(--border);
@@ -19,7 +19,7 @@
 .yt-thumb-img {
   width: 100%;
   display: block;
-  opacity: 0.9;
+  opacity: 0.85;
   transition: opacity 0.2s;
 }
 .yt-preview:hover .yt-thumb-img { opacity: 1; }
@@ -28,10 +28,32 @@
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 68px; height: 48px;
+  width: 48px; height: 34px;
   pointer-events: none;
+  opacity: 0.9;
 }
 .yt-play-btn svg { width: 100%; height: 100%; }
+
+/* Cuando se reproduce (iframe insertado) */
+.yt-preview.playing {
+  width: 100%;
+  max-width: 500px;
+  cursor: default;
+}
+
+.yt-player-wrap {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.yt-player-wrap iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: 0;
+}
 
 .yt-nae-watermark {
   position: absolute;
@@ -45,26 +67,35 @@
   color: #3B82F6;
   pointer-events: none;
   backdrop-filter: blur(4px);
+  z-index: 2;
 }
 
-/* Cuando se reproduce (iframe insertado) */
-.yt-preview.playing {
-  position: relative;
-  padding-bottom: 56.25%; /* 16:9 */
-  height: 0;
-  overflow: hidden;
-  cursor: default;
+.yt-close-btn {
+  display: block;
+  width: 100%;
+  background: var(--card2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
 }
-.yt-preview.playing iframe {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  border: 0;
+.yt-close-btn:hover {
+  background: var(--card);
+  color: var(--text);
 }
-.yt-preview.playing .yt-thumb-img,
-.yt-preview.playing .yt-play-btn,
-.yt-preview.playing .yt-nae-watermark {
-  display: none;
+
+@media (max-width: 768px) {
+  .yt-preview {
+    width: 140px;
+  }
+  .yt-preview.playing {
+    max-width: 100%;
+  }
 }
 
 /* ── MARKDOWN (render de publicaciones) ──────────────────────────────────── */

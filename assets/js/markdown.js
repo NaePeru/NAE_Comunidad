@@ -22,9 +22,8 @@ export function parseMarkdown(raw = '') {
     const thumb = `<div class="yt-preview" data-video-id="${videoId}" onclick="window.__playYt(this)">
       <img src="https://i.ytimg.com/vi/${videoId}/hqdefault.jpg" class="yt-thumb-img" alt="Video">
       <div class="yt-play-btn">
-        <svg width="68" height="48" viewBox="0 0 68 48"><path class="yt-play-bg" d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="#f00"></path><path d="M45 24 27 14v20" fill="#fff"></path></svg>
+        <svg width="48" height="34" viewBox="0 0 68 48"><path class="yt-play-bg" d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="#f00"></path><path d="M45 24 27 14v20" fill="#fff"></path></svg>
       </div>
-      <div class="yt-nae-watermark">◆ NAE</div>
     </div>`;
     ytEmbeds.push(thumb);
     return `__YT_EMBED_${ytEmbeds.length - 1}__`;
@@ -115,17 +114,42 @@ export function parseMarkdown(raw = '') {
   return html;
 }
 
-// ── FUNCIÓN GLOBAL: Expandir miniatura de YouTube al hacer click ────────────
+// ── FUNCIÓN GLOBAL: Expandir/Cerrar miniatura de YouTube ───────────────────
 window.__playYt = function(el) {
   const videoId = el.getAttribute('data-video-id');
   if (!videoId) return;
   
   // Reemplazar el contenido por el iframe (reproductor real)
   el.classList.add('playing');
+  el.onclick = null; // Evitar doble click
+  
   el.innerHTML = `
-    <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1" 
-      frameborder="0" 
-      allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
-      allowfullscreen></iframe>
+    <div class="yt-player-wrap">
+      <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen></iframe>
+      <div class="yt-nae-watermark">◆ NAE</div>
+    </div>
+    <button class="yt-close-btn" onclick="window.__closeYt(event, '${videoId}')">✕ Cerrar video</button>
+  `;
+};
+
+// ── FUNCIÓN GLOBAL: Cerrar video y volver a la miniatura ────────────────────
+window.__closeYt = function(event, videoId) {
+  event.stopPropagation();
+  const container = event.target.parentElement;
+  if (!container) return;
+  
+  // Restaurar la miniatura
+  container.classList.remove('playing');
+  container.setAttribute('data-video-id', videoId);
+  container.onclick = function() { window.__playYt(this); };
+  
+  container.innerHTML = `
+    <img src="https://i.ytimg.com/vi/${videoId}/hqdefault.jpg" class="yt-thumb-img" alt="Video">
+    <div class="yt-play-btn">
+      <svg width="48" height="34" viewBox="0 0 68 48"><path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="#f00"></path><path d="M45 24 27 14v20" fill="#fff"></path></svg>
+    </div>
   `;
 };
