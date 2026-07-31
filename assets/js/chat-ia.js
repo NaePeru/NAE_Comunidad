@@ -19,36 +19,7 @@ const PROMPT_BASE = SYSTEM_PROMPT;
 
 // ── LLAMADA A POLLINATIONS (IA gratuita, sin API key) ──────────────────────
 async function llamarIA(pregunta) {
-  // 1. Buscar en la base de datos (Admin -> Chatbot) primero
-  try {
-    const { data: faqs } = await supabase
-      .from('chatbot_faqs')
-      .select('respuesta, palabras_clave')
-      .eq('activo', true);
-
-    if (faqs && faqs.length > 0) {
-      const q = pregunta.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      let bestMatch = null;
-      let maxHits = 0;
-
-      for (const faq of faqs) {
-        const keys = faq.palabras_clave.toLowerCase().split(',').map(k => k.trim());
-        const hits = keys.filter(k => k.length > 2 && q.includes(k)).length;
-        if (hits > maxHits) {
-          maxHits = hits;
-          bestMatch = faq.respuesta;
-        }
-      }
-
-      if (bestMatch && maxHits > 0) {
-        return bestMatch; // Respuesta exacta encontrada en la base
-      }
-    }
-  } catch (e) {
-    console.error('Error leyendo FAQs:', e);
-  }
-
-  // 2. Si no hay match, intentar con la IA externa (Pollinations)
+  // Usar ÚNICAMENTE el prompt importado desde prompt.js
   const systemPrompt = PROMPT_BASE;
   const recentHistory = chatHistory.slice(-4);
 
@@ -74,7 +45,7 @@ async function llamarIA(pregunta) {
     const data = await response.json();
     return data.choices?.[0]?.message?.content || 'No pude procesar eso. Intentá de nuevo.';
   } catch (err) {
-    return 'No tengo información sobre eso todavía. Escribinos al WhatsApp 988502354 😊';
+    return 'No tengo información sobre eso. Escribinos al WhatsApp 988502354.';
   }
 }
 
