@@ -6,20 +6,23 @@
 /* ── YOUTUBE PREVIEW (Miniatura clickeable) ───────────────────────────────── */
 .yt-preview {
   float: right; /* Flotar a la derecha del texto */
-  width: 130px; /* Tamaño más pequeño */
+  width: 130px;
   max-width: 100%;
-  margin: 0 0 10px 16px; /* Espacio abajo y a la izquierda (para que el texto no se pegue) */
+  margin: 4px 0 10px 16px; /* Margen fino arriba/abajo, y separación a la izquierda */
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid var(--border);
-  background: #000;
+  /* El encuadre visual: */
+  border: 1px solid var(--border2); 
+  padding: 4px;
+  background: var(--card);
   display: block;
 }
 .yt-thumb-img {
   width: 100%;
   display: block;
   opacity: 0.85;
+  border-radius: 4px;
   transition: opacity 0.2s;
 }
 .yt-preview:hover .yt-thumb-img { opacity: 1; }

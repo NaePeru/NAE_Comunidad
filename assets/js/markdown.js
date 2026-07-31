@@ -105,9 +105,11 @@ export function parseMarkdown(raw = '') {
 
   // 5. Reemplazar placeholders de YouTube por los embeds reales
   ytEmbeds.forEach((embed, i) => {
-    // El placeholder puede estar dentro de un <p> (en una línea de párrafo)
-    // Lo reemplazamos y limpiamos etiquetas <p> vacías que puedan quedar
+    // Caso 1: El video estaba solo en el párrafo (ej: "<p>__EMBED__</p>")
     html = html.replace(new RegExp(`<p class="md-p">__YT_EMBED_${i}__</p>`, 'g'), embed);
+    
+    // Caso 2: El video estaba acompañado por texto (ej: "<p>Miren __EMBED__</p>")
+    // En este caso, dejamos el texto y el video (float right) juntos en el contenedor del párrafo
     html = html.replace(new RegExp(`__YT_EMBED_${i}__`, 'g'), embed);
   });
 
