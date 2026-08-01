@@ -134,17 +134,21 @@ async function abrirCurso(courseId) {
     return;
   }
 
-  // Verificar si es curso pago y el alumno no tiene acceso
+  // Verificar si es curso pago
   const esPago = course.requiere_pago;
-  const tieneMembresia = tieneAcceso();
-  
-  if (esPago && !tieneMembresia) {
-    // Verificar si ya lo compró individualmente
-    const yaCompro = await tieneCursoComprado(course.id);
-    if (!yaCompro) {
-      // Mostrar pantalla de pago (Módulo separado)
-      renderPantallaPago(course, 'curso-container');
-      return;
+
+  if (esPago) {
+    // Cursos PREMIUM: siempre requieren compra individual (S/50)
+    // Sin importar si tiene trial o membresía activa.
+    // Solo el Admin entra directo.
+    const { esAdmin } = await import('./auth.js');
+    if (!esAdmin()) {
+      const yaCompro = await tieneCursoComprado(course.id);
+      if (!yaCompro) {
+        // No lo compró → mostrar pantalla de pago
+        renderPantallaPago(course, 'curso-container');
+        return;
+      }
     }
   }
 
