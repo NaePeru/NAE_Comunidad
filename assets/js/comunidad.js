@@ -14,6 +14,7 @@ export const CATEGORIAS = [
   { id: 'general', label: 'General', emoji: '💬' },
   { id: 'excel',   label: 'MS Excel', emoji: '📊' },
   { id: 'powerbi', label: 'Power BI', emoji: '⚡' },
+  { id: 'ia',      label: 'IA', emoji: '🤖' },
 ];
 
 function catInfo(id) {
