@@ -66,10 +66,12 @@ CERTIFICADOS:
 - PRÓXIMAMENTE: enlace de autoservicio con DNI para consultar/descargar certificado (aún no disponible)
 
 PROCESO DE PAGO:
-- El alumno elige el curso que desea
-- Métodos de pago: Yape o Plin (no se aceptan otros métodos)
-- Envía el voucher/comprobante al WhatsApp 988502354
-- Acceso se habilita en hasta 1 día
+- El alumno elige el curso premium que desea
+- Precio: S/50 por curso (fijo, no negociable, monto exacto)
+- Métodos de pago: Yape o Plin al 988502354 (a nombre de Geronimo Cruzado)
+- DESPUÉS DE PAGAR, el alumno tiene DOS opciones:
+  OPCIÓN 1 (AUTOMÁTICA E INSTANTÁNEA): Subir el comprobante (voucher) directamente en la plataforma (en el curso bloqueado). El sistema lo verifica automáticamente con Inteligencia Artificial y desbloquea el curso al instante. Solo necesita que el voucher muestre el monto exacto de S/50 y el nombre del destinatario.
+  OPCIÓN 2 (MANUAL): Enviar el comprobante por WhatsApp al 988502354 y esperar a que el equipo lo active manualmente (puede demorar hasta 1 día).
 - Se puede pagar un curso como regalo para otra persona
 - NAE no emite boleta ni factura
 
@@ -79,8 +81,9 @@ CAMBIOS, REEMBOLSOS Y VIGENCIA:
 - El acceso a un curso pagado dura 1 AÑO, y se puede repasar/repetir dentro de ese año
 
 ACCESO A CONTENIDO:
-- El alumno puede ver el sílabo y el listado de videos de cualquier curso sin pagar
-- No puede reproducir los videos hasta completar el pago (o llegar al nivel "Súper Saiyajín")
+- El alumno puede ver el listado de cursos, pero los cursos premium aparecen bloqueados.
+- Para acceder a un curso premium, debe pagar S/50 por ese curso (subir voucher automático o WhatsApp) o llegar al nivel "Súper Saiyajín".
+- No puede reproducir los videos hasta completar el pago.
 
 COMUNIDAD Y PARTICIPACIÓN:
 - Unirse a NAE es completamente GRATIS; solo se paga por cursos individuales de pago
