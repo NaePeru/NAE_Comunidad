@@ -6,9 +6,9 @@
 /* ── YOUTUBE PREVIEW (Miniatura clickeable) ───────────────────────────────── */
 .yt-preview {
   flex-shrink: 0;
-  width: 130px;
+  width: 110px; /* Reducido a 110px */
   max-width: 100%;
-  margin: 4px 0 10px 0;
+  margin: 0 0 10px 0;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;

@@ -103,17 +103,15 @@ export function parseMarkdown(raw = '') {
   // Cursiva *
   html = html.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
 
-  // 5. Reemplazar placeholders de YouTube por los embeds reales
+  // 5. Reemplazar placeholders de YouTube por marcadores limpios
   ytEmbeds.forEach((embed, i) => {
-    // Caso 1: El video estaba solo en el párrafo (ej: "<p>__EMBED__</p>")
-    html = html.replace(new RegExp(`<p class="md-p">__YT_EMBED_${i}__</p>`, 'g'), embed);
-    
-    // Caso 2: El video estaba acompañado por texto (ej: "<p>Miren __EMBED__</p>")
-    // En este caso, dejamos el texto y el video (float right) juntos en el contenedor del párrafo
-    html = html.replace(new RegExp(`__YT_EMBED_${i}__`, 'g'), embed);
+    // En lugar de insertar el HTML complejo acá, dejamos un marcador simple.
+    // El render del post (comunidad.js) detectará este marcador y lo separará del texto.
+    html = html.replace(new RegExp(`<p class="md-p">__YT_EMBED_${i}__</p>`, 'g'), `<!--YT_EMBED_${i}-->`);
+    html = html.replace(new RegExp(`__YT_EMBED_${i}__`, 'g'), `<!--YT_EMBED_${i}-->`);
   });
 
-  return html;
+  return { html: html, embeds: ytEmbeds };
 }
 
 // ── FUNCIÓN GLOBAL: Expandir/Cerrar miniatura de YouTube ───────────────────

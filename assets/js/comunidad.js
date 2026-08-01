@@ -132,39 +132,45 @@ function renderPost(p, myId) {
           </div>
         </div>
       </div>
-      ${p.imagen_url ? `
-        <div style="display:flex; gap:14px; margin-bottom:12px;">
-          <img src="${p.imagen_url}" class="feed-image" alt="Imagen del post" onclick="window.__abrirImagen('${p.imagen_url}')" style="margin:0; flex-shrink:0;">
-          <div class="feed-body" style="flex:1; min-width:0; margin:0;">${parseMarkdown(p.contenido)}</div>
-        </div>
-      ` : (() => {
-        // Detectar si el contenido tiene un video de YouTube embebido
-        let contenidoHtml = parseMarkdown(p.contenido);
-        const tieneVideo = contenidoHtml.includes('class="yt-preview"');
+      ${(() => {
+        // Procesar el texto y extraer videos/imágenes
+        const resultado = parseMarkdown(p.contenido);
+        let textoHtml = resultado.html;
+        const embeds = resultado.embeds || [];
+        
+        let mediaHtml = '';
 
-        if (tieneVideo) {
-          // Si tiene video, lo separamos y lo ponemos a la derecha del texto (Flexbox)
-          // Extraemos el div del video
-          const videoMatch = contenidoHtml.match(/<div class="yt-preview"[\s\S]*?<\/div>(<\/div>)?/);
-          let videoHtml = '';
-          let textoHtml = contenidoHtml;
+        // 1. Extraer imagen subida (si existe)
+        if (p.imagen_url) {
+          mediaHtml += `<img src="${p.imagen_url}" class="feed-image" alt="Imagen" onclick="window.__abrirImagen('${p.imagen_url}')" style="margin:0; flex-shrink:0;">`;
+        }
 
-          if (videoMatch) {
-            videoHtml = videoMatch[0];
-            // Limpiar el video del texto (y párrafos vacíos que queden)
-            textoHtml = contenidoHtml.replace(videoMatch[0], '').replace(/<p class="md-p">\s*<\/p>/g, '').trim();
-          }
+        // 2. Extraer videos de YouTube (si existen en el texto)
+        if (embeds.length > 0) {
+          embeds.forEach((embed, i) => {
+            // Reemplazar el marcador en el texto por un espacio vacío
+            textoHtml = textoHtml.replace(`<!--YT_EMBED_${i}-->`, '');
+            // Agregar el video a la columna de medios
+            mediaHtml += embed;
+          });
+        }
 
+        // Limpiar párrafos vacíos que hayan quedado
+        textoHtml = textoHtml.replace(/<p class="md-p">\s*<\/p>/g, '').trim();
+
+        // 3. Renderizar layout
+        if (mediaHtml) {
+          // Si hay medios (video/imagen), ponerlos a la DERECHA y el texto a la IZQUIERDA
           return `
-            <div style="display:flex; gap:14px; margin-bottom:12px; align-items: flex-start;">
+            <div style="display:flex; flex-direction: row-reverse; gap:14px; margin-bottom:12px; align-items: flex-start;">
+              <div style="flex-shrink: 0;">${mediaHtml}</div>
               <div class="feed-body" style="flex:1; min-width:0; margin:0;">${textoHtml}</div>
-              ${videoHtml}
             </div>
           `;
         }
 
-        // Si no tiene video ni imagen, texto normal
-        return `<div class="feed-body">${contenidoHtml}</div>`;
+        // Si no hay medios, solo texto
+        return `<div class="feed-body">${textoHtml}</div>`;
       })()}
       <div class="feed-actions">
         <button class="feed-action ${likedByMe ? 'liked' : ''}" onclick="window.__like('${p.id}')">
@@ -286,7 +292,7 @@ async function cargarComentarios(postId) {
         ${avatarHtml}
         <div class="comment-body">
           <div class="comment-name">${escapeHtml(perfil.nombre)}</div>
-          <div class="comment-text">${parseMarkdown(c.contenido)}</div>
+          <div class="comment-text">${(parseMarkdown(c.contenido) || {}).html || ''}</div>
           <div class="comment-meta">
             <span class="comment-time">${tiempoRelativo(c.creado_en)}</span>
             <button class="comment-like ${liked ? 'liked' : ''}" onclick="window.__likeComment('${c.id}')">
