@@ -5,14 +5,13 @@
 
 /* ── YOUTUBE PREVIEW (Miniatura clickeable) ───────────────────────────────── */
 .yt-preview {
-  float: right; /* Flotar a la derecha del texto */
+  flex-shrink: 0;
   width: 130px;
   max-width: 100%;
-  margin: 4px 0 10px 16px; /* Margen fino arriba/abajo, y separación a la izquierda */
+  margin: 4px 0 10px 0;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  /* El encuadre visual: */
   border: 1px solid var(--border2); 
   padding: 4px;
   background: var(--card);

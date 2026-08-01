@@ -137,7 +137,35 @@ function renderPost(p, myId) {
           <img src="${p.imagen_url}" class="feed-image" alt="Imagen del post" onclick="window.__abrirImagen('${p.imagen_url}')" style="margin:0; flex-shrink:0;">
           <div class="feed-body" style="flex:1; min-width:0; margin:0;">${parseMarkdown(p.contenido)}</div>
         </div>
-      ` : `<div class="feed-body">${parseMarkdown(p.contenido)}</div>`}
+      ` : (() => {
+        // Detectar si el contenido tiene un video de YouTube embebido
+        let contenidoHtml = parseMarkdown(p.contenido);
+        const tieneVideo = contenidoHtml.includes('class="yt-preview"');
+
+        if (tieneVideo) {
+          // Si tiene video, lo separamos y lo ponemos a la derecha del texto (Flexbox)
+          // Extraemos el div del video
+          const videoMatch = contenidoHtml.match(/<div class="yt-preview"[\s\S]*?<\/div>(<\/div>)?/);
+          let videoHtml = '';
+          let textoHtml = contenidoHtml;
+
+          if (videoMatch) {
+            videoHtml = videoMatch[0];
+            // Limpiar el video del texto (y párrafos vacíos que queden)
+            textoHtml = contenidoHtml.replace(videoMatch[0], '').replace(/<p class="md-p">\s*<\/p>/g, '').trim();
+          }
+
+          return `
+            <div style="display:flex; gap:14px; margin-bottom:12px; align-items: flex-start;">
+              <div class="feed-body" style="flex:1; min-width:0; margin:0;">${textoHtml}</div>
+              ${videoHtml}
+            </div>
+          `;
+        }
+
+        // Si no tiene video ni imagen, texto normal
+        return `<div class="feed-body">${contenidoHtml}</div>`;
+      })()}
       <div class="feed-actions">
         <button class="feed-action ${likedByMe ? 'liked' : ''}" onclick="window.__like('${p.id}')">
           ${likedByMe ? '👍' : '👍🏻'} ${p.likes_count || 0}
