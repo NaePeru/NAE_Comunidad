@@ -7,6 +7,7 @@
 import { supabase } from './supabase-client.js';
 import { session, tieneAcceso } from './auth.js';
 import { escapeHtml, toast } from './utils.js';
+import { renderPantallaPago, tieneCursoComprado } from './pago-voucher.js';
 
 // Estado
 window.__coursesData = [];
@@ -133,8 +134,19 @@ async function abrirCurso(courseId) {
     return;
   }
 
-  const bloqueado = course.requiere_pago && !tieneAcceso();
-  if (bloqueado) { renderCursoBloqueado(course); return; }
+  // Verificar si es curso pago y el alumno no tiene acceso
+  const esPago = course.requiere_pago;
+  const tieneMembresia = tieneAcceso();
+  
+  if (esPago && !tieneMembresia) {
+    // Verificar si ya lo compró individualmente
+    const yaCompro = await tieneCursoComprado(course.id);
+    if (!yaCompro) {
+      // Mostrar pantalla de pago (Módulo separado)
+      renderPantallaPago(course, 'curso-container');
+      return;
+    }
+  }
 
   const { data: modules, error: errMod } = await supabase
     .from('modules').select('*').eq('course_id', courseId).order('orden', { ascending: true });
