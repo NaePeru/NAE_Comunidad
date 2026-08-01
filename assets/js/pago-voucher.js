@@ -219,22 +219,34 @@ function initVoucherFunctions() {
           </button>
         `;
       } else {
-        // No aprobado (monto < 50 o no detectado)
+        // No aprobado: armar mensaje claro con el motivo
+        let motivoError = '';
+        
+        if (!result.monto_valido && !result.nombre_valido) {
+          motivoError = `No se detectó un pago válido de S/${PRECIO_CURSO} a nombre de Geronimo Cruzado.`;
+        } else if (!result.monto_valido) {
+          motivoError = `El monto detectado es S/ ${result.monto}, pero el curso cuesta S/ ${PRECIO_CURSO}.`;
+        } else if (!result.nombre_valido) {
+          motivoError = `El pago no fue a nombre del beneficiario correcto.<br>
+          <span style="font-size:12px; color:var(--muted2);">Destinatario detectado: ${result.destinatario || 'No detectado'}</span>`;
+        } else {
+          motivoError = 'No se pudieron verificar los datos del comprobante.';
+        }
+
         status.innerHTML = `
           <div style="font-size:40px; margin-bottom:12px;">⚠️</div>
-          <div style="font-size:16px; font-weight:600; color:var(--text); margin-bottom:8px;">No se pudo verificar el pago</div>
-          <div style="font-size:13px; color:var(--muted); margin-bottom:8px;">
-            ${result.monto ? `Monto detectado: S/ ${result.monto}` : 'No se detectó un monto válido'}<br>
-            El curso cuesta S/ ${PRECIO_CURSO}.
+          <div style="font-size:16px; font-weight:600; color:var(--text); margin-bottom:8px;">Pago no verificado</div>
+          <div style="font-size:13px; color:var(--muted); margin-bottom:8px; line-height:1.6;">
+            ${motivoError}
           </div>
           <div style="font-size:12px; color:var(--muted2); margin-bottom:16px;">
-            Si el pago es correcto, escribinos por WhatsApp y lo activamos manualmente.
+            Si creés que es un error, escribinos por WhatsApp con tu comprobante.
           </div>
-          <a href="https://wa.me/51988502354" target="_blank" class="btn btn-ghost" style="width:100%; margin-bottom:8px;">
+          <a href="https://wa.me/51988502354" target="_blank" class="btn btn-primary" style="width:100%; margin-bottom:8px;">
             💬 Contactar por WhatsApp
           </a>
           <button class="btn btn-ghost" onclick="window.__quitarVoucher(); document.getElementById('voucher-status').style.display='none'; document.getElementById('voucher-upload-zone').style.display='block';" style="width:100%;">
-            Intentar con otra imagen
+            Subir otra imagen
           </button>
         `;
       }
