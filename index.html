@@ -349,8 +349,28 @@
       if (error) {
         errEl.textContent = error;
       } else {
-        toast('🎉 Cuenta creada. Redirigiendo...');
-        setTimeout(() => window.location.href = 'app/comunidad.html', 800);
+        // ¡ÉXITO! Mostrar pantalla clara en lugar de redirigir
+        const authCard = document.querySelector('.auth-card');
+        authCard.innerHTML = `
+          <div style="text-align:center; padding: 20px 0;">
+            <div style="font-size: 56px; margin-bottom: 16px;">⏳</div>
+            <h2 style="font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 12px;">¡Cuenta creada con éxito!</h2>
+            <p style="font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 24px;">
+              Tu solicitud de acceso fue enviada.<br>
+              El administrador revisará tu cuenta lo antes posible.<br><br>
+              <strong>Pronto podrás ingresar a la comunidad.</strong>
+            </p>
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+              <p style="font-size: 13px; color: var(--muted2);">¿Tienes alguna duda?</p>
+              <a href="https://wa.me/51988502354" target="_blank" class="btn btn-ghost btn-block" style="margin-top: 8px;">
+                💬 Escribir por WhatsApp
+              </a>
+            </div>
+            <button onclick="location.reload()" class="btn btn-ghost btn-block">
+              Volver al inicio
+            </button>
+          </div>
+        `;
       }
     });
   </script>
