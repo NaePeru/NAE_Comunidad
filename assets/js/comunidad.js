@@ -425,9 +425,35 @@ window.__toggleComentarios = toggleComentarios;
 window.__comentar = comentar;
 window.__borrarPost = borrarPost;
 window.__likeComment = likeComment;
-window.__abrirImagen = (url) => {
-  const w = window.open('', '_blank');
-  if (w) {
-    w.document.write(`<title>Imagen</title><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${url}" style="max-width:100%;max-height:100%;"></body>`);
+
+// ── VISOR MULTIMEDIA (Videos e Imágenes en popup) ──────────────────────────
+window.__closeViewer = () => {
+  const viewer = document.getElementById('media-viewer');
+  if (viewer) {
+    viewer.classList.remove('open');
+    document.getElementById('media-viewer-body').innerHTML = ''; // Detener video
   }
+};
+
+window.__openVideoViewer = (videoId) => {
+  const viewer = document.getElementById('media-viewer');
+  const body = document.getElementById('media-viewer-body');
+  if (!viewer || !body) return;
+  body.innerHTML = `
+    <div class="media-viewer-video">
+      <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen></iframe>
+    </div>
+  `;
+  viewer.classList.add('open');
+};
+
+window.__abrirImagen = (url) => {
+  const viewer = document.getElementById('media-viewer');
+  const body = document.getElementById('media-viewer-body');
+  if (!viewer || !body) return;
+  body.innerHTML = `<img src="${url}" class="media-viewer-image" alt="Imagen">`;
+  viewer.classList.add('open');
 };

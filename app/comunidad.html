@@ -120,6 +120,14 @@
   <!-- Tabbar móvil (lo rellena navbar.js) -->
   <div class="tabbar"></div>
 
+  <!-- Modal Visor Multimedia (Videos/Imágenes) -->
+  <div id="media-viewer" class="media-viewer-overlay" onclick="if(event.target.id==='media-viewer') window.__closeViewer()">
+    <div class="media-viewer-content">
+      <button class="media-viewer-close" onclick="window.__closeViewer()">✕</button>
+      <div id="media-viewer-body"></div>
+    </div>
+  </div>
+
   <!-- Librería de compresión de imágenes -->
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.min.js"></script>
 
