@@ -177,6 +177,22 @@ function initVoucherFunctions() {
 
       if (result.error) throw new Error(result.error);
 
+      // === NUEVO: Si el voucher ya fue usado (fraude) ===
+      if (result.ya_usado) {
+        status.innerHTML = `
+          <div style="font-size:40px; margin-bottom:12px;">🚫</div>
+          <div style="font-size:16px; font-weight:600; color:var(--red); margin-bottom:8px;">Comprobante ya utilizado</div>
+          <div style="font-size:13px; color:var(--muted); margin-bottom:16px; line-height:1.6;">
+            Este comprobante de pago ya fue registrado por otro alumno.<br>
+            Cada pago es válido para un solo curso.
+          </div>
+          <button class="btn btn-ghost" onclick="window.__quitarVoucher(); document.getElementById('voucher-status').style.display='none'; document.getElementById('voucher-upload-zone').style.display='block';" style="width:100%;">
+            Subir otro comprobante
+          </button>
+        `;
+        return;
+      }
+
       // 3. Si la IA aprobó (monto y nombre correctos)
       if (result.aprobado) {
         // El servidor ya le dio acceso automáticamente (course_access)
