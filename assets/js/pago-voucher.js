@@ -169,43 +169,18 @@ function initVoucherFunctions() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${sess.access_token}`,
         },
-        body: JSON.stringify({ voucherUrl }),
+        // Mandamos la URL de la foto Y el ID del curso al servidor
+        body: JSON.stringify({ voucherUrl, courseId }), 
       });
 
       const result = await response.json();
 
       if (result.error) throw new Error(result.error);
 
-      // 3. Guardar el registro de pago
-      statusText.textContent = 'Verificando monto...';
-
-      const { error: logErr } = await supabase.from('payment_logs').insert({
-        user_id: session.user.id,
-        course_id: courseId,
-        voucher_url: voucherUrl,
-        monto_detectado: parseFloat(result.monto) || 0,
-        fecha_detectada: result.fecha || null,
-        estado: result.aprobado ? 'aprobado' : 'pendiente',
-      });
-
-      // 4. Si la IA aprobó (monto >= 50)
+      // 3. Si la IA aprobó (monto y nombre correctos)
       if (result.aprobado) {
-        // Desbloquear el curso
-        const { error: accErr } = await supabase.from('course_access').insert({
-          user_id: session.user.id,
-          course_id: courseId,
-        });
-
-        // Actualizar el log a aprobado
-        if (!logErr) {
-          await supabase.from('payment_logs')
-            .update({ estado: 'aprobado' })
-            .eq('user_id', session.user.id)
-            .eq('course_id', courseId)
-            .order('creado_en', { ascending: false })
-            .limit(1);
-        }
-
+        // El servidor ya le dio acceso automáticamente (course_access)
+        
         // Mostrar éxito
         status.innerHTML = `
           <div style="font-size:48px; margin-bottom:12px;">🎉</div>
