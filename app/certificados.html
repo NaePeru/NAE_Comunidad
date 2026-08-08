@@ -58,7 +58,7 @@
     import { cargarPerfilCompleto, session } from '../assets/js/auth.js';
     import { renderNavbar } from '../assets/js/navbar.js';
     import { verificarAcceso } from '../assets/js/guard.js';
-    import { renderCertificados } from '../assets/js/certificados.js';
+    import { renderCertificados } from '../assets/js/certificados.js?v=20260808v2';
 
     // ── Verificar sesión ──
     const { data: { session: sess } } = await supabase.auth.getSession();
