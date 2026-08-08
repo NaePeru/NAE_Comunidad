@@ -409,42 +409,41 @@ export async function renderCertificados() {
 
     root.innerHTML = html;
 
-    // ── Eventos delegados ──
-    root.addEventListener('click', async (e) => {
-      const btnEmitir = e.target.closest('[data-emitir]');
-      const btnDescargar = e.target.closest('[data-descargar]');
-
-      if (btnEmitir) {
-        const tipo = btnEmitir.dataset.emitir;
-        btnEmitir.disabled = true;
-        btnEmitir.innerHTML = '<span class="spinner"></span> Emitiendo...';
+    // ── Eventos: asignar directamente a cada botón (más robusto que delegation) ──
+    root.querySelectorAll('[data-emitir]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const tipo = btn.dataset.emitir;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Emitiendo...';
         try {
           const cert = await emitirCertificado(tipo);
           toast('✅ ¡Certificado emitido!');
           // Re-render para mostrar el botón de descarga
           await renderCertificados();
-          // Auto-descargar
-          await generarPDFCertificado(cert);
+          // Auto-descargar el PDF recién emitido
+          if (cert) await generarPDFCertificado(cert);
         } catch (err) {
-          btnEmitir.disabled = false;
-          btnEmitir.innerHTML = 'Emitir certificado';
+          btn.disabled = false;
+          btn.innerHTML = 'Emitir certificado';
           toast('⚠️ ' + (err.message || 'No se pudo emitir'));
         }
-      }
+      });
+    });
 
-      if (btnDescargar) {
-        const tipo = btnDescargar.dataset.descargar;
+    root.querySelectorAll('[data-descargar]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const tipo = btn.dataset.descargar;
         const cert = emitidosMap[tipo];
-        if (cert) {
-          btnDescargar.innerHTML = '<span class="spinner"></span> Generando PDF...';
-          try {
-            await generarPDFCertificado(cert);
-          } catch (err) {
-            toast('⚠️ No se pudo generar el PDF');
-          }
-          btnDescargar.innerHTML = '⬇️ Descargar PDF';
+        if (!cert) return;
+        btn.innerHTML = '<span class="spinner"></span> Generando PDF...';
+        try {
+          await generarPDFCertificado(cert);
+          btn.innerHTML = '⬇️ Descargar PDF';
+        } catch (err) {
+          toast('⚠️ No se pudo generar el PDF');
+          btn.innerHTML = '⬇️ Descargar PDF';
         }
-      }
+      });
     });
 
     // ── Guardar DNI ──
