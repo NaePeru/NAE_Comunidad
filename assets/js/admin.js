@@ -305,6 +305,7 @@ export async function cargarPagosAdmin() {
     .from('payment_logs')
     .select(`
       id, voucher_url, monto_detectado, estado, creado_en,
+      numero_operacion, fecha_operacion,
       user_id, course_id,
       profiles:user_id (nombre),
       courses:course_id (titulo)
@@ -353,6 +354,12 @@ export async function cargarPagosAdmin() {
             S/ ${p.monto_detectado || 0} · 
             ${fecha}
           </div>
+          ${p.numero_operacion || p.fecha_operacion ? `
+          <div class="admin-course-meta" style="margin-top: 4px; font-size: 10.5px; color: var(--muted2);">
+            ${p.numero_operacion ? `Operación: <strong style="color:var(--gold);">${escapeHtml(p.numero_operacion)}</strong> · ` : ''}
+            ${p.fecha_operacion ? `Fecha Voucher: ${escapeHtml(p.fecha_operacion)}` : ''}
+          </div>
+          ` : ''}
         </div>
         <div class="admin-course-actions">
           <span class="badge-status ${estadoClass}">${estadoText}</span>
