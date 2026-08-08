@@ -292,6 +292,76 @@ async function borrarLeccion(id) {
 
 
 // (Sección Chatbot eliminada - Ahora se controla desde prompt.js)
+
+// ============================================================================
+// PAGOS — Listar comprobantes y calcular ingresos
+// ============================================================================
+export async function cargarPagosAdmin() {
+  const list = document.getElementById('admin-pagos-list');
+  if (!list) return;
+
+  // 1. Obtener todos los logs de pago
+  const { data: pagos, error } = await supabase
+    .from('payment_logs')
+    .select(`
+      id, voucher_url, monto_detectado, estado, creado_en,
+      user_id, course_id,
+      profiles:user_id (nombre),
+      courses:course_id (titulo)
+    `)
+    .order('creado_en', { ascending: false });
+
+  if (error) {
+    console.error('Error cargando pagos:', error);
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div>Error al cargar.</div>';
+    return;
+  }
+
+  // 2. Actualizar estadísticas
+  const aprobados = (pagos || []).filter(p => p.estado === 'aprobado');
+  const pendientes = (pagos || []).filter(p => p.estado !== 'aprobado');
+  const totalIngresos = aprobados.length * 50; // S/50 por curso
+
+  const elIng = document.getElementById('stats-ingresos');
+  const elVen = document.getElementById('stats-vendidos');
+  const elPen = document.getElementById('stats-pendientes');
+  
+  if (elIng) elIng.textContent = `S/ ${totalIngresos}`;
+  if (elVen) elVen.textContent = aprobados.length;
+  if (elPen) elPen.textContent = pendientes.length;
+
+  // 3. Renderizar la lista
+  if (!pagos || pagos.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">💳</div>Aún no hay comprobantes de pago.</div>';
+    return;
+  }
+
+  list.innerHTML = pagos.map(p => {
+    const nombreAlumno = p.profiles?.nombre || 'Desconocido';
+    const nombreCurso = p.courses?.titulo || 'Curso eliminado';
+    const fecha = new Date(p.creado_en).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const estadoClass = p.estado === 'aprobado' ? 'activa' : 'trial';
+    const estadoText = p.estado === 'aprobado' ? '✅ Aprobado' : '⏳ Pendiente';
+
+    return `
+      <div class="admin-course-row" style="align-items: center;">
+        <a href="${escapeHtml(p.voucher_url)}" target="_blank" class="admin-course-icon" style="background: var(--card2); cursor: pointer; text-decoration: none;" title="Ver comprobante">🖼️</a>
+        <div class="admin-course-info">
+          <div class="admin-course-title" style="color: #fff;">${escapeHtml(nombreAlumno)}</div>
+          <div class="admin-course-meta">
+            ${escapeHtml(nombreCurso)} · 
+            S/ ${p.monto_detectado || 0} · 
+            ${fecha}
+          </div>
+        </div>
+        <div class="admin-course-actions">
+          <span class="badge-status ${estadoClass}">${estadoText}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ============================================================================
 export async function cargarAlumnos() {
   const { data: profiles, error } = await supabase
     .from('profiles')
@@ -384,7 +454,7 @@ async function suspenderAlumno(uid) {
 // NAVEGACIÓN ENTRE SECCIONES
 // ============================================================================
 export function mostrarSeccion(seccion) {
-  ['dashboard', 'cursos', 'lecciones', 'alumnos', 'mailing'].forEach(s => {
+  ['dashboard', 'cursos', 'lecciones', 'alumnos', 'pagos', 'mailing'].forEach(s => {
     const el = document.getElementById('admin-section-' + s);
     if (el) el.classList.toggle('hidden', s !== seccion);
   });
@@ -395,6 +465,7 @@ export function mostrarSeccion(seccion) {
   if (seccion === 'dashboard') cargarDashboard();
   if (seccion === 'cursos') cargarCursosAdmin();
   if (seccion === 'alumnos') cargarAlumnos();
+  if (seccion === 'pagos') cargarPagosAdmin();
 }
 
 

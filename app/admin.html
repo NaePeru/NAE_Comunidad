@@ -28,6 +28,7 @@
           <button class="admin-tab active" data-tab="dashboard" onclick="window.__adminMostrar('dashboard')">📊 Dashboard</button>
           <button class="admin-tab" data-tab="cursos" onclick="window.__adminMostrar('cursos')">📚 Cursos</button>
           <button class="admin-tab" data-tab="alumnos" onclick="window.__adminMostrar('alumnos')">👥 Alumnos</button>
+          <button class="admin-tab" data-tab="pagos" onclick="window.__adminMostrar('pagos')">💳 Pagos</button>
           <button class="admin-tab" data-tab="mailing" onclick="window.__adminMostrar('mailing')">📧 Correos</button>
         </div>
 
@@ -96,6 +97,30 @@
             <button class="btn btn-primary btn-block" id="btn-send-mail" onclick="window.__enviarMailMasivo()">
               📧 Enviar a todos los alumnos
             </button>
+          </div>
+        </section>
+
+        <!-- SECCIÓN PAGOS -->
+        <section id="admin-section-pagos" class="hidden">
+          <div class="section-header" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+            <div class="section-title">Pagos y Comprobantes</div>
+            <div style="display:flex; gap: 20px; width: 100%; flex-wrap: wrap; background: var(--card); padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div>
+                <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">Ingresos (Aprobados)</div>
+                <div style="font-size: 24px; font-weight: 800; font-family: var(--font-display); color: var(--green);" id="stats-ingresos">S/ 0</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">Cursos Vendidos</div>
+                <div style="font-size: 24px; font-weight: 800; font-family: var(--font-display); color: var(--blue);" id="stats-vendidos">0</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">En Revisión</div>
+                <div style="font-size: 24px; font-weight: 800; font-family: var(--font-display); color: var(--gold);" id="stats-pendientes">0</div>
+              </div>
+            </div>
+          </div>
+          <div id="admin-pagos-list" style="margin-top: 20px;">
+            <div class="empty-state"><div class="empty-icon">⏳</div>Cargando pagos...</div>
           </div>
         </section>
 
