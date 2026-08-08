@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certificados — NAE</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/base.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/components.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/layout.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/gamificacion.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/certificados.css?v=20260808v1">
+
+  <style>
+    .cert-header {
+      text-align: center;
+      padding: 28px 20px 8px;
+    }
+    .cert-header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .cert-header p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <div class="container" style="max-width:860px;margin-top:16px;padding-bottom:60px;">
+
+      <!-- Encabezado -->
+      <div class="cert-header">
+        <h1>🎓 Mis Certificados</h1>
+        <p>Completa un módulo para obtener tu certificado oficial NAE</p>
+      </div>
+
+      <!-- Contenido dinámico -->
+      <div id="cert-root" style="margin-top:20px;"></div>
+
+    </div>
+
+  </div>
+
+  <!-- Tabbar móvil (lo rellena navbar.js) -->
+  <div class="tabbar"></div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, session } from '../assets/js/auth.js';
+    import { renderNavbar } from '../assets/js/navbar.js';
+    import { verificarAcceso } from '../assets/js/guard.js';
+    import { renderCertificados } from '../assets/js/certificados.js';
+
+    // ── Verificar sesión ──
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) {
+      window.location.href = '../index.html';
+    } else {
+      await cargarPerfilCompleto();
+      inicializar();
+    }
+
+    async function inicializar() {
+      renderNavbar('certificados');
+      if (!verificarAcceso()) return;
+      await renderCertificados();
+    }
+  </script>
+</body>
+</html>
