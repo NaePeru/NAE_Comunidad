@@ -106,7 +106,8 @@ begin
     v_titulo := 'Analista de Datos en Power BI';
   elsif p_tipo = 'completo' then
     v_slugs := array['excel-nivel-1','excel-nivel-2','excel-nivel-3','excel-nivel-4',
-                     'power-bi-nivel-1','power-bi-nivel-2','power-bi-nivel-3'];
+                     'power-bi-nivel-1','power-bi-nivel-2','power-bi-nivel-3',
+                     'sql-consultas'];
     v_titulo := 'Analista de Datos';
   else
     raise exception 'Tipo de certificado no válido';

@@ -29,10 +29,11 @@ const MODULOS = {
   },
   completo: {
     titulo: 'Analista de Datos',
-    descripcion: 'Completar ambos módulos: Excel (1-4) + Power BI (1-3)',
+    descripcion: 'Completar ambos módulos: Excel (1-4) + Power BI (1-3) + SQL (Consultas SQL)',
     slugs: [
       'excel-nivel-1', 'excel-nivel-2', 'excel-nivel-3', 'excel-nivel-4',
       'power-bi-nivel-1', 'power-bi-nivel-2', 'power-bi-nivel-3',
+      'sql-consultas',
     ],
     color: '#3B82F6',
     emoji: '🏆',
