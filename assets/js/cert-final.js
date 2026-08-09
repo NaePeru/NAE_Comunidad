@@ -181,7 +181,7 @@ async function cargarJsPDF() {
   throw new Error('No se pudo cargar el generador de PDF desde ningún CDN');
 }
 
-export async function generarPDFCertificado(cert) {
+export async function generarPDFCertificado(cert, esDemo = false) {
   await cargarJsPDF();
 
   const { jsPDF } = window.jspdf;
@@ -326,8 +326,24 @@ export async function generarPDFCertificado(cert) {
   doc.setFontSize(7);
   doc.text('Verifica la autenticidad en nae-comunidad.vercel.app/verificar.html', W / 2, 199, { align: 'center' });
 
+  // ── MARCA DE AGUA "MUESTRA" (solo si es demo) ──
+  if (esDemo) {
+    doc.saveGraphicsState();
+    doc.setTextColor(220, 220, 220);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(72);
+    // Texto diagonal centrado
+    doc.text('MUESTRA', W / 2, H / 2 + 15, { align: 'center', angle: 30 });
+    // Texto pequeño "SIN VALIDEZ OFICIAL"
+    doc.setTextColor(200, 200, 200);
+    doc.setFontSize(10);
+    doc.text('CERTIFICADO DE DEMOSTRACIÓN — SIN VALIDEZ OFICIAL', W / 2, H / 2 + 30, { align: 'center', angle: 30 });
+    doc.restoreGraphicsState();
+  }
+
   // ── DESCARGAR ──
-  const nombreArchivo = `Certificado_NAE_${(cert.tipo || '').toUpperCase()}_${(cert.nombre_emisor || 'alumno').replace(/\s+/g, '_')}.pdf`;
+  const sufijo = esDemo ? '_MUESTRA' : '';
+  const nombreArchivo = `Certificado_NAE_${(cert.tipo || '').toUpperCase()}_${(cert.nombre_emisor || 'alumno').replace(/\s+/g, '_')}${sufijo}.pdf`;
   doc.save(nombreArchivo);
 }
 
@@ -437,6 +453,9 @@ export async function renderCertificados() {
             <button class="btn btn-primary btn-block" onclick="window.__emitirCert('${key}', this)" style="margin-top:12px;">
               Emitir certificado
             </button>
+            <button class="btn btn-sm btn-ghost btn-block" onclick="window.__verDemo('${key}', this)" style="margin-top:6px;">
+              👁️ Ver demo
+            </button>
           ` : `
             <div class="cert-progress-wrap">
               <div class="cert-progress-info">
@@ -449,6 +468,9 @@ export async function renderCertificados() {
             </div>
             ${detalleCursosHtml}
             ${sinLecciones ? `<div style="font-size:11px;color:var(--muted2);margin-top:8px;">Aún no hay lecciones cargadas en este módulo.</div>` : ''}
+            <button class="btn btn-sm btn-ghost btn-block" onclick="window.__verDemo('${key}', this)" style="margin-top:8px;">
+              👁️ Ver demo
+            </button>
           `}
         </div>
       `;
@@ -506,6 +528,31 @@ window.__descargarCert = async function(tipo) {
   } catch (err) {
     toast('⚠️ ' + (err.message || 'No se pudo generar el PDF'));
   }
+};
+
+// Generar certificado de DEMOSTRACIÓN (con marca de agua "MUESTRA")
+window.__verDemo = async function(tipo, btn) {
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generando...'; }
+  // Crear objeto certificado ficticio con los datos del perfil actual
+  const p = session.profile;
+  const mod = MODULOS[tipo];
+  const certDemo = {
+    tipo: tipo,
+    titulo: mod.titulo,
+    codigo: 'NAE-DEMO-00000',
+    dni: p.dni || '--------',
+    nombre_emisor: p.nombre || 'Alumno Demo',
+    horas: 60,
+    modalidad: 'Virtual',
+    emitido_en: new Date().toISOString(),
+  };
+  toast('📄 Generando certificado de muestra...');
+  try {
+    await generarPDFCertificado(certDemo, true);
+  } catch (err) {
+    toast('⚠️ ' + (err.message || 'No se pudo generar el PDF'));
+  }
+  if (btn) { btn.disabled = false; btn.innerHTML = '👁️ Ver demo'; }
 };
 
 window.__guardarDni = async function(btn) {
