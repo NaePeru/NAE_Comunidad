@@ -146,9 +146,9 @@
     import { supabase } from '../assets/js/supabase-client.js';
     import { cargarPerfilCompleto, session } from '../assets/js/auth.js';
     import { toast } from '../assets/js/utils.js';
-    import { renderNavbar } from '../assets/js/navbar.js';
+    import { renderNavbar } from '../assets/js/navbar.js?v=20260809';
     import { verificarAcceso } from '../assets/js/guard.js';
-    import { cargarFeed, crearPost, filtrar, iniciarRealtime, getFiltroActual } from '../assets/js/comunidad.js';
+    import { cargarFeed, crearPost, filtrar, iniciarRealtime, getFiltroActual } from '../assets/js/comunidad.js?v=20260809';
 
     // ── Verificar sesión ──
     const { data: { session: sess } } = await supabase.auth.getSession();
@@ -365,7 +365,7 @@
       // Si hay imagen, subirla directamente como File
       if (imagenPendiente) {
         try {
-          const { subirImagenComunidad } = await import('../assets/js/storage.js');
+          const { subirImagenComunidad } = await import('../assets/js/storage.js?v=20260809');
           const { url, error: errSub } = await subirImagenComunidad(imagenPendiente);
           if (errSub) {
             toast('⚠️ Error al subir imagen: ' + errSub);
