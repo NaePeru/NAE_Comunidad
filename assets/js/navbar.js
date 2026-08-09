@@ -114,7 +114,8 @@ export function renderNavbar(activoId) {
         nav.classList.remove('hidden-nav');
       }
       lastScrollY = currentScrollY;
-  });
+    });
+  }
 
   // Inicializar Alessandra (chat IA flotante) — una sola vez
   if (!window.__chatInit) {
