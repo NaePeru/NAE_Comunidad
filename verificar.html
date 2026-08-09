@@ -197,9 +197,12 @@
 
         if (error) throw error;
 
-        if (data && data.codigo) {
+        // La RPC devuelve un array (tabla); tomar el primer elemento
+        const cert = Array.isArray(data) ? data[0] : data;
+
+        if (cert && cert.codigo) {
           // Certificado válido
-          const fechaStr = new Date(data.emitido_en).toLocaleDateString('es-PE', {
+          const fechaStr = new Date(cert.emitido_en).toLocaleDateString('es-PE', {
             day: '2-digit', month: 'long', year: 'numeric',
           });
 
@@ -211,23 +214,23 @@
             </div>
             <div class="verify-field">
               <span class="verify-field-label">Nombre</span>
-              <span class="verify-field-value">${data.nombre_emisor}</span>
+              <span class="verify-field-value">${cert.nombre_emisor}</span>
             </div>
             <div class="verify-field">
               <span class="verify-field-label">DNI</span>
-              <span class="verify-field-value">${data.dni || '—'}</span>
+              <span class="verify-field-value">${cert.dni || '—'}</span>
             </div>
             <div class="verify-field">
               <span class="verify-field-label">Programa</span>
-              <span class="verify-field-value">${data.titulo}</span>
+              <span class="verify-field-value">${cert.titulo}</span>
             </div>
             <div class="verify-field">
               <span class="verify-field-label">Horas</span>
-              <span class="verify-field-value">${data.horas} horas</span>
+              <span class="verify-field-value">${cert.horas} horas</span>
             </div>
             <div class="verify-field">
               <span class="verify-field-label">Modalidad</span>
-              <span class="verify-field-value">${data.modalidad}</span>
+              <span class="verify-field-value">${cert.modalidad}</span>
             </div>
             <div class="verify-field">
               <span class="verify-field-label">Fecha de emisión</span>
@@ -235,7 +238,7 @@
             </div>
             <div class="verify-field">
               <span class="verify-field-label">Código</span>
-              <span class="verify-field-value" style="font-family:var(--font-mono);">${data.codigo}</span>
+              <span class="verify-field-value" style="font-family:var(--font-mono);">${cert.codigo}</span>
             </div>
           `;
         } else {
