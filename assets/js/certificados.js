@@ -124,7 +124,7 @@ async function cargarCertificadosEmitidos() {
 
 // ── EMITIR CERTIFICADO (vía RPC server-side) ────────────────────────────────
 export async function emitirCertificado(tipo) {
-  const { data, error } = await supabase.rpc('emitir_certificado', { tipo });
+  const { data, error } = await supabase.rpc('emitir_certificado', { p_tipo: tipo });
   if (error) throw error;
   return data;
 }
@@ -338,7 +338,7 @@ export async function renderCertificados() {
               <input type="text" id="input-dni" maxlength="8" value="${escapeHtml(dniActual)}"
                 placeholder="12345678"
                 style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:var(--font-mono);font-size:13px;width:120px;color:var(--text);">
-              <button class="btn btn-sm btn-ghost" id="btn-guardar-dni">Guardar</button>
+              <button class="btn btn-sm btn-ghost" id="btn-guardar-dni" onclick="window.__guardarDni(this)">Guardar</button>
             </div>
           </div>
         </div>
@@ -371,12 +371,12 @@ export async function renderCertificados() {
               ✅ Certificado emitido
               <span style="font-family:var(--font-mono);font-size:10.5px;opacity:0.8;">${yaEmitido.codigo}</span>
             </div>
-            <button class="btn btn-primary btn-block" data-descargar="${key}" style="margin-top:12px;">
+            <button class="btn btn-primary btn-block" onclick="window.__descargarCert('${key}')" style="margin-top:12px;">
               ⬇️ Descargar PDF
             </button>
           ` : completo ? `
             <div class="cert-ready-badge">🎉 ¡Listo para emitir!</div>
-            <button class="btn btn-primary btn-block" data-emitir="${key}" style="margin-top:12px;">
+            <button class="btn btn-primary btn-block" onclick="window.__emitirCert('${key}', this)" style="margin-top:12px;">
               Emitir certificado
             </button>
           ` : `
@@ -409,68 +409,8 @@ export async function renderCertificados() {
 
     root.innerHTML = html;
 
-    // ── Eventos: asignar directamente a cada botón (más robusto que delegation) ──
-    root.querySelectorAll('[data-emitir]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const tipo = btn.dataset.emitir;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Emitiendo...';
-        try {
-          const cert = await emitirCertificado(tipo);
-          toast('✅ ¡Certificado emitido!');
-          // Re-render para mostrar el botón de descarga
-          await renderCertificados();
-          // Auto-descargar el PDF recién emitido
-          if (cert) await generarPDFCertificado(cert);
-        } catch (err) {
-          btn.disabled = false;
-          btn.innerHTML = 'Emitir certificado';
-          toast('⚠️ ' + (err.message || 'No se pudo emitir'));
-        }
-      });
-    });
-
-    root.querySelectorAll('[data-descargar]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const tipo = btn.dataset.descargar;
-        const cert = emitidosMap[tipo];
-        if (!cert) return;
-        btn.innerHTML = '<span class="spinner"></span> Generando PDF...';
-        try {
-          await generarPDFCertificado(cert);
-          btn.innerHTML = '⬇️ Descargar PDF';
-        } catch (err) {
-          toast('⚠️ No se pudo generar el PDF');
-          btn.innerHTML = '⬇️ Descargar PDF';
-        }
-      });
-    });
-
-    // ── Guardar DNI ──
-    const btnDni = document.getElementById('btn-guardar-dni');
-    if (btnDni) {
-      btnDni.addEventListener('click', async () => {
-        const dni = document.getElementById('input-dni').value.trim();
-        if (dni && !/^\d{8}$/.test(dni)) {
-          toast('⚠️ El DNI debe tener 8 dígitos');
-          return;
-        }
-        btnDni.disabled = true;
-        btnDni.textContent = 'Guardando...';
-        const { error } = await supabase
-          .from('profiles')
-          .update({ dni: dni || null })
-          .eq('id', session.user.id);
-        btnDni.disabled = false;
-        btnDni.textContent = 'Guardar';
-        if (error) {
-          toast('⚠️ No se pudo guardar el DNI');
-        } else {
-          session.profile.dni = dni || null;
-          toast('✅ DNI guardado');
-        }
-      });
-    }
+    // ── Guardar referencia para los handlers globales ──
+    window.__certEmitidosMap = emitidosMap;
 
   } catch (err) {
     console.error('Error cargando certificados:', err);
@@ -483,3 +423,52 @@ export async function renderCertificados() {
     `;
   }
 }
+
+// ── HANDLERS GLOBALES (onclick inline — a prueba de cache) ──────────────────
+window.__emitirCert = async function(tipo, btn) {
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Emitiendo...'; }
+  try {
+    const cert = await emitirCertificado(tipo);
+    toast('✅ ¡Certificado emitido!');
+    await renderCertificados();
+    if (cert) await generarPDFCertificado(cert);
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Emitir certificado'; }
+    toast('⚠️ ' + (err.message || 'No se pudo emitir'));
+  }
+};
+
+window.__descargarCert = async function(tipo) {
+  const cert = window.__certEmitidosMap?.[tipo];
+  if (!cert) { toast('⚠️ Certificado no encontrado'); return; }
+  toast('📄 Generando PDF...');
+  try {
+    await generarPDFCertificado(cert);
+  } catch (err) {
+    toast('⚠️ No se pudo generar el PDF');
+  }
+};
+
+window.__guardarDni = async function(btn) {
+  const input = document.getElementById('input-dni');
+  if (!input) return;
+  const dni = input.value.trim();
+  if (dni && !/^\d{8}$/.test(dni)) {
+    toast('⚠️ El DNI debe tener 8 dígitos');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  const { error } = await supabase
+    .from('profiles')
+    .update({ dni: dni || null })
+    .eq('id', session.user.id);
+  btn.disabled = false;
+  btn.textContent = 'Guardar';
+  if (error) {
+    toast('⚠️ No se pudo guardar el DNI');
+  } else {
+    session.profile.dni = dni || null;
+    toast('✅ DNI guardado');
+  }
+};

@@ -124,7 +124,7 @@ async function cargarCertificadosEmitidos() {
 
 // ── EMITIR CERTIFICADO (vía RPC server-side) ────────────────────────────────
 export async function emitirCertificado(tipo) {
-  const { data, error } = await supabase.rpc('emitir_certificado', { tipo });
+  const { data, error } = await supabase.rpc('emitir_certificado', { p_tipo: tipo });
   if (error) throw error;
   return data;
 }

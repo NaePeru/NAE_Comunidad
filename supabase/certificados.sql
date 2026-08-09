@@ -70,7 +70,7 @@ create policy "certificates_admin_all" on public.certificates
 -- lecciones del módulo y, si es así, inserta el certificado (o lo devuelve
 -- si ya existe). Usa la auth.uid() del solicitante.
 -- ----------------------------------------------------------------------------
-create or replace function public.emitir_certificado(tipo text)
+create or replace function public.emitir_certificado(p_tipo text)
 returns public.certificates
 language plpgsql
 security definer
@@ -98,13 +98,13 @@ begin
   end if;
 
   -- Slugs que componen cada módulo
-  if tipo = 'excel' then
+  if p_tipo = 'excel' then
     v_slugs := array['excel-intermedio','excel-avanzado','excel-bi'];
     v_titulo := 'Analista de Datos en Excel';
-  elsif tipo = 'powerbi' then
+  elsif p_tipo = 'powerbi' then
     v_slugs := array['power-bi-transformacion','power-bi-visualizaciones','power-bi-dax'];
     v_titulo := 'Analista de Datos en Power BI';
-  elsif tipo = 'completo' then
+  elsif p_tipo = 'completo' then
     v_slugs := array['excel-intermedio','excel-avanzado','excel-bi',
                      'power-bi-transformacion','power-bi-visualizaciones','power-bi-dax'];
     v_titulo := 'Analista de Datos';
@@ -114,7 +114,7 @@ begin
 
   -- Si ya existe un certificado de ese tipo, devolverlo sin recalcular
   select * into v_cert from public.certificates
-    where user_id = v_user and tipo = tipo limit 1;
+    where user_id = v_user and certificates.tipo = p_tipo limit 1;
   if found then
     return v_cert;
   end if;
@@ -141,13 +141,13 @@ begin
     raise exception 'Aún no completaste el módulo (% de % lecciones)', v_done, v_total;
   end if;
 
-  -- Generar código único: NAE-2024-XXXXX
+  -- Generar código único: NAE-2026-XXXXX
   v_codigo := 'NAE-' || extract(year from now())::text || '-' ||
               lpad(floor(random() * 100000)::text, 5, '0');
 
   -- Insertar el certificado
   insert into public.certificates (user_id, tipo, titulo, codigo, dni, nombre_emisor, horas, modalidad)
-  values (v_user, tipo, v_titulo, v_codigo, v_profile.dni, v_profile.nombre, 60, 'Virtual')
+  values (v_user, p_tipo, v_titulo, v_codigo, v_profile.dni, v_profile.nombre, 60, 'Virtual')
   returning * into v_cert;
 
   return v_cert;
