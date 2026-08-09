@@ -62,17 +62,18 @@ export async function cargarFeed() {
     return;
   }
 
-  // Mis likes (para saber cuáles ya di like)
-  const { data: misLikes } = await supabase
-    .from('post_likes')
-    .select('post_id')
-    .in('post_id', data.map(p => p.id));
-  const misLikesSet = new Set((misLikes || []).map(l => l.post_id));
+  // Paralelizar: cargar mis likes Y perfiles al mismo tiempo
+  const postIds = data.map(p => p.id);
+  const [misLikesRes] = await Promise.all([
+    supabase.from('post_likes').select('post_id').in('post_id', postIds),
+    cargarPerfiles(data.map(p => p.autor_id)),
+  ]);
+
+  const misLikesSet = new Set((misLikesRes.data || []).map(l => l.post_id));
   data.forEach(p => {
     p.likedByMe = misLikesSet.has(p.id);
   });
 
-  await cargarPerfiles(data.map(p => p.autor_id));
   cachePosts = data;
   renderFeed();
 }
@@ -143,7 +144,7 @@ function renderPost(p, myId) {
 
         // 1. Extraer imagen subida (si existe)
         if (p.imagen_url) {
-          mediaHtml += `<img src="${p.imagen_url}" class="feed-image" alt="Imagen" onclick="window.__abrirImagen('${p.imagen_url}')" style="margin:0; flex-shrink:0;">`;
+          mediaHtml += `<img src="${p.imagen_url}" class="feed-image" alt="Imagen" loading="lazy" decoding="async" onclick="window.__abrirImagen('${p.imagen_url}')" style="margin:0; flex-shrink:0;">`;
         }
 
         // 2. Extraer videos de YouTube (si existen en el texto)
@@ -285,7 +286,7 @@ async function cargarComentarios(postId) {
     const perfil = cachePerfiles[c.autor_id] || { nombre: 'Alumno', color: null };
     const [c1, c2] = perfil.color || colorAvatar(perfil.nombre);
     const avatarHtml = perfil.avatar_url
-      ? `<img src="${perfil.avatar_url}" class="comment-avatar" style="object-fit:cover;" alt="${escapeHtml(perfil.nombre)}" onerror="this.style.display='none';">`
+      ? `<img src="${perfil.avatar_url}" class="comment-avatar" loading="lazy" decoding="async" style="object-fit:cover;" alt="${escapeHtml(perfil.nombre)}" onerror="this.style.display='none';">`
       : `<div class="comment-avatar" style="background:${c1};color:${c2};">${escapeHtml(iniciales(perfil.nombre))}</div>`;
     const liked = misSet.has(c.id);
     return `
@@ -366,23 +367,22 @@ async function borrarPost(postId) {
       .from('comments')
       .select('id')
       .eq('post_id', postId);
-    
-    // Borrar likes de esos comentarios (si hay comentarios)
+
+    // Paralelizar borrado de dependencias (likes de comentarios, comentarios, likes del post)
+    const deletes = [
+      supabase.from('post_likes').delete().eq('post_id', postId),
+      supabase.from('comments').delete().eq('post_id', postId),
+    ];
     if (comments && comments.length > 0) {
       const commentIds = comments.map(c => c.id);
-      await supabase.from('comment_likes').delete().in('comment_id', commentIds);
+      deletes.push(supabase.from('comment_likes').delete().in('comment_id', commentIds));
     }
-    
-    // Borrar comentarios del post
-    await supabase.from('comments').delete().eq('post_id', postId);
-    
-    // Borrar likes del post
-    await supabase.from('post_likes').delete().eq('post_id', postId);
-    
+    await Promise.all(deletes);
+
     // Finalmente, borrar el post
     const { error } = await supabase.from('posts').delete().eq('id', postId);
     if (error) throw error;
-    
+
     toast('🗑️ Publicación eliminada');
   } catch (err) {
     console.error('Error borrando post:', err);
@@ -397,18 +397,44 @@ export function iniciarRealtime() {
     .channel('feed-publico')
     .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'posts' },
-      (payload) => {
+      async (payload) => {
         if (payload.new.autor_id !== session.user?.id) {
           toast('💬 Nueva publicación en la comunidad');
-          cargarFeed();
+          // Agregar solo el post nuevo en vez de recargar todo el feed
+          await agregarPostRealtime(payload.new);
         }
       }
     )
     .on('postgres_changes',
       { event: 'DELETE', schema: 'public', table: 'posts' },
-      () => cargarFeed()
+      (payload) => {
+        // Solo remover el post borrado del cache, sin recargar todo
+        const deletedId = payload?.old?.id;
+        if (deletedId) {
+          cachePosts = cachePosts.filter(p => p.id !== deletedId);
+          renderFeed();
+        } else {
+          cargarFeed();
+        }
+      }
     )
     .subscribe();
+}
+
+// Agregar un solo post nuevo al cache (sin recargar todo el feed)
+async function agregarPostRealtime(postNuevo) {
+  // Evitar duplicados
+  if (cachePosts.some(p => p.id === postNuevo.id)) return;
+
+  // Cargar el perfil del autor del post nuevo
+  await cargarPerfiles([postNuevo.autor_id]);
+
+  // Agregar al inicio del cache
+  postNuevo.likedByMe = false;
+  cachePosts.unshift(postNuevo);
+  if (cachePosts.length > 50) cachePosts = cachePosts.slice(0, 50);
+
+  renderFeed();
 }
 
 // ── FILTRAR ─────────────────────────────────────────────────────────────────

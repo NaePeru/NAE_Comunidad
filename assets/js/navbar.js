@@ -100,18 +100,20 @@ export function renderNavbar(activoId) {
   // Insertar la navbar al principio del body
   document.body.insertBefore(navbar, document.body.firstChild);
 
-  // Lógica para ocultar navbar al hacer scroll hacia abajo
-  let lastScrollY = window.scrollY;
-  window.addEventListener('scroll', () => {
-    const currentScrollY = window.scrollY;
-    if (currentScrollY > lastScrollY && currentScrollY > 150) {
-      // Scrolleando hacia abajo: ocultar
-      navbar.classList.add('hidden-nav');
-    } else {
-      // Scrolleando hacia arriba: mostrar
-      navbar.classList.remove('hidden-nav');
-    }
-    lastScrollY = currentScrollY;
+  // Lógica para ocultar navbar al hacer scroll hacia abajo (solo una vez)
+  if (!window.__navScrollInit) {
+    window.__navScrollInit = true;
+    let lastScrollY = window.scrollY;
+    window.addEventListener('scroll', () => {
+      const currentScrollY = window.scrollY;
+      const nav = document.querySelector('.navbar');
+      if (!nav) return;
+      if (currentScrollY > lastScrollY && currentScrollY > 150) {
+        nav.classList.add('hidden-nav');
+      } else {
+        nav.classList.remove('hidden-nav');
+      }
+      lastScrollY = currentScrollY;
   });
 
   // Inicializar Alessandra (chat IA flotante) — una sola vez

@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="../assets/img/icon-192.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="../assets/css/base.css?v=20240710v1">
   <link rel="stylesheet" href="../assets/css/components.css?v=20240710v1">
@@ -128,8 +128,19 @@
     </div>
   </div>
 
-  <!-- Librería de compresión de imágenes -->
-  <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.min.js"></script>
+  <!-- Librería de compresión de imágenes (carga diferida: solo cuando se necesita) -->
+  <script>
+    window.__loadImageCompression = function() {
+      if (window.imageCompression) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.min.js';
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    };
+  </script>
 
   <script type="module">
     import { supabase } from '../assets/js/supabase-client.js';
@@ -280,6 +291,8 @@
       if (btnImg) btnImg.innerHTML = '⏳';
 
       try {
+        // Cargar librería de compresión bajo demanda (no bloquea el render inicial)
+        await window.__loadImageCompression();
         // COMPRIMIR con la librería profesional (vía window porque estamos en un módulo ES)
         const compressedFile = await window.imageCompression(file, {
           maxSizeMB: 0.5,            // Máximo 500 KB

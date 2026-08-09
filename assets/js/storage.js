@@ -84,6 +84,7 @@ export function renderAvatar(perfil, sizeClass = 'avatar-md') {
 
   if (perfil?.avatar_url) {
     return `<img src="${perfil.avatar_url}" class="avatar ${sizeClass}" alt="${nombre}"
+              loading="lazy" decoding="async"
               style="object-fit:cover;"
               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <div class="avatar ${sizeClass}" style="display:none;background:${c1};color:${c2};">${ini}</div>`;
@@ -99,6 +100,7 @@ export function renderAvatarFeed(perfil) {
 
   if (perfil?.avatar_url) {
     return `<img src="${perfil.avatar_url}" class="feed-avatar" alt="${nombre}"
+              loading="lazy" decoding="async"
               style="object-fit:cover;"
               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <div class="feed-avatar" style="display:none;background:${c1};color:${c2};">${ini}</div>`;
