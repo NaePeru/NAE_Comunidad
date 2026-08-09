@@ -178,6 +178,44 @@ revoke all on function public.mis_certificados() from public;
 grant execute on function public.mis_certificados() to authenticated;
 
 
+-- ----------------------------------------------------------------------------
+-- 6. FUNCIÓN RPC — Verificación PÚBLICA de certificados (sin auth)
+-- ----------------------------------------------------------------------------
+-- Cualquier persona con el código puede verificar la autenticidad.
+-- Devuelve datos limitados (sin user_id interno).
+-- ----------------------------------------------------------------------------
+create or replace function public.verificar_certificado(p_codigo text)
+returns table (
+  codigo        text,
+  titulo        text,
+  nombre_emisor text,
+  dni           text,
+  horas         integer,
+  modalidad     text,
+  emitido_en    timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    c.codigo,
+    c.titulo,
+    c.nombre_emisor,
+    c.dni,
+    c.horas,
+    c.modalidad,
+    c.emitido_en
+  from public.certificates c
+  where upper(c.codigo) = upper(p_codigo)
+  limit 1;
+$$;
+
+-- Esta función es PÚBLICA: cualquiera (incluso anon) puede llamarla
+revoke all on function public.verificar_certificado(text) from public;
+grant execute on function public.verificar_certificado(text) to anon, authenticated;
+
+
 -- ============================================================================
 -- FIN — certificados.sql
 -- ============================================================================

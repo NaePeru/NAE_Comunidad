@@ -1,9 +1,10 @@
 // ============================================================================
-// PROYECTO Z — certificados.js
-// Sistema de certificados NAE:
-//   - Calcula progreso por módulo (Excel / Power BI / Completo)
+// PROYECTO Z — cert-final.js
+// Sistema de certificados NAE (versión estable):
+//   - Calcula progreso por módulo Y por curso individual
 //   - Emite certificados vía RPC `emitir_certificado` (server-side verification)
-//   - Genera PDF descargable con jsPDF
+//   - Genera PDF descargable con jsPDF (con fallback de CDN)
+//   - Página de verificación pública vía `verificar_certificado` RPC
 // ============================================================================
 
 import { supabase } from './supabase-client.js';
@@ -11,7 +12,7 @@ import { session } from './auth.js';
 import { toast, escapeHtml } from './utils.js';
 
 // ── DEFINICIÓN DE MÓDULOS Y SLUGS ──────────────────────────────────────────
-// Deben coincidir con los slugs reales en la BD
+// Deben coincidir con los slugs reales en la BD y con la función SQL emitir_certificado
 const MODULOS = {
   excel: {
     titulo: 'Analista de Datos en Excel',
@@ -40,27 +41,38 @@ const MODULOS = {
   },
 };
 
-// ── CARGAR PROGRESO POR MÓDULO ──────────────────────────────────────────────
-// Devuelve { [moduloKey]: { total, done, pct, slugs } }
+// ── CARGAR PROGRESO POR MÓDULO (con detalle por curso) ─────────────────────
+// Devuelve { [moduloKey]: { total, done, pct, cursos: [{titulo, done, total, pct}] } }
 async function cargarProgresoModulos() {
   const userId = session.user.id;
 
-  // Traer todos los slugs involucrados
-  const todosSlugs = [
+  // Traer todos los slugs de los módulos Excel y Power BI
+  // (el módulo "completo" es la unión de ambos + SQL)
+  const todosSlugs = [...new Set([
     ...MODULOS.excel.slugs,
     ...MODULOS.powerbi.slugs,
-  ];
+    ...MODULOS.completo.slugs,
+  ])];
 
-  // 1. Cursos del módulo
+  // 1. Cursos del módulo (guard anti-vacío)
   const { data: cursos, error: errCursos } = await supabase
     .from('courses')
     .select('id, slug, titulo')
     .in('slug', todosSlugs);
 
   if (errCursos) throw errCursos;
-  const cursoIds = (cursos || []).map(c => c.id);
+  if (!cursos || cursos.length === 0) {
+    // No hay cursos cargados — devolver módulos vacíos
+    const vacio = {};
+    for (const [key, mod] of Object.entries(MODULOS)) {
+      vacio[key] = { ...mod, total: 0, done: 0, pct: 0, cursos: [] };
+    }
+    return vacio;
+  }
 
-  // 2. Total de lecciones por curso
+  const cursoIds = cursos.map(c => c.id);
+
+  // 2. Total de lecciones por curso (guard anti-vacío)
   const { data: lecciones, error: errLecc } = await supabase
     .from('lessons')
     .select('id, course_id')
@@ -75,7 +87,7 @@ async function cargarProgresoModulos() {
   });
   const leccionIds = (lecciones || []).map(l => l.id);
 
-  // 3. Lecciones completadas por el usuario
+  // 3. Lecciones completadas por el usuario (guard anti-vacío)
   let doneSet = new Set();
   if (leccionIds.length > 0) {
     const { data: progreso, error: errProg } = await supabase
@@ -97,20 +109,33 @@ async function cargarProgresoModulos() {
     }
   });
 
-  // 4. Calcular por módulo
+  // 4. Calcular por módulo (con detalle por curso)
   const resultado = {};
   for (const [key, mod] of Object.entries(MODULOS)) {
-    const cursosMod = (cursos || []).filter(c => mod.slugs.includes(c.slug));
+    const cursosMod = cursos.filter(c => mod.slugs.includes(c.slug));
     let total = 0, done = 0;
+    const cursosDetalle = [];
+
     cursosMod.forEach(c => {
-      total += totalPorCurso[c.id] || 0;
-      done += donePorCurso[c.id] || 0;
+      const cTotal = totalPorCurso[c.id] || 0;
+      const cDone = donePorCurso[c.id] || 0;
+      total += cTotal;
+      done += cDone;
+      cursosDetalle.push({
+        titulo: c.titulo,
+        slug: c.slug,
+        done: cDone,
+        total: cTotal,
+        pct: cTotal > 0 ? Math.round((cDone / cTotal) * 100) : 0,
+      });
     });
+
     resultado[key] = {
       ...mod,
       total,
       done,
       pct: total > 0 ? Math.round((done / total) * 100) : 0,
+      cursos: cursosDetalle,
     };
   }
   return resultado;
@@ -131,18 +156,33 @@ export async function emitirCertificado(tipo) {
 }
 
 // ── GENERAR PDF DEL CERTIFICADO ─────────────────────────────────────────────
-// Usa jsPDF (cargado dinámicamente desde CDN)
-export async function generarPDFCertificado(cert) {
-  // Cargar jsPDF bajo demanda
-  if (!window.jspdf) {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
-      s.onload = resolve;
-      s.onerror = () => reject(new Error('No se pudo cargar el generador de PDF'));
-      document.head.appendChild(s);
-    });
+// Usa jsPDF (cargado dinámicamente desde CDN, con fallback a mirror)
+const JSPDF_URLS = [
+  'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+  'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js',
+];
+
+async function cargarJsPDF() {
+  if (window.jspdf) return;
+  for (const url of JSPDF_URLS) {
+    try {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('CDN falló: ' + url));
+        document.head.appendChild(s);
+      });
+      return; // éxito
+    } catch (e) {
+      console.warn(url, 'falló, probando siguiente CDN...');
+    }
   }
+  throw new Error('No se pudo cargar el generador de PDF desde ningún CDN');
+}
+
+export async function generarPDFCertificado(cert) {
+  await cargarJsPDF();
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -155,7 +195,7 @@ export async function generarPDFCertificado(cert) {
   doc.rect(0, 0, W, H, 'F');
 
   // ── BORDE EXTERIOR (azul tenue) ──
-  doc.setDrawColor(70, 110, 180);     // azul bajito
+  doc.setDrawColor(70, 110, 180);
   doc.setLineWidth(2);
   doc.rect(8, 8, W - 16, H - 16);
 
@@ -266,15 +306,12 @@ export async function generarPDFCertificado(cert) {
 
   doc.setTextColor(40, 40, 40);
   firmas.forEach(f => {
-    // Línea de firma
     doc.setDrawColor(70, 70, 70);
     doc.setLineWidth(0.5);
     doc.line(f.x - 45, 175, f.x + 45, 175);
-    // Nombre
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.text(f.nombre, f.x, 170, { align: 'center' });
-    // Cargo
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(110, 110, 110);
@@ -287,7 +324,7 @@ export async function generarPDFCertificado(cert) {
   doc.setTextColor(150, 150, 150);
   doc.text(`Código de verificación: ${cert.codigo}`, W / 2, 195, { align: 'center' });
   doc.setFontSize(7);
-  doc.text('Verifica la autenticidad en nae-comunidad.vercel.app', W / 2, 199, { align: 'center' });
+  doc.text('Verifica la autenticidad en nae-comunidad.vercel.app/verificar.html', W / 2, 199, { align: 'center' });
 
   // ── DESCARGAR ──
   const nombreArchivo = `Certificado_NAE_${(cert.tipo || '').toUpperCase()}_${(cert.nombre_emisor || 'alumno').replace(/\s+/g, '_')}.pdf`;
@@ -357,6 +394,25 @@ export async function renderCertificados() {
       const completo = prog.pct >= 100 && prog.total > 0;
       const sinLecciones = prog.total === 0;
 
+      // ── Detalle por curso (solo si no está emitido y tiene cursos) ──
+      let detalleCursosHtml = '';
+      if (!yaEmitido && prog.cursos && prog.cursos.length > 0) {
+        detalleCursosHtml = `
+          <div class="cert-cursos-list">
+            ${prog.cursos.map(c => {
+              const icono = c.pct >= 100 ? '✅' : c.pct > 0 ? '⏳' : '⚪';
+              return `
+                <div class="cert-curso-item">
+                  <span class="cert-curso-icono">${icono}</span>
+                  <span class="cert-curso-nombre">${escapeHtml(c.titulo)}</span>
+                  <span class="cert-curso-pct">${c.done}/${c.total}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+
       html += `
         <div class="cert-card ${yaEmitido ? 'cert-card-emitido' : ''}" style="--accent:${mod.color};">
           <div class="cert-card-head">
@@ -377,6 +433,7 @@ export async function renderCertificados() {
             </button>
           ` : completo ? `
             <div class="cert-ready-badge">🎉 ¡Listo para emitir!</div>
+            ${detalleCursosHtml}
             <button class="btn btn-primary btn-block" onclick="window.__emitirCert('${key}', this)" style="margin-top:12px;">
               Emitir certificado
             </button>
@@ -389,8 +446,9 @@ export async function renderCertificados() {
               <div class="progress-wrap" style="margin-top:6px;">
                 <div class="progress-bar" style="width:${prog.pct}%;background:${mod.color};"></div>
               </div>
-              ${sinLecciones ? `<div style="font-size:11px;color:var(--muted2);margin-top:8px;">Aún no hay lecciones cargadas en este módulo.</div>` : ''}
             </div>
+            ${detalleCursosHtml}
+            ${sinLecciones ? `<div style="font-size:11px;color:var(--muted2);margin-top:8px;">Aún no hay lecciones cargadas en este módulo.</div>` : ''}
           `}
         </div>
       `;
@@ -403,7 +461,7 @@ export async function renderCertificados() {
       <div class="card" style="margin-top:24px;font-size:12.5px;color:var(--muted);line-height:1.6;">
         <strong style="color:var(--text);">¿Cómo obtengo un certificado?</strong><br>
         Los certificados se otorgan al completar el <strong>100% de las lecciones</strong> de un módulo.
-        El certificado <strong>"Analista de Datos"</strong> requiere completar ambos módulos (Excel + Power BI).
+        El certificado <strong>"Analista de Datos"</strong> requiere completar ambos módulos (Excel + Power BI) + SQL.
         Cada certificado tiene un código único de verificación.
       </div>
     `;
@@ -446,7 +504,7 @@ window.__descargarCert = async function(tipo) {
   try {
     await generarPDFCertificado(cert);
   } catch (err) {
-    toast('⚠️ No se pudo generar el PDF');
+    toast('⚠️ ' + (err.message || 'No se pudo generar el PDF'));
   }
 };
 
