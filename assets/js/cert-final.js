@@ -11,28 +11,28 @@ import { session } from './auth.js';
 import { toast, escapeHtml } from './utils.js';
 
 // ── DEFINICIÓN DE MÓDULOS Y SLUGS ──────────────────────────────────────────
-// Deben coincidir con los slugs reales en la BD (cursos-skool.sql)
+// Deben coincidir con los slugs reales en la BD
 const MODULOS = {
   excel: {
     titulo: 'Analista de Datos en Excel',
-    descripcion: 'Por completar todos los cursos del Módulo Excel',
-    slugs: ['excel-intermedio', 'excel-avanzado', 'excel-bi'],
+    descripcion: 'Completar: Excel Nivel 1, 2, 3 y 4 (Análisis de Datos)',
+    slugs: ['excel-nivel-1', 'excel-nivel-2', 'excel-nivel-3', 'excel-nivel-4'],
     color: '#217346',
     emoji: '📗',
   },
   powerbi: {
     titulo: 'Analista de Datos en Power BI',
-    descripcion: 'Por completar todos los cursos del Módulo Power BI',
-    slugs: ['power-bi-transformacion', 'power-bi-visualizaciones', 'power-bi-dax'],
+    descripcion: 'Completar: Power BI Nivel 1, 2 y 3',
+    slugs: ['power-bi-nivel-1', 'power-bi-nivel-2', 'power-bi-nivel-3'],
     color: '#e8590c',
     emoji: '📊',
   },
   completo: {
     titulo: 'Analista de Datos',
-    descripcion: 'Por completar TODOS los cursos de ambos módulos',
+    descripcion: 'Completar ambos módulos: Excel (1-4) + Power BI (1-3)',
     slugs: [
-      'excel-intermedio', 'excel-avanzado', 'excel-bi',
-      'power-bi-transformacion', 'power-bi-visualizaciones', 'power-bi-dax',
+      'excel-nivel-1', 'excel-nivel-2', 'excel-nivel-3', 'excel-nivel-4',
+      'power-bi-nivel-1', 'power-bi-nivel-2', 'power-bi-nivel-3',
     ],
     color: '#3B82F6',
     emoji: '🏆',

@@ -99,14 +99,14 @@ begin
 
   -- Slugs que componen cada módulo
   if p_tipo = 'excel' then
-    v_slugs := array['excel-intermedio','excel-avanzado','excel-bi'];
+    v_slugs := array['excel-nivel-1','excel-nivel-2','excel-nivel-3','excel-nivel-4'];
     v_titulo := 'Analista de Datos en Excel';
   elsif p_tipo = 'powerbi' then
-    v_slugs := array['power-bi-transformacion','power-bi-visualizaciones','power-bi-dax'];
+    v_slugs := array['power-bi-nivel-1','power-bi-nivel-2','power-bi-nivel-3'];
     v_titulo := 'Analista de Datos en Power BI';
   elsif p_tipo = 'completo' then
-    v_slugs := array['excel-intermedio','excel-avanzado','excel-bi',
-                     'power-bi-transformacion','power-bi-visualizaciones','power-bi-dax'];
+    v_slugs := array['excel-nivel-1','excel-nivel-2','excel-nivel-3','excel-nivel-4',
+                     'power-bi-nivel-1','power-bi-nivel-2','power-bi-nivel-3'];
     v_titulo := 'Analista de Datos';
   else
     raise exception 'Tipo de certificado no válido';
