@@ -147,6 +147,213 @@
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Certificado visual HTML (réplica del PDF) ── */
+    .cert-visual {
+      background: #fff;
+      border: 3px solid #466EB4;
+      border-radius: 8px;
+      padding: 40px 36px 32px;
+      position: relative;
+      color: #1a1a1a;
+      font-family: Georgia, 'Times New Roman', serif;
+      box-shadow: 0 4px 24px rgba(70, 110, 180, 0.15);
+    }
+
+    .cert-visual::before {
+      content: '';
+      position: absolute;
+      top: 8px; left: 8px; right: 8px; bottom: 8px;
+      border: 1px solid #96AFD7;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    .cert-vis-header {
+      text-align: center;
+      border-bottom: 1px solid #466EB4;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+
+    .cert-vis-logo {
+      font-size: 22px;
+      font-weight: 700;
+      color: #466EB4;
+      letter-spacing: 0.05em;
+    }
+
+    .cert-vis-sub {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+      font-family: Arial, sans-serif;
+      letter-spacing: 0.03em;
+    }
+
+    .cert-vis-inst {
+      font-size: 10px;
+      color: #999;
+      margin-top: 2px;
+      font-family: Arial, sans-serif;
+    }
+
+    .cert-vis-title {
+      text-align: center;
+      font-size: 13px;
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 4px;
+      font-family: Arial, sans-serif;
+    }
+
+    .cert-vis-title-big {
+      text-align: center;
+      font-size: 30px;
+      font-weight: 700;
+      color: #2a2a2a;
+      margin-bottom: 2px;
+    }
+
+    .cert-vis-title-sub {
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+      letter-spacing: 0.1em;
+      margin-bottom: 24px;
+      font-family: Arial, sans-serif;
+    }
+
+    .cert-vis-otorgado {
+      text-align: center;
+      font-size: 13px;
+      color: #999;
+      font-family: Arial, sans-serif;
+      margin-bottom: 4px;
+    }
+
+    .cert-vis-nombre {
+      text-align: center;
+      font-size: 26px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+
+    .cert-vis-dni {
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+      font-family: Arial, sans-serif;
+      margin-bottom: 20px;
+    }
+
+    .cert-vis-programa-label {
+      text-align: center;
+      font-size: 13px;
+      color: #666;
+      font-family: Arial, sans-serif;
+      margin-bottom: 4px;
+    }
+
+    .cert-vis-programa {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #466EB4;
+      margin-bottom: 22px;
+    }
+
+    .cert-vis-pills {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .cert-vis-pill {
+      background: #F0F4FC;
+      border: 1px solid #466EB4;
+      border-radius: 16px;
+      padding: 6px 16px;
+      font-size: 12px;
+      color: #3C5A96;
+      font-family: Arial, sans-serif;
+    }
+
+    .cert-vis-firmas {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 16px;
+      gap: 30px;
+    }
+
+    .cert-vis-firma {
+      text-align: center;
+      flex: 1;
+      max-width: 200px;
+    }
+
+    .cert-vis-firma-line {
+      border-top: 1px solid #555;
+      margin-bottom: 6px;
+    }
+
+    .cert-vis-firma-nombre {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2a2a2a;
+      font-family: Arial, sans-serif;
+    }
+
+    .cert-vis-firma-cargo {
+      font-size: 11px;
+      color: #888;
+      font-family: Arial, sans-serif;
+      margin-top: 2px;
+    }
+
+    .cert-vis-codigo {
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 14px;
+      border-top: 1px solid #ddd;
+    }
+
+    .cert-vis-codigo-text {
+      font-size: 11px;
+      color: #999;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .cert-vis-verificado {
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .cert-vis-verificado-badge {
+      display: inline-block;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: #22c55e;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-family: Arial, sans-serif;
+    }
+
+    @media (max-width: 520px) {
+      .cert-vis-title-big { font-size: 24px; }
+      .cert-vis-nombre { font-size: 20px; }
+      .cert-vis-programa { font-size: 18px; }
+      .cert-vis-firmas { flex-direction: column; gap: 16px; }
+      .cert-vis-pills { gap: 6px; }
+      .cert-vis-pill { font-size: 11px; padding: 5px 12px; }
+    }
   </style>
 </head>
 <body>
@@ -201,44 +408,59 @@
         const cert = Array.isArray(data) ? data[0] : data;
 
         if (cert && cert.codigo) {
-          // Certificado válido
+          // Certificado válido — mostrar en formato visual HTML
           const fechaStr = new Date(cert.emitido_en).toLocaleDateString('es-PE', {
             day: '2-digit', month: 'long', year: 'numeric',
           });
 
           result.className = 'verify-result valido';
+          result.style.padding = '0';
+          result.style.background = 'transparent';
+          result.style.border = 'none';
           result.innerHTML = `
-            <div class="verify-result-head">
-              <span style="font-size:24px;">✅</span>
-              Certificado Válido
+            <div class="cert-vis-verificado">
+              <span class="cert-vis-verificado-badge">✅ Certificado verificado y válido</span>
             </div>
-            <div class="verify-field">
-              <span class="verify-field-label">Nombre</span>
-              <span class="verify-field-value">${cert.nombre_emisor}</span>
-            </div>
-            <div class="verify-field">
-              <span class="verify-field-label">DNI</span>
-              <span class="verify-field-value">${cert.dni || '—'}</span>
-            </div>
-            <div class="verify-field">
-              <span class="verify-field-label">Programa</span>
-              <span class="verify-field-value">${cert.titulo}</span>
-            </div>
-            <div class="verify-field">
-              <span class="verify-field-label">Horas</span>
-              <span class="verify-field-value">${cert.horas} horas</span>
-            </div>
-            <div class="verify-field">
-              <span class="verify-field-label">Modalidad</span>
-              <span class="verify-field-value">${cert.modalidad}</span>
-            </div>
-            <div class="verify-field">
-              <span class="verify-field-label">Fecha de emisión</span>
-              <span class="verify-field-value">${fechaStr}</span>
-            </div>
-            <div class="verify-field">
-              <span class="verify-field-label">Código</span>
-              <span class="verify-field-value" style="font-family:var(--font-mono);">${cert.codigo}</span>
+            <div class="cert-visual" style="margin-top:16px;">
+              <div class="cert-vis-header">
+                <div class="cert-vis-logo">◆ NAE</div>
+                <div class="cert-vis-sub">NEW ACADEMY EXCEL</div>
+                <div class="cert-vis-inst">Centro de Capacitación NAE · Comunidad Virtual de Análisis de Datos</div>
+              </div>
+
+              <div class="cert-vis-title">Certificado</div>
+              <div class="cert-vis-title-big">DE APROBACIÓN</div>
+              <div class="cert-vis-title-sub">&nbsp;</div>
+
+              <div class="cert-vis-otorgado">Otorgado a:</div>
+              <div class="cert-vis-nombre">${cert.nombre_emisor}</div>
+              <div class="cert-vis-dni">${cert.dni ? 'DNI: ' + cert.dni : ''}</div>
+
+              <div class="cert-vis-programa-label">Por completar satisfactoriamente el programa de:</div>
+              <div class="cert-vis-programa">${cert.titulo}</div>
+
+              <div class="cert-vis-pills">
+                <span class="cert-vis-pill">⏱ ${cert.horas} horas</span>
+                <span class="cert-vis-pill">💻 Modalidad ${cert.modalidad}</span>
+                <span class="cert-vis-pill">📅 ${fechaStr}</span>
+              </div>
+
+              <div class="cert-vis-firmas">
+                <div class="cert-vis-firma">
+                  <div class="cert-vis-firma-line"></div>
+                  <div class="cert-vis-firma-nombre">Geronimo Cruzado</div>
+                  <div class="cert-vis-firma-cargo">Analista de Datos</div>
+                </div>
+                <div class="cert-vis-firma">
+                  <div class="cert-vis-firma-line"></div>
+                  <div class="cert-vis-firma-nombre">Jhonny Vasquez C.</div>
+                  <div class="cert-vis-firma-cargo">Arquitecto de Datos</div>
+                </div>
+              </div>
+
+              <div class="cert-vis-codigo">
+                <div class="cert-vis-codigo-text">Código de verificación: ${cert.codigo}</div>
+              </div>
             </div>
           `;
         } else {
