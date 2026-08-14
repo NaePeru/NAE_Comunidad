@@ -10,10 +10,13 @@ import { renderAvatar } from './storage.js';
 
 // ── CARGAR LEADERBOARD SEMANAL ──────────────────────────────────────────────
 export async function cargarLeaderboard() {
-  // Usamos la vista leaderboard_semanal que calcula puntos de últimos 7 días
+  if (!session.user?.id) return;
+  // OPTIMIZACIÓN: antes traía top 50 y filtraba en JS los de puntos > 0.
+  // Ahora filtramos directo en la query (gt = greater than) → menos datos por red.
   const { data, error } = await supabase
     .from('leaderboard_semanal')
     .select('id, nombre, avatar_url, color, puntos_semana, posicion')
+    .gt('puntos_semana', 0)
     .order('posicion', { ascending: true })
     .limit(50);
 
@@ -24,8 +27,7 @@ export async function cargarLeaderboard() {
     return;
   }
 
-  // Filtrar los que tienen 0 puntos (no aportaron esta semana)
-  const activos = (data || []).filter(u => u.puntos_semana > 0);
+  const activos = data || [];
 
   if (activos.length === 0) {
     document.getElementById('lb-list').innerHTML = `
@@ -45,9 +47,12 @@ export async function cargarLeaderboard() {
 
 // ── CARGAR RANKING TOTAL (histórico) ────────────────────────────────────────
 export async function cargarRankingTotal() {
+  if (!session.user?.id) return;
+  // OPTIMIZACIÓN: mismo patrón que cargarLeaderboard, filtramos en la query.
   const { data, error } = await supabase
     .from('profiles')
     .select('id, nombre, avatar_url, color, puntos')
+    .gt('puntos', 0)
     .order('puntos', { ascending: false })
     .limit(50);
 
@@ -56,7 +61,7 @@ export async function cargarRankingTotal() {
     return;
   }
 
-  const activos = (data || []).filter(u => u.puntos > 0);
+  const activos = data || [];
   if (activos.length === 0) {
     document.getElementById('lb-list').innerHTML = `
       <div class="empty-state">
@@ -104,24 +109,19 @@ function renderFila(u, i, myId, tipo) {
 
 // ── ESTADÍSTICAS DE LA COMUNIDAD ────────────────────────────────────────────
 export async function cargarStatsComunidad() {
-  // Total de miembros
-  const { count: totalMiembros } = await supabase
-    .from('profiles')
-    .select('id', { count: 'exact', head: true })
-    .eq('activo', true);
+  // OPTIMIZACIÓN: las 3 counts son independientes → se lanzan en paralelo.
+  // Antes se hacían secuenciales (3 viajes a la BD uno tras otro).
+  const [miembros, posts, activos] = await Promise.all([
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('activo', true),
+    supabase.from('posts').select('id', { count: 'exact', head: true }),
+    supabase.from('leaderboard_semanal').select('id', { count: 'exact', head: true }).gt('puntos_semana', 0),
+  ]);
 
-  // Posts totales
-  const { count: totalPosts } = await supabase
-    .from('posts')
-    .select('id', { count: 'exact', head: true });
-
-  // Activos esta semana (con puntos > 0)
-  const { count: activosSemana } = await supabase
-    .from('leaderboard_semanal')
-    .select('id', { count: 'exact', head: true })
-    .gt('puntos_semana', 0);
-
-  document.getElementById('stat-miembros').textContent = formatNum(totalMiembros || 0);
-  document.getElementById('stat-posts').textContent = formatNum(totalPosts || 0);
-  document.getElementById('stat-activos').textContent = formatNum(activosSemana || 0);
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = formatNum(val || 0);
+  };
+  setText('stat-miembros', miembros.count);
+  setText('stat-posts', posts.count);
+  setText('stat-activos', activos.count);
 }
