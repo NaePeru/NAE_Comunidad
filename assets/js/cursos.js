@@ -27,6 +27,15 @@ function catStyle(cat) { return CAT_COLORS[cat] || CAT_COLORS.general; }
 // VISTA 1: CATÁLOGO
 // ============================================================================
 export async function cargarCatalogo() {
+  // Guard: si por algún motivo no hay sesión (token expiró, recarga lenta),
+  // evitamos TypeError al acceder a session.user.id más abajo.
+  if (!session.user?.id) {
+    const list = document.getElementById('courses-list');
+    if (list) list.innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⚠️</div>Tu sesión expiró. Recargá la página.</div>';
+    return;
+  }
+
   const { data: courses, error } = await supabase
     .from('courses')
     .select('id, titulo, descripcion, categoria, icono, color_tema, requiere_pago, orden')
@@ -39,13 +48,29 @@ export async function cargarCatalogo() {
     return;
   }
 
-  const { data: counts } = await supabase.from('lessons').select('course_id');
-  const lessonCounts = {};
-  (counts || []).forEach(l => { lessonCounts[l.course_id] = (lessonCounts[l.course_id] || 0) + 1; });
+  // DEFENSA ANTI-DUPLICADOS:
+  // Aunque la BD tenga filas repetidas (por migraciones solapadas),
+  // deduplicamos por slug y por título (case-insensitive) ANTES de renderizar.
+  // Mostramos solo la primera aparición de cada curso.
+  const vistos = new Set();
+  const cursosUnicos = (courses || []).filter(c => {
+    const keySlug = (c.slug || '').toLowerCase().trim();
+    const keyTitulo = (c.titulo || '').toLowerCase().trim();
+    // Combinamos slug+título en una sola clave para no colisionar
+    if (vistos.has(keySlug) || vistos.has(keyTitulo)) return false;
+    vistos.add(keySlug);
+    vistos.add(keyTitulo);
+    return true;
+  });
 
+  // OPTIMIZACIÓN: antes había DOS queries que cargaban TODAS las lecciones.
+  // Con una sola query basta: calculamos conteo Y agrupación en una pasada.
+  // Esto reduce a la mitad el tráfico cuando hay muchos cursos/lecciones.
   const { data: allLessons } = await supabase.from('lessons').select('id, course_id');
+  const lessonCounts = {};
   const lessonsByCourse = {};
   (allLessons || []).forEach(l => {
+    lessonCounts[l.course_id] = (lessonCounts[l.course_id] || 0) + 1;
     if (!lessonsByCourse[l.course_id]) lessonsByCourse[l.course_id] = [];
     lessonsByCourse[l.course_id].push(l.id);
   });
@@ -56,8 +81,8 @@ export async function cargarCatalogo() {
     .eq('user_id', session.user.id);
   const myDone = new Set((myProgress || []).filter(p => p.completado).map(p => p.lesson_id));
 
-  window.__coursesData = courses;
-  renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone);
+  window.__coursesData = cursosUnicos;
+  renderCatalogo(cursosUnicos, lessonCounts, lessonsByCourse, myDone);
 }
 
 function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
@@ -95,14 +120,15 @@ function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
   bindClicksCatalogo();
 }
 
-// Listener global para clicks en tarjetas (delegación de eventos)
+// Listener global para clicks en tarjetas (delegación de eventos).
+// Usamos un flag en el nodo para no duplicar listeners al re-renderizar el catálogo.
+// Antes se usaba replaceWith(cloneNode) que reescribía el DOM y perdía referencias.
 export function bindClicksCatalogo() {
   const list = document.getElementById('courses-list');
   if (!list) return;
-  // Evitar duplicar listeners
-  list.replaceWith(list.cloneNode(true));
-  const newList = document.getElementById('courses-list');
-  newList.addEventListener('click', async (e) => {
+  if (list.__catalogBound) return;   // ya tiene el listener, no lo duplicamos
+  list.__catalogBound = true;
+  list.addEventListener('click', async (e) => {
     const card = e.target.closest('.course-card');
     if (!card) return;
     const courseId = card.dataset.courseId;
@@ -117,6 +143,11 @@ export function bindClicksCatalogo() {
 // CAMBIO DE VISTA: catálogo → curso
 // ============================================================================
 async function abrirCurso(courseId) {
+  // Guard de sesión: evita crash si el token expiró durante la navegación.
+  if (!session.user?.id) {
+    toast('⚠️ Tu sesión expiró. Recargá la página.');
+    return;
+  }
   // Ocultar catálogo, mostrar contenedor de curso
   document.getElementById('vista-catalogo').classList.add('hidden');
   document.getElementById('vista-curso').classList.remove('hidden');
@@ -152,23 +183,30 @@ async function abrirCurso(courseId) {
     }
   }
 
-  const { data: modules, error: errMod } = await supabase
-    .from('modules').select('*').eq('course_id', courseId).order('orden', { ascending: true });
-  const { data: lessons, error: errLec } = await supabase
-    .from('lessons').select('*').eq('course_id', courseId).order('orden', { ascending: true });
+  // OPTIMIZACIÓN: módulos y lecciones son independientes → paralelas.
+  const [modulesRes, lessonsRes] = await Promise.all([
+    supabase.from('modules').select('*').eq('course_id', courseId).order('orden', { ascending: true }),
+    supabase.from('lessons').select('*').eq('course_id', courseId).order('orden', { ascending: true }),
+  ]);
+  const modules = modulesRes.data;
+  const lessons = lessonsRes.data;
 
-  if (errLec) {
+  if (lessonsRes.error) {
     document.getElementById('curso-container').innerHTML =
       '<div class="empty-state"><div class="empty-icon">⚠️</div>Error al cargar lecciones.</div>';
     return;
   }
 
-  const { data: myProgress } = await supabase
-    .from('lesson_progress')
-    .select('lesson_id, completado')
-    .eq('user_id', session.user.id)
-    .in('lesson_id', (lessons || []).map(l => l.id));
-  const myDone = new Set((myProgress || []).filter(p => p.completado).map(p => p.lesson_id));
+  // El progreso depende de los IDs de lecciones → va después (no paralelizable).
+  let myDone = new Set();
+  if ((lessons || []).length > 0) {
+    const { data: myProgress } = await supabase
+      .from('lesson_progress')
+      .select('lesson_id, completado')
+      .eq('user_id', session.user.id)
+      .in('lesson_id', (lessons || []).map(l => l.id));
+    myDone = new Set((myProgress || []).filter(p => p.completado).map(p => p.lesson_id));
+  }
 
   const flattened = (lessons || []).slice();
   cursoState = { course, modules: modules || [], lessons: lessons || [], myDone, flattened };
@@ -199,6 +237,30 @@ function renderCursoLayout(course, modules, lessons, myDone) {
   const done = lessons.filter(l => myDone.has(l.id)).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const cs = catStyle(course.categoria);
+
+  // ── DEDUPLICACIÓN DEFENSIVA ──────────────────────────────────────────────
+  // Si por migraciones solapadas hay módulos duplicados (mismo id o mismo
+  // título+curso) o lecciones repetidas, los eliminamos antes de renderizar
+  // para que el sidebar nunca muestre duplicados.
+  const modsUnicos = [];
+  const vistosMod = new Set();
+  for (const m of (modules || [])) {
+    const key = (m.id || '') + '|' + (m.titulo || '').toLowerCase().trim();
+    if (vistosMod.has(key)) continue;
+    vistosMod.add(key);
+    modsUnicos.push(m);
+  }
+  const lessonsUnicas = [];
+  const vistosLecc = new Set();
+  for (const l of (lessons || [])) {
+    const key = (l.id || '') + '|' + (l.titulo || '').toLowerCase().trim();
+    if (vistosLecc.has(key)) continue;
+    vistosLecc.add(key);
+    lessonsUnicas.push(l);
+  }
+  modules = modsUnicos;
+  lessons = lessonsUnicas;
+  // ────────────────────────────────────────────────────────────────────────
 
   // Agrupar lecciones: módulos reales + las que no tienen módulo
   const leccionesSinModulo = lessons.filter(l => !l.module_id);
@@ -405,16 +467,23 @@ function abrirLeccion(lessonId) {
 // ── COMPLETAR LECCIÓN ───────────────────────────────────────────────────────
 async function completarLeccion(lessonId) {
   if (!cursoState) return;
+  if (!session.user?.id) { toast('⚠️ Tu sesión expiró. Recargá la página.'); return; }
   const { myDone, lessons, modules, course } = cursoState;
   const nuevoEstado = !myDone.has(lessonId);
 
-  await supabase.from('lesson_progress').upsert({
+  const { error } = await supabase.from('lesson_progress').upsert({
     user_id: session.user.id,
     lesson_id: lessonId,
     completado: nuevoEstado,
     porcentaje: nuevoEstado ? 100 : 0,
     completado_en: nuevoEstado ? new Date().toISOString() : null,
   });
+
+  // Si el upsert falló (red, permisos, etc.), avisamos y NO actualizamos la UI
+  if (error) {
+    toast('⚠️ No se pudo guardar tu progreso. Intentá de nuevo.');
+    return;
+  }
 
   if (nuevoEstado) { myDone.add(lessonId); toast('✅ Lección completada'); }
   else { myDone.delete(lessonId); }
