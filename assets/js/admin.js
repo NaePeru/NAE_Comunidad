@@ -105,9 +105,14 @@ export async function guardarCurso(formData) {
     publicado: formData.publicado,
     orden: parseInt(formData.orden) || 1,
   };
-  datos.slug = (datos.titulo.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) || 'curso-' + Date.now();
+  // FIX: el slug solo se genera al CREAR. Al editar un curso existente NO se
+  // regenera, porque cambiarlo rompe los certificados (que buscan slugs exactos
+  // como 'excel-nivel-1') y los accesos comprados.
+  if (!formData.id) {
+    datos.slug = (datos.titulo.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) || 'curso-' + Date.now();
+  }
 
   if (!datos.titulo) { toast('⚠️ Falta el título'); return { error: true }; }
 
