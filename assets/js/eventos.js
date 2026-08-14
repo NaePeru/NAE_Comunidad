@@ -10,6 +10,10 @@ import { escapeHtml, toast } from './utils.js';
 const MESES = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
+// Cache de eventos cargados (para precargar el modal al editar).
+let eventosCache = [];
+export function getEventoById(id) { return eventosCache.find(e => e.id === id) || null; }
+
 const TIPO_INFO = {
   webinar: { emoji: '📡', label: 'Webinar', cls: 'type-webinar' },
   clase:   { emoji: '🎥', label: 'Clase en vivo', cls: 'type-clase' },
@@ -32,13 +36,16 @@ export async function cargarEventos() {
     return;
   }
 
+  // Guardar en cache para poder precargar datos al editar (evita perder info).
+  eventosCache = data || [];
+
   // Filtrar por fecha Y hora reales (para no cerrar un evento antes de hora)
   const ahora = Date.now();
-  const proximos = (data || []).filter(e => {
+  const proximos = eventosCache.filter(e => {
     const fechaCompleta = new Date(`${e.fecha}T${e.hora || '23:59:59'}`);
     return fechaCompleta.getTime() >= ahora;
   });
-  const pasados = (data || []).filter(e => {
+  const pasados = eventosCache.filter(e => {
     const fechaCompleta = new Date(`${e.fecha}T${e.hora || '00:00:00'}`);
     return fechaCompleta.getTime() < ahora;
   }).reverse().slice(0, 3);
@@ -122,6 +129,7 @@ function renderEvento(e, esPasado = false) {
 
 // ── CREAR / EDITAR EVENTO (admin) ───────────────────────────────────────────
 export async function guardarEvento(formData) {
+  if (!session.user?.id) { toast('⚠️ Tu sesión expiró. Recargá la página.'); return { error: true }; }
   const datos = {
     titulo: formData.titulo.trim(),
     tipo: formData.tipo,
@@ -156,11 +164,16 @@ export async function borrarEvento(id) {
 
 // ── AGREGAR A GOOGLE CALENDAR ───────────────────────────────────────────────
 function addCalendar(titulo, fecha, hora) {
-  const start = hora ? `${fecha}T${hora}:00` : `${fecha}T18:00:00`;
-  const end = hora ? `${fecha}T${String(parseInt(hora) + 2).padStart(2,'0')}:00:00` : `${fecha}T20:00:00`;
+  // FIX: antes calculaba "hora + 2" con parseInt, lo que generaba horas
+  // inválidas como 25:00 para eventos tardíos (ej: 23:00 → 25:00).
+  // Ahora usamos Date para manejar el rollo de medianoche correctamente.
+  const base = hora ? `${fecha}T${hora}:00` : `${fecha}T18:00:00`;
+  const inicio = new Date(base);
+  const fin = new Date(inicio.getTime() + 2 * 60 * 60 * 1000); // +2 horas
+  const fmt = d => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   const text = encodeURIComponent('NAE — ' + titulo);
   const details = encodeURIComponent('Seminario en vivo de la comunidad NAE');
-  const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start.replace(/[-:]/g,'')}/${end.replace(/[-:]/g,'')}&details=${details}`;
+  const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${fmt(inicio)}/${fmt(fin)}&details=${details}`;
   window.open(url, '_blank');
 }
 
