@@ -21,6 +21,9 @@
   <link rel="stylesheet" href="../assets/css/layout.css?v=20240710v1">
   <link rel="stylesheet" href="../assets/css/gamificacion.css?v=20240710v1">
   <link rel="stylesheet" href="../assets/css/comunidad.css?v=20240714v1">
+
+  <!-- Red de seguridad: captura errores antes que cualquier otro JS -->
+  <script src="../assets/js/error-guard.js"></script>
 </head>
 <body>
 
@@ -148,7 +151,7 @@
     import { toast } from '../assets/js/utils.js';
     import { renderNavbar } from '../assets/js/navbar.js?v=20260809';
     import { verificarAcceso } from '../assets/js/guard.js';
-    import { cargarFeed, crearPost, filtrar, iniciarRealtime, getFiltroActual } from '../assets/js/comunidad.js?v=20260809';
+    import { cargarFeed, crearPost, filtrar, iniciarRealtime, detenerRealtime, getFiltroActual } from '../assets/js/comunidad.js?v=20260809';
 
     // ── Verificar sesión ──
     const { data: { session: sess } } = await supabase.auth.getSession();
@@ -202,44 +205,65 @@
       window.addEventListener('perfil-actualizado', () => {
         renderNavbar('comunidad');
       });
+
+      // Limpieza al salir: evita fugas de WebSockets al navegar entre páginas.
+      // pagehide cubre desktop (Chrome/Firefox) y móvil (iOS/Android), y también
+      // funciona cuando el usuario envía la pestaña a segundo plano.
+      window.addEventListener('pagehide', () => {
+        detenerRealtime();
+        detenerPresence();
+      });
     }
 
     // ── Presence: Usuarios en línea ──
+    let presenceChannel = null;
     function initPresence() {
-      const channel = supabase.channel('online-users', {
+      presenceChannel = supabase.channel('online-users', {
         config: { presence: { key: session.user.id } }
       });
 
-      channel.on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
+      presenceChannel.on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
         const count = Object.keys(state).length;
         const el = document.getElementById('com-online');
         if (el) el.textContent = count;
       });
 
-      channel.subscribe(async (status) => {
+      presenceChannel.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          await channel.track({ user_id: session.user.id, online_at: new Date().toISOString() });
+          await presenceChannel.track({ user_id: session.user.id, online_at: new Date().toISOString() });
         }
       });
     }
 
+    // Limpieza del canal presence al salir (evita fuga de conexiones)
+    function detenerPresence() {
+      if (presenceChannel) {
+        try { supabase.removeChannel(presenceChannel); } catch (e) { /* ya cerrado */ }
+        presenceChannel = null;
+      }
+    }
+
     // ── Cargar datos del panel lateral ──
     async function cargarPanelComunidad() {
-      // Total miembros
-      const { count: totalMiembros } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
-      const elM = document.getElementById('com-members');
-      if (elM) elM.textContent = totalMiembros || 0;
+      // OPTIMIZACIÓN: las 3 queries son independientes → se lanzan en paralelo.
+      // Antes se hacían secuenciales (3 viajes a la BD uno tras otro).
+      const hoy = new Date().toISOString().split('T')[0];
+      const [miembrosRes, eventosRes, topRes] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('events').select('titulo, fecha, hora').gte('fecha', hoy).order('fecha').limit(1),
+        supabase.from('leaderboard_semanal').select('nombre, puntos_semana').gt('puntos_semana', 0).order('posicion').limit(5),
+      ]);
 
-      // Total posts
-      const { count: totalPosts } = await supabase.from('posts').select('id', { count: 'exact', head: true });
-      const elP = document.getElementById('com-online');
-      if (elP) elP.textContent = totalPosts || 0;
+      // Total miembros
+      const elM = document.getElementById('com-members');
+      if (elM) elM.textContent = miembrosRes.count || 0;
+
+      // NOTA: No sobrescribir #com-online aquí.
+      // Ese ID lo controla initPresence() con el conteo de usuarios en vivo (realtime).
 
       // Próximo evento
-      const hoy = new Date().toISOString().split('T')[0];
-      const { data: eventos } = await supabase
-        .from('events').select('titulo, fecha, hora').gte('fecha', hoy).order('fecha').limit(1);
+      const eventos = eventosRes.data;
       const elE = document.getElementById('com-next-event');
       if (elE) {
         if (eventos && eventos.length > 0) {
@@ -252,9 +276,7 @@
       }
 
       // Top de la semana
-      const { data: top } = await supabase
-        .from('leaderboard_semanal')
-        .select('nombre, puntos_semana').gt('puntos_semana', 0).order('posicion').limit(5);
+      const top = topRes.data;
       const elT = document.getElementById('com-top-week');
       if (elT) {
         if (top && top.length > 0) {
@@ -390,7 +412,12 @@
         document.getElementById('composer-text').value = '';
         window.__quitarImagen();
         if (liveActivo) { liveActivo = false; toggleLive(); }
-        await cargarFeed();
+        // OPTIMIZACIÓN: antes recargábamos TODO el feed (cargarFeed con reset)
+        // cada vez que alguien publicaba. Eso era innecesario porque el Realtime
+        // ya trae el post nuevo automáticamente a los demás usuarios.
+        // El autor del post no necesita recargar: su post aparece vía Realtime
+        // (el trigger INSERT en la tabla posts lo dispara).
+        // Si el Realtime fallara, el usuario puede hacer pull-to-refresh.
       }
     }
     window.publicar = publicar;
