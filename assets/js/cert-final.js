@@ -44,6 +44,7 @@ const MODULOS = {
 // ── CARGAR PROGRESO POR MÓDULO (con detalle por curso) ─────────────────────
 // Devuelve { [moduloKey]: { total, done, pct, cursos: [{titulo, done, total, pct}] } }
 async function cargarProgresoModulos() {
+  if (!session.user?.id) throw new Error('No hay sesión activa.');
   const userId = session.user.id;
 
   // Traer todos los slugs de los módulos Excel y Power BI
@@ -556,6 +557,7 @@ window.__verDemo = async function(tipo, btn) {
 };
 
 window.__guardarDni = async function(btn) {
+  if (!session.user?.id) { toast('⚠️ Tu sesión expiró. Recargá la página.'); return; }
   const input = document.getElementById('input-dni');
   if (!input) return;
   const dni = input.value.trim();
@@ -563,18 +565,25 @@ window.__guardarDni = async function(btn) {
     toast('⚠️ El DNI debe tener 8 dígitos');
     return;
   }
+  // Anti-doble-click: si ya está guardando, ignorar clicks nuevos
+  if (btn.disabled) return;
   btn.disabled = true;
   btn.textContent = 'Guardando...';
-  const { error } = await supabase
-    .from('profiles')
-    .update({ dni: dni || null })
-    .eq('id', session.user.id);
-  btn.disabled = false;
-  btn.textContent = 'Guardar';
-  if (error) {
-    toast('⚠️ No se pudo guardar el DNI');
-  } else {
-    session.profile.dni = dni || null;
-    toast('✅ DNI guardado');
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ dni: dni || null })
+      .eq('id', session.user.id);
+    if (error) {
+      toast('⚠️ No se pudo guardar el DNI');
+    } else {
+      session.profile.dni = dni || null;
+      toast('✅ DNI guardado');
+    }
+  } catch (e) {
+    toast('⚠️ Error inesperado. Probá de nuevo.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar';
   }
 };
