@@ -43,6 +43,22 @@ export function renderPantallaPago(course, containerId = 'curso-container') {
         </div>
       </div>
 
+      <!-- QR DE YAPE -->
+      <div style="background:#fff; border-radius:12px; padding:16px; margin-bottom:14px; text-align:center;">
+        <div style="font-family:var(--font-display); font-size:12px; font-weight:700; color:#5C2670; margin-bottom:10px;">
+          📱 ESCANEÁ Y PAGÁ CON YAPE
+        </div>
+        <img src="../assets/img/qr-yape.jpg" alt="QR de pago Yape" style="width:100%; max-width:230px; border-radius:8px; display:block; margin:0 auto;">
+        <div style="font-size:12px; color:#374151; margin-top:10px; font-weight:600;">
+          Monto exacto: <span style="color:#5C2670;">S/ ${PRECIO_CURSO}.00</span> a nombre de <strong>Geronimo Cruzado</strong>
+        </div>
+      </div>
+
+      <!-- Nota para móviles: no pueden escanear su propia pantalla -->
+      <div style="font-size:12px; color:var(--muted); text-align:center; margin-bottom:14px; line-height:1.5;">
+        ¿Estás en el celular? Abrí <strong style="color:#fff;">Yape</strong> y pagá al <strong style="color:#3B82F6;">988502354</strong> · Geronimo Cruzado
+      </div>
+
       <!-- Pasos -->
       <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:20px;">
         <div style="font-family:var(--font-display); font-size:12px; font-weight:600; color:#94A3B8; text-transform:uppercase; letter-spacing:1px; margin-bottom:14px;">
@@ -51,7 +67,7 @@ export function renderPantallaPago(course, containerId = 'curso-container') {
         <div style="display:flex; flex-direction:column; gap:12px;">
           <div style="display:flex; gap:10px; align-items:flex-start;">
             <div style="width:22px; height:22px; background:rgba(59,130,246,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#3B82F6; flex-shrink:0;">1</div>
-            <div style="font-size:13px; color:var(--text);">Pagá <strong>S/${PRECIO_CURSO}</strong> por <strong style="color:#fff;">Yape</strong> o <strong style="color:#fff;">Plin</strong> al <strong style="color:#3B82F6;">988502354</strong></div>
+            <div style="font-size:13px; color:var(--text);">Pagá <strong>S/${PRECIO_CURSO} exactos</strong> escaneando el QR (o por Yape al 988502354)</div>
           </div>
           <div style="display:flex; gap:10px; align-items:flex-start;">
             <div style="width:22px; height:22px; background:rgba(59,130,246,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#3B82F6; flex-shrink:0;">2</div>
@@ -59,7 +75,7 @@ export function renderPantallaPago(course, containerId = 'curso-container') {
           </div>
           <div style="display:flex; gap:10px; align-items:flex-start;">
             <div style="width:22px; height:22px; background:rgba(59,130,246,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#3B82F6; flex-shrink:0;">3</div>
-            <div style="font-size:13px; color:var(--text);">Subí la captura acá abajo ↓</div>
+            <div style="font-size:13px; color:var(--text);">Subí la captura acá abajo ↓ y se desbloquea solo</div>
           </div>
         </div>
       </div>
@@ -135,12 +151,17 @@ function initVoucherFunctions() {
 
   window.__verificarPago = async (courseId, courseTitle) => {
     if (!voucherFile) return;
+    // Guard de sesión: sin esto, session.user.id null → TypeError y flujo roto.
+    if (!session.user?.id) { alert('Tu sesión expiró. Recargá la página.'); return; }
 
     const btn = document.getElementById('btn-verificar-pago');
     const status = document.getElementById('voucher-status');
     const statusText = document.getElementById('voucher-status-text');
     const preview = document.getElementById('voucher-preview');
+    if (!btn || !status || !preview) return;
 
+    // Anti-doble-click mientras verifica
+    if (btn.disabled) return;
     btn.disabled = true;
     preview.style.display = 'none';
     status.style.display = 'block';
@@ -163,15 +184,26 @@ function initVoucherFunctions() {
       statusText.textContent = 'La IA está leyendo tu comprobante...';
 
       const { data: { session: sess } } = await supabase.auth.getSession();
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sess.access_token}`,
-        },
-        // Mandamos la URL de la foto Y el ID del curso al servidor
-        body: JSON.stringify({ voucherUrl, courseId }), 
-      });
+      // Timeout de 45s: la verificación con visión IA puede tardar más que el chat.
+      // Si excede, abortamos y damos feedback claro en vez de spinner eterno.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+      let response;
+      try {
+        response = await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sess.access_token}`,
+          },
+          // Mandamos la URL de la foto Y el ID del curso al servidor
+          body: JSON.stringify({ voucherUrl, courseId }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       const result = await response.json();
 
@@ -244,12 +276,19 @@ function initVoucherFunctions() {
 
     } catch (err) {
       console.error('Error verify payment:', err);
+      const esTimeout = err.name === 'AbortError';
+      const mensaje = esTimeout
+        ? 'La verificación está demorando demasiado. Intentá de nuevo en un momento o escribinos por WhatsApp.'
+        : 'Hubo un error al verificar. Intentá de nuevo o escribinos por WhatsApp.';
       status.innerHTML = `
         <div style="font-size:40px; margin-bottom:12px;">⚠️</div>
-        <div style="font-size:15px; color:var(--text); margin-bottom:16px;">Hubo un error al verificar. Intentá de nuevo o escribinos por WhatsApp.</div>
+        <div style="font-size:15px; color:var(--text); margin-bottom:16px;">${mensaje}</div>
         <a href="https://wa.me/51988502354" target="_blank" class="btn btn-primary" style="width:100%;">
           💬 Escribir por WhatsApp
         </a>
+        <button class="btn btn-ghost" onclick="window.__quitarVoucher(); document.getElementById('voucher-status').style.display='none'; document.getElementById('voucher-upload-zone').style.display='block';" style="width:100%; margin-top:8px;">
+          Subir otra imagen
+        </button>
       `;
     }
   };
