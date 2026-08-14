@@ -81,42 +81,38 @@ export async function cargarPerfilCompleto() {
 
   session.user = user;
 
-  // Perfil
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-  session.profile = profile;
+  // OPTIMIZACIÓN: perfil y membresía son independientes → se cargan en paralelo.
+  // Antes se hacían secuenciales (2 viajes a la BD uno tras otro).
+  const [profileRes, membershipRes] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('memberships').select('*').eq('user_id', user.id).single(),
+  ]);
 
-  // Membresía
-  const { data: membership } = await supabase
-    .from('memberships')
-    .select('*')
-    .eq('user_id', user.id)
-    .single();
-  session.membership = membership;
+  session.profile = profileRes.data;
+  session.membership = membershipRes.data;
 
   return session;
 }
 
 // ── REFRESCAR PERFIL (para que puntos/nivel se actualicen en vivo) ──────────
 // Llamar después de acciones que dan puntos (post, comentario, like, lección).
-// Recarga solo el perfil (no toda la sesión) y dispara un evento para que las
-// páginas actualicen el chip de nivel y la barra de progreso.
+// OPTIMIZACIÓN: antes traía TODAS las columnas. Ahora solo las que cambian
+// (puntos, nivel) + las que usa el navbar (rol, nombre, color, avatar_url).
+// Hace merge con el perfil existente para no perder datos.
 export async function refrescarPerfil() {
-  if (!session.user) return;
-  const { data: profile } = await supabase
+  if (!session.user?.id) return;
+  const { data } = await supabase
     .from('profiles')
-    .select('*')
+    .select('puntos, nivel, rol, nombre, color, avatar_url')
     .eq('id', session.user.id)
     .single();
-  if (profile) {
+  if (data) {
     const puntosAnt = session.profile?.puntos ?? 0;
-    session.profile = profile;
+    // Merge: conservamos los campos viejos que no trajimos y actualizamos los nuevos
+    session.profile = { ...(session.profile || {}), ...data };
     // Avisar a la página que el perfil cambió (para refrescar UI)
     window.dispatchEvent(new CustomEvent('perfil-actualizado', {
-      detail: { puntos: profile.puntos, puntosAnteriores: puntosAnt }
+      detail: { puntos: data.puntos, puntosAnteriores: puntosAnt }
     }));
   }
   return session;
@@ -153,7 +149,10 @@ export function diasRestantes() {
 }
 
 // ── GUARDAR RUTA DESTINO TRAS LOGIN ─────────────────────────────────────────
-export function requiereAuth(redirect = 'app/aula.html') {
+// Nota: esta función NO se usa actualmente (las páginas validan sesión inline).
+// Antes apuntaba a app/aula.html, que fue movido a /legacy. Se mantiene por
+// compatibilidad pero con redirect a comunidad.html (entrada post-login real).
+export function requiereAuth(redirect = 'app/comunidad.html') {
   // Esta función la usan las páginas internas para verificar sesión.
   supabase.auth.getSession().then(async ({ data }) => {
     if (!data.session) {
