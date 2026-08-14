@@ -7,7 +7,7 @@
 import { session, logout, esAdmin } from './auth.js';
 import { getNivel, iniciales, colorAvatar } from './utils.js';
 import { initChat } from './chat-ia.js';
-import { initNotificaciones, togglePanelNotificaciones } from './notificaciones.js';
+import { initNotificaciones, togglePanelNotificaciones, detenerNotificaciones } from './notificaciones.js';
 
 // Estructura de pestañas (id → ruta + label + icono)
 const PESTANAS = [
@@ -123,8 +123,16 @@ export function renderNavbar(activoId) {
     initChat();
   }
 
-  // Inicializar notificaciones
-  initNotificaciones();
+  // Inicializar notificaciones — una sola vez (evita múltiples suscripciones)
+  if (!window.__notifInit) {
+    window.__notifInit = true;
+    initNotificaciones();
+    // Limpieza global: liberar el canal de notificaciones al cerrar la página.
+    // Esto aplica a TODAS las páginas que usan navbar (no solo comunidad).
+    window.addEventListener('pagehide', () => {
+      try { detenerNotificaciones(); } catch (e) { /* canal ya cerrado */ }
+    });
+  }
 
   window.__logout = logout;
 }
@@ -143,36 +151,57 @@ window.__toggleSearch = () => {
 };
 
 let searchTimer;
+let searchAbort = null;   // AbortController activo (para cancelar búsquedas viejas)
 window.__doSearch = (q) => {
   clearTimeout(searchTimer);
+  // Cancelar cualquier búsqueda anterior que siga en vuelo.
+  // Así evitamos que una query lenta vieja pise el resultado de una nueva.
+  if (searchAbort) { searchAbort.abort(); searchAbort = null; }
+
   if (!q || q.trim().length < 2) {
     document.getElementById('navbar-search-results').innerHTML = '';
     return;
   }
   searchTimer = setTimeout(async () => {
     const query = q.trim();
-    const [posts, courses, users] = await Promise.all([
-      supabase.from('posts').select('id, contenido, categoria').ilike('contenido', `%${query}%`).limit(3),
-      supabase.from('courses').select('id, titulo, icono').ilike('titulo', `%${query}%`).limit(3),
-      supabase.from('profiles').select('id, nombre, avatar_url').ilike('nombre', `%${query}%`).limit(3),
-    ]);
+    // Creamos un AbortController nuevo para esta búsqueda.
+    searchAbort = new AbortController();
+    const signal = searchAbort.signal;
 
-    let html = '';
-    if (courses.data?.length > 0) {
-      html += '<div class="search-group-title">📚 Cursos</div>';
-      html += courses.data.map(c => `<a href="cursos.html" class="search-result-item">${c.icono||'📘'} ${escapeHtml(c.titulo)}</a>`).join('');
-    }
-    if (posts.data?.length > 0) {
-      html += '<div class="search-group-title">💬 Publicaciones</div>';
-      html += posts.data.map(p => `<a href="comunidad.html" class="search-result-item">💭 ${escapeHtml(p.contenido.substring(0,50))}...</a>`).join('');
-    }
-    if (users.data?.length > 0) {
-      html += '<div class="search-group-title">👥 Personas</div>';
-      html += users.data.map(u => `<a href="miembros.html" class="search-result-item">👤 ${escapeHtml(u.nombre)}</a>`).join('');
-    }
-    if (!html) html = '<div class="search-empty">Sin resultados para "' + escapeHtml(query) + '"</div>';
+    try {
+      const [posts, courses, users] = await Promise.all([
+        supabase.from('posts').select('id, contenido, categoria').ilike('contenido', `%${query}%`).limit(3).abortSignal(signal),
+        supabase.from('courses').select('id, titulo, icono').ilike('titulo', `%${query}%`).limit(3).abortSignal(signal),
+        supabase.from('profiles').select('id, nombre, avatar_url').ilike('nombre', `%${query}%`).limit(3).abortSignal(signal),
+      ]);
 
-    const res = document.getElementById('navbar-search-results');
-    if (res) res.innerHTML = html;
+      // Si la búsqueda fue cancelada mientras esperábamos, ignorar el resultado.
+      if (signal.aborted) return;
+
+      let html = '';
+      if (courses.data?.length > 0) {
+        html += '<div class="search-group-title">📚 Cursos</div>';
+        html += courses.data.map(c => `<a href="cursos.html" class="search-result-item">${c.icono||'📘'} ${escapeHtml(c.titulo)}</a>`).join('');
+      }
+      if (posts.data?.length > 0) {
+        html += '<div class="search-group-title">💬 Publicaciones</div>';
+        html += posts.data.map(p => `<a href="comunidad.html" class="search-result-item">💭 ${escapeHtml(p.contenido.substring(0,50))}...</a>`).join('');
+      }
+      if (users.data?.length > 0) {
+        html += '<div class="search-group-title">👥 Personas</div>';
+        html += users.data.map(u => `<a href="miembros.html" class="search-result-item">👤 ${escapeHtml(u.nombre)}</a>`).join('');
+      }
+      if (!html) html = '<div class="search-empty">Sin resultados para "' + escapeHtml(query) + '"</div>';
+
+      const res = document.getElementById('navbar-search-results');
+      if (res && !signal.aborted) res.innerHTML = html;
+    } catch (err) {
+      // AbortError es esperado cuando cancelamos una búsqueda vieja → ignorar.
+      if (err.name !== 'AbortError' && !signal.aborted) {
+        console.warn('Error en búsqueda:', err);
+      }
+    } finally {
+      if (searchAbort?.signal === signal) searchAbort = null;
+    }
   }, 300);
 };
