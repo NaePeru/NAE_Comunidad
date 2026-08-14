@@ -15,6 +15,9 @@
   <link rel="stylesheet" href="../assets/css/gamificacion.css?v=20240710v1">
   <link rel="stylesheet" href="../assets/css/comunidad.css?v=20240714v1">
 
+  <!-- Red de seguridad: captura errores antes que cualquier otro JS -->
+  <script src="../assets/js/error-guard.js"></script>
+
   <style>
     /* Estilos exclusivos del perfil */
     .profile-header {
@@ -183,6 +186,19 @@
       renderNavbar('perfil');
       const p = session.profile;
 
+      // Guard: si el perfil no cargó (problema de red, token expirado, etc.),
+      // evitamos un crash en blanco al acceder a p.nombre / p.bio más abajo.
+      if (!p) {
+        document.querySelector('.container').innerHTML = `
+          <div class="empty-state" style="margin-top:60px;">
+            <div class="empty-icon">⚠️</div>
+            <p style="font-size:15px;color:var(--text);margin-bottom:8px;">No se pudo cargar tu perfil</p>
+            <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Tu sesión puede haber expirado.</p>
+            <button onclick="location.reload()" class="btn btn-primary">🔄 Recargar</button>
+          </div>`;
+        return;
+      }
+
       const [c1, c2] = p.color || colorAvatar(p.nombre);
 
       // Avatar grande
@@ -272,6 +288,7 @@
       const nombre = document.getElementById('edit-nombre').value.trim();
       const bio = document.getElementById('edit-bio').value.trim();
       if (!nombre) { toast('⚠️ El nombre no puede estar vacío'); return; }
+      if (!session.user?.id) { toast('⚠️ Tu sesión expiró. Recargá la página.'); return; }
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Guardando...';
