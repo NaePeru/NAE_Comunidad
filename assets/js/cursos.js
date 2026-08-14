@@ -38,7 +38,7 @@ export async function cargarCatalogo() {
 
   const { data: courses, error } = await supabase
     .from('courses')
-    .select('id, titulo, descripcion, categoria, icono, color_tema, requiere_pago, orden')
+    .select('id, slug, titulo, descripcion, categoria, icono, color_tema, requiere_pago, orden')
     .eq('publicado', true)
     .order('orden', { ascending: true });
 
@@ -48,18 +48,19 @@ export async function cargarCatalogo() {
     return;
   }
 
-  // DEFENSA ANTI-DUPLICADOS:
-  // Aunque la BD tenga filas repetidas (por migraciones solapadas),
-  // deduplicamos por slug y por título (case-insensitive) ANTES de renderizar.
-  // Mostramos solo la primera aparición de cada curso.
+  // DEFENSA ANTI-DUPLICADOS (blindada):
+  // Deduplicamos por slug y título (case-insensitive) ANTES de renderizar.
+  // FIX CRÍTICO: antes se agregaban claves VACÍAS al Set cuando faltaba el
+  // slug en el SELECT, lo que descartaba todos los cursos menos el primero.
+  // Ahora solo se comparan/agregan claves no vacías.
   const vistos = new Set();
   const cursosUnicos = (courses || []).filter(c => {
     const keySlug = (c.slug || '').toLowerCase().trim();
     const keyTitulo = (c.titulo || '').toLowerCase().trim();
-    // Combinamos slug+título en una sola clave para no colisionar
-    if (vistos.has(keySlug) || vistos.has(keyTitulo)) return false;
-    vistos.add(keySlug);
-    vistos.add(keyTitulo);
+    if (keySlug && vistos.has(keySlug)) return false;
+    if (keyTitulo && vistos.has(keyTitulo)) return false;
+    if (keySlug) vistos.add(keySlug);
+    if (keyTitulo) vistos.add(keyTitulo);
     return true;
   });
 
