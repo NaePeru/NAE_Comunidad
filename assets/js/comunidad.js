@@ -29,38 +29,72 @@ let subscription = null;
 
 // ── CARGAR PERFILES EN BATCH ────────────────────────────────────────────────
 async function cargarPerfiles(ids) {
-  const faltantes = [...new Set(ids)].filter(id => !cachePerfiles[id]);
+  const faltantes = [...new Set(ids)].filter(id => id && !cachePerfiles[id]);
   if (faltantes.length === 0) return;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('id, nombre, puntos, color, avatar_url, rol')
     .in('id', faltantes);
+  if (error) {
+    console.warn('No se pudieron cargar perfiles:', error.message);
+    return;
+  }
   data?.forEach(p => { cachePerfiles[p.id] = p; });
 }
 
 // ── CARGAR FEED ─────────────────────────────────────────────────────────────
-export async function cargarFeed() {
-  const { data, error } = await supabase
+// Paginación por cursor: traemos de a 50 posts. El cursor es la fecha del
+// post más viejo cargado. Así evitamos recalcular offsets cuando entran
+// posts nuevos mientras el usuario navega (más eficiente y consistente).
+const FEED_PAGE_SIZE = 50;
+let feedCursor = null;      // fecha del último post cargado (para siguiente página)
+let hayMasPosts = false;    // si quedan posts viejos por cargar
+
+export async function cargarFeed(reset = true) {
+  if (reset) {
+    feedCursor = null;
+    cachePosts = [];
+  }
+
+  let query = supabase
     .from('posts')
     .select(`
       id, contenido, categoria, es_live, imagen_url,
       likes_count, comentarios_count, creado_en, autor_id
     `)
     .order('creado_en', { ascending: false })
-    .limit(50);
+    .limit(FEED_PAGE_SIZE);
+
+  // Si no es reset, traer posts ANTERIORES al cursor (más viejos)
+  if (!reset && feedCursor) {
+    query = query.lt('creado_en', feedCursor);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error cargando feed:', error);
-    document.getElementById('feed-list').innerHTML =
-      '<div class="empty-state"><div class="empty-icon">⚠️</div>Error al cargar el feed.</div>';
+    if (reset) {
+      document.getElementById('feed-list').innerHTML =
+        '<div class="empty-state"><div class="empty-icon">⚠️</div>Error al cargar el feed.</div>';
+    }
     return;
   }
 
+  // ¿Quedan más posts por cargar? (si vino una página completa, probablemente sí)
+  hayMasPosts = (data && data.length === FEED_PAGE_SIZE);
+
   if (!data || data.length === 0) {
-    cachePosts = [];
-    renderFeed();
+    if (reset) {
+      cachePosts = [];
+      renderFeed();
+    }
+    renderBotonCargarMas();   // oculta el botón si no hay más
     return;
   }
+
+  // Actualizar cursor con el post más viejo de esta página
+  feedCursor = data[data.length - 1].creado_en;
 
   // Paralelizar: cargar mis likes Y perfiles al mismo tiempo
   const postIds = data.map(p => p.id);
@@ -70,13 +104,45 @@ export async function cargarFeed() {
   ]);
 
   const misLikesSet = new Set((misLikesRes.data || []).map(l => l.post_id));
-  data.forEach(p => {
-    p.likedByMe = misLikesSet.has(p.id);
-  });
+  data.forEach(p => { p.likedByMe = misLikesSet.has(p.id); });
 
-  cachePosts = data;
+  if (reset) {
+    cachePosts = data;
+  } else {
+    // Evitar duplicados al concatenar (realtime pudo haber agregado alguno)
+    const idsExistentes = new Set(cachePosts.map(p => p.id));
+    cachePosts = cachePosts.concat(data.filter(p => !idsExistentes.has(p.id)));
+  }
+
   renderFeed();
+  renderBotonCargarMas();
 }
+
+// ── BOTÓN "CARGAR MÁS" ──────────────────────────────────────────────────────
+function renderBotonCargarMas() {
+  // Buscar o crear el botón al final del feed
+  let btn = document.getElementById('feed-load-more');
+  if (!btn) {
+    const list = document.getElementById('feed-list');
+    if (!list) return;
+    btn = document.createElement('div');
+    btn.id = 'feed-load-more';
+    btn.style.cssText = 'text-align:center; padding:18px;';
+    list.after(btn);   // se inserta después del contenedor del feed
+  }
+
+  if (hayMasPosts) {
+    btn.innerHTML = `<button class="btn btn-ghost" onclick="window.__cargarMasPosts()">⬇️ Cargar más publicaciones</button>`;
+  } else {
+    btn.innerHTML = `<div style="font-size:12px; color:var(--muted2); padding:8px;">No hay más publicaciones</div>`;
+  }
+}
+
+window.__cargarMasPosts = async () => {
+  const btn = document.getElementById('feed-load-more');
+  if (btn) btn.innerHTML = '<div class="spinner" style="margin:0 auto;"></div>';
+  await cargarFeed(false);
+};
 
 // ── RENDER FEED ─────────────────────────────────────────────────────────────
 function renderFeed() {
@@ -193,7 +259,12 @@ export async function crearPost(contenido, categoria, esLive = false, imagenUrl 
     toast('⚠️ Escribe algo primero');
     return { error: true };
   }
-  const { error } = await supabase
+  if (!session.user?.id) {
+    toast('⚠️ Tu sesión expiró. Recargá la página.');
+    return { error: true };
+  }
+
+  const { data, error } = await supabase
     .from('posts')
     .insert({
       contenido: contenido.trim(),
@@ -201,11 +272,20 @@ export async function crearPost(contenido, categoria, esLive = false, imagenUrl 
       es_live: esLive,
       imagen_url: imagenUrl,
       autor_id: session.user.id,
-    });
+    })
+    .select('id, contenido, categoria, es_live, imagen_url, likes_count, comentarios_count, creado_en, autor_id')
+    .single();   // devolvemos el post creado para agregarlo al feed sin recargar
 
   if (error) {
     toast('⚠️ No se pudo publicar');
     return { error: true };
+  }
+
+  // Agregar el post del autor al feed sin recargar todo (optimización).
+  // El Realtime filtra el post del propio autor, así que lo agregamos a mano.
+  if (data) {
+    data.likedByMe = false;
+    await agregarPostRealtime(data);
   }
 
   if (esLive) {
@@ -220,6 +300,7 @@ export async function crearPost(contenido, categoria, esLive = false, imagenUrl 
 // ── TOGGLE LIKE EN POST ─────────────────────────────────────────────────────
 // Importante: el que da el like NO gana puntos. El AUTOR del post gana +1.
 async function toggleLike(postId) {
+  if (!session.user?.id) { toast('⚠️ Tu sesión expiró. Recargá la página.'); return; }
   const myId = session.user.id;
   const post = cachePosts.find(p => p.id === postId);
   if (!post) return;
@@ -243,8 +324,14 @@ async function toggleLike(postId) {
     post.likedByMe = true;
     post.likes_count = (post.likes_count || 0) + 1;
   }
-  const el = document.getElementById(`post-${postId}`);
-  if (el) el.outerHTML = renderPost(post, myId);
+  // OPTIMIZACIÓN: antes re-renderizábamos TODO el post (outerHTML).
+  // Eso destruía y recreaba el nodo completo (videos, imágenes, etc.).
+  // Ahora actualizamos solo el botón de like → más rápido y sin flujos raros.
+  const likeBtn = document.querySelector(`#post-${postId} .feed-action:first-child`);
+  if (likeBtn) {
+    likeBtn.classList.toggle('liked', post.likedByMe);
+    likeBtn.innerHTML = `${post.likedByMe ? '👍' : '👍🏻'} ${post.likes_count || 0}`;
+  }
 }
 
 // ── COMENTARIOS (ahora con like en comentarios) ─────────────────────────────
@@ -256,6 +343,7 @@ async function toggleComentarios(postId) {
 
 async function cargarComentarios(postId) {
   const sec = document.getElementById(`comments-${postId}`);
+  if (!sec) return;
   sec.innerHTML = '<div class="muted" style="font-size:12px;padding:6px 0;">Cargando...</div>';
 
   const { data, error } = await supabase
@@ -266,21 +354,21 @@ async function cargarComentarios(postId) {
 
   if (error) { sec.innerHTML = '<div class="muted" style="font-size:12px;">Error al cargar.</div>'; return; }
 
-  await cargarPerfiles(data.map(c => c.autor_id));
-
-  // Mis likes en comentarios
-  const { data: misCommentLikes } = await supabase
-    .from('comment_likes')
-    .select('comment_id')
-    .in('comment_id', data.map(c => c.id));
-  const misSet = new Set((misCommentLikes || []).map(l => l.comment_id));
-
-  if (data.length === 0) {
+  // Early return si no hay comentarios (evita 2 queries innecesarias)
+  if (!data || data.length === 0) {
     sec.innerHTML = `
       <div class="muted" style="font-size:12px;padding:6px 0;">Sin comentarios aún. ¡Sé el primero!</div>
       ${renderCommentInput(postId)}`;
     return;
   }
+
+  // OPTIMIZACIÓN: perfiles y mis likes son independientes → paralelas.
+  const commentIds = data.map(c => c.id);
+  const [, likesRes] = await Promise.all([
+    cargarPerfiles(data.map(c => c.autor_id)),
+    supabase.from('comment_likes').select('comment_id').in('comment_id', commentIds),
+  ]);
+  const misSet = new Set((likesRes.data || []).map(l => l.comment_id));
 
   sec.innerHTML = data.map(c => {
     const perfil = cachePerfiles[c.autor_id] || { nombre: 'Alumno', color: null };
@@ -297,7 +385,7 @@ async function cargarComentarios(postId) {
           <div class="comment-text">${(parseMarkdown(c.contenido) || {}).html || ''}</div>
           <div class="comment-meta">
             <span class="comment-time">${tiempoRelativo(c.creado_en)}</span>
-            <button class="comment-like ${liked ? 'liked' : ''}" onclick="window.__likeComment('${c.id}')">
+            <button class="comment-like ${liked ? 'liked' : ''}" onclick="window.__likeComment(event, '${c.id}')">
               ${liked ? '❤️' : '🤍'} ${c.likes_count || 0}
             </button>
           </div>
@@ -316,6 +404,7 @@ function renderCommentInput(postId) {
 }
 
 async function comentar(postId) {
+  if (!session.user?.id) { toast('⚠️ Tu sesión expiró. Recargá la página.'); return; }
   const input = document.getElementById(`comment-text-${postId}`);
   const texto = input.value.trim();
   if (!texto) return;
@@ -328,14 +417,21 @@ async function comentar(postId) {
 
   if (error) { toast('⚠️ No se pudo comentar'); return; }
   await cargarComentarios(postId);
-  // Actualizar contador
+  // Actualizar contador en cache Y en el DOM
   const post = cachePosts.find(p => p.id === postId);
-  if (post) post.comentarios_count = (post.comentarios_count || 0) + 1;
+  if (post) {
+    post.comentarios_count = (post.comentarios_count || 0) + 1;
+    const commentBtn = document.querySelector(`#post-${postId} .feed-action:nth-child(2)`);
+    if (commentBtn) commentBtn.innerHTML = `💬 ${post.comentarios_count}`;
+  }
 }
 
 // ── TOGGLE LIKE EN COMENTARIO ───────────────────────────────────────────────
-async function likeComment(commentId) {
-  const btn = event?.target?.closest('.comment-like');
+async function likeComment(eventArg, commentId) {
+  // Guard de sesión
+  if (!session.user?.id) { toast('⚠️ Tu sesión expiró. Recargá la página.'); return; }
+  // Ahora recibimos el evento como parámetro (no usamos la variable global deprecada).
+  const btn = eventArg?.target?.closest('.comment-like');
   const wasLiked = btn?.classList.contains('liked');
 
   if (wasLiked) {
@@ -354,6 +450,7 @@ async function likeComment(commentId) {
 
 // ── BORRAR POST ─────────────────────────────────────────────────────────────
 async function borrarPost(postId) {
+  if (!session.user?.id) { toast('⚠️ Tu sesión expiró. Recargá la página.'); return; }
   if (!confirm('¿Eliminar esta publicación? No se puede deshacer.')) return;
   
   // 1. Borrar primero los likes de los comentarios asociados
@@ -421,6 +518,17 @@ export function iniciarRealtime() {
     .subscribe();
 }
 
+// ── DETENER REALTIME ────────────────────────────────────────────────────────
+// CRÍTICO para estabilidad: si no desuscribimos el canal al salir de la página,
+// la conexión WebSocket queda abierta y se acumula en cada navegación (fuga).
+// Llamar desde comunidad.html en 'pagehide' / 'beforeunload'.
+export function detenerRealtime() {
+  if (subscription) {
+    try { supabase.removeChannel(subscription); } catch (e) { /* canal ya cerrado */ }
+    subscription = null;
+  }
+}
+
 // Agregar un solo post nuevo al cache (sin recargar todo el feed)
 async function agregarPostRealtime(postNuevo) {
   // Evitar duplicados
@@ -432,7 +540,8 @@ async function agregarPostRealtime(postNuevo) {
   // Agregar al inicio del cache
   postNuevo.likedByMe = false;
   cachePosts.unshift(postNuevo);
-  if (cachePosts.length > 50) cachePosts = cachePosts.slice(0, 50);
+  // Nota: no cortamos a 50 acá porque el usuario pudo haber cargado más páginas.
+  // El límite lo controla el cursor de paginación, no el cache.
 
   renderFeed();
 }
