@@ -11,7 +11,7 @@ let notifSubscription = null;
 
 // ── INICIALIZAR (se llama desde navbar.js) ──────────────────────────────────
 export async function initNotificaciones() {
-  if (!session.user) return;
+  if (!session.user?.id) return;
 
   // 1. Cargar contador inicial
   await actualizarContador();
@@ -25,6 +25,15 @@ export async function initNotificaciones() {
         () => actualizarContador()
       )
       .subscribe();
+  }
+}
+
+// ── DETENER SUSCRIPCIÓN ────────────────────────────────────────────────────
+// Evita la fuga de WebSockets al cambiar de página. Llamar en pagehide.
+export function detenerNotificaciones() {
+  if (notifSubscription) {
+    try { supabase.removeChannel(notifSubscription); } catch (e) { /* canal ya cerrado */ }
+    notifSubscription = null;
   }
 }
 
