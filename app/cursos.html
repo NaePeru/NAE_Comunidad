@@ -21,6 +21,9 @@
   <link rel="stylesheet" href="../assets/css/layout.css?v=20240710v1">
   <link rel="stylesheet" href="../assets/css/gamificacion.css?v=20240710v1">
   <link rel="stylesheet" href="../assets/css/cursos.css?v=20240710v1">
+
+  <!-- Red de seguridad: captura errores antes que cualquier otro JS -->
+  <script src="../assets/js/error-guard.js"></script>
 </head>
 <body>
 
@@ -61,7 +64,7 @@
     import { cargarPerfilCompleto, session } from '../assets/js/auth.js';
     import { renderNavbar } from '../assets/js/navbar.js?v=20260809';
     import { verificarAcceso } from '../assets/js/guard.js';
-    import { cargarCatalogo, bindClicksCatalogo } from '../assets/js/cursos.js';
+    import { cargarCatalogo, bindClicksCatalogo } from '../assets/js/cursos.js?v=20260809b';
 
     const { data: { session: sess } } = await supabase.auth.getSession();
     if (!sess) {
