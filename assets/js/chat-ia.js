@@ -33,25 +33,40 @@ async function llamarIA(pregunta) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('No hay sesión');
 
+    // Timeout de 30s: si la Edge Function o la IA no responden en ese tiempo,
+    // abortamos para no dejar al usuario con el spinner girando para siempre.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     // Llamar a nuestra Edge Function en Supabase
-    const response = await fetch('https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/chat-ai', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ messages }),
-    });
+    let response;
+    try {
+      response = await fetch('https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/chat-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ messages }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) throw new Error('Error en el servidor');
 
     const data = await response.json();
-    
+
     if (data.error) throw new Error(data.error);
-    
+
     return data.reply || 'No pude procesar eso. Intentá de nuevo.';
   } catch (err) {
     console.error('Error IA:', err);
+    // Mensaje diferenciado para timeout (mejor UX que un error genérico)
+    if (err.name === 'AbortError') {
+      return 'La respuesta está demorando demasiado. Reintentá en un momento o escribinos al WhatsApp 988502354.';
+    }
     return 'Tengo un problema de conexión en este momento. Escribinos al WhatsApp 988502354.';
   }
 }
@@ -190,9 +205,9 @@ async function sendMsg(text) {
   document.getElementById('chat-send').disabled = true;
   addTyping();
 
-  // Retraso de 5 segundos para simular que está "pensando"
-  await new Promise(resolve => setTimeout(resolve, 5000));
-
+  // Antes había un setTimeout de 5s aquí para "simular que piensa".
+  // Lo eliminamos: el indicador addTyping() ya cubre la espera, y el delay
+  // solo duplicaba el tiempo total de respuesta (5s fijos + latencia real de la IA).
   const reply = await llamarIA(text);
 
   removeTyping();
