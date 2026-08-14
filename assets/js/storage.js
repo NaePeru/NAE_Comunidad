@@ -12,7 +12,7 @@ const BUCKET = 'avatars';
 // Devuelve { url } pública o { error }.
 export async function subirAvatar(file) {
   if (!file) return { error: 'No se seleccionó archivo.' };
-  if (!session.user) return { error: 'No hay sesión.' };
+  if (!session.user?.id) return { error: 'No hay sesión.' };
 
   // Validaciones
   if (!file.type.startsWith('image/')) return { error: 'El archivo debe ser una imagen.' };
@@ -31,6 +31,7 @@ export async function subirAvatar(file) {
 
   // Obtener URL pública (con cache-buster para forzar refresco)
   const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(ruta);
+  if (!pub?.publicUrl) return { error: 'No se pudo obtener la URL de la imagen.' };
   const url = `${pub.publicUrl}?t=${Date.now()}`;
 
   // Guardar la URL en el perfil
@@ -41,8 +42,8 @@ export async function subirAvatar(file) {
 
   if (dbErr) return { error: 'Subida OK, pero no se guardó en el perfil.' };
 
-  // Actualizar sesión en memoria
-  session.profile.avatar_url = url;
+  // Actualizar sesión en memoria (guard anti profile null)
+  if (session.profile) session.profile.avatar_url = url;
 
   return { url, error: null };
 }
@@ -53,17 +54,40 @@ import { iniciales, colorAvatar } from './utils.js';
 
 // ── SUBIR IMAGEN A LA COMUNIDAD ─────────────────────────────────────────────
 export async function subirImagenComunidad(file) {
-  if (!session.user) return { error: 'No hay sesión.' };
+  if (!session.user?.id) return { error: 'No hay sesión.' };
+  if (!file) return { error: 'No se seleccionó archivo.' };
+
+  // Validaciones de tamaño y tipo (defensa adicional)
+  if (!file.type.startsWith('image/')) return { error: 'El archivo debe ser una imagen.' };
+  if (file.size > 10 * 1024 * 1024) return { error: 'La imagen pesa más de 10MB.' };
 
   try {
+    // Compresión: las imágenes grandes saturan Storage y hacen lento el feed.
+    // Si la imagen ya es chica (<500KB), la subimos directo.
+    // Si es más grande, intentamos comprimir con la librería browser-image-compression
+    // (la misma que usa el composer). Si la librería no está cargada, subimos la original.
+    let archivoFinal = file;
+    if (file.size > 500 * 1024 && typeof window.imageCompression === 'function') {
+      try {
+        archivoFinal = await window.imageCompression(file, {
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 1080,
+          useWebWorker: true,
+        });
+      } catch (compErr) {
+        console.warn('Compresión falló, subiendo original:', compErr);
+        archivoFinal = file;
+      }
+    }
+
     // Generar ruta única: comunidad-img/<uid>/<timestamp>.<ext>
-    const ext = file.name.split('.').pop().toLowerCase() || 'jpg';
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
     const ruta = `${session.user.id}/${Date.now()}.${ext}`;
 
     // Subida directa del archivo
     const { error: upErr } = await supabase.storage
       .from('comunidad-img')
-      .upload(ruta, file, { cacheControl: '3600', upsert: false });
+      .upload(ruta, archivoFinal, { cacheControl: '3600', upsert: false });
 
     if (upErr) return { error: upErr.message || 'No se pudo subir la imagen.' };
 
