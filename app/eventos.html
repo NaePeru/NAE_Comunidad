@@ -21,6 +21,9 @@
   <link rel="stylesheet" href="../assets/css/layout.css?v=20240710v1">
   <link rel="stylesheet" href="../assets/css/admin.css?v=20240710v1">
   <link rel="stylesheet" href="../assets/css/eventos.css?v=20240710v1">
+
+  <!-- Red de seguridad: captura errores antes que cualquier otro JS -->
+  <script src="../assets/js/error-guard.js"></script>
 </head>
 <body>
 
@@ -106,7 +109,7 @@
     import { supabase } from '../assets/js/supabase-client.js';
     import { cargarPerfilCompleto, esAdmin, session } from '../assets/js/auth.js';
     import { renderNavbar } from '../assets/js/navbar.js?v=20260809';
-    import { cargarEventos, guardarEvento } from '../assets/js/eventos.js';
+    import { cargarEventos, guardarEvento, getEventoById } from '../assets/js/eventos.js';
 
     const { data: { session: sess } } = await supabase.auth.getSession();
     if (!sess) {
@@ -126,20 +129,34 @@
     window.__openEventoModal = (id = null) => {
       const modal = document.getElementById('modal-evento');
       document.getElementById('evento-id').value = id || '';
+
+      // Buscar el evento en el cache (si es edición) para precargar sus datos.
+      // Antes los campos se limpiaban siempre → editar un evento borraba su contenido.
+      const ev = id ? getEventoById(id) : null;
+
       if (id) {
         document.getElementById('modal-evento-title').textContent = 'Editar seminario';
-        // Por simplicidad, dejamos campos en blanco para edición (se podrían precargar)
       } else {
         document.getElementById('modal-evento-title').textContent = 'Nuevo seminario';
       }
-      // Limpiar campos
-      ['evento-titulo','evento-link','evento-desc','evento-hora'].forEach(i => document.getElementById(i).value = '');
-      document.getElementById('evento-tipo').value = 'webinar';
-      // Fecha por defecto: próximo sábado
-      const proxSabado = new Date();
-      const diasHastaSabado = (6 - proxSabado.getDay() + 7) % 7 || 7;
-      proxSabado.setDate(proxSabado.getDate() + diasHastaSabado);
-      document.getElementById('evento-fecha').value = proxSabado.toISOString().split('T')[0];
+
+      // Precargar campos con datos existentes (o vacíos si es nuevo)
+      document.getElementById('evento-titulo').value = ev?.titulo || '';
+      document.getElementById('evento-tipo').value = ev?.tipo || 'webinar';
+      document.getElementById('evento-link').value = ev?.link || '';
+      document.getElementById('evento-desc').value = ev?.descripcion || '';
+      document.getElementById('evento-hora').value = ev?.hora ? ev.hora.substring(0,5) : '';
+
+      if (ev?.fecha) {
+        // Si editamos, mantener la fecha existente
+        document.getElementById('evento-fecha').value = ev.fecha;
+      } else {
+        // Si es nuevo, sugerir próximo sábado
+        const proxSabado = new Date();
+        const diasHastaSabado = (6 - proxSabado.getDay() + 7) % 7 || 7;
+        proxSabado.setDate(proxSabado.getDate() + diasHastaSabado);
+        document.getElementById('evento-fecha').value = proxSabado.toISOString().split('T')[0];
+      }
 
       modal.classList.add('open');
     };
