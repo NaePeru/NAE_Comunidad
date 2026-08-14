@@ -54,7 +54,9 @@ export function verificarAcceso() {
   window.__logoutApp = async () => {
     const { supabase } = await import('./supabase-client.js');
     await supabase.auth.signOut();
-    window.location.href = 'index.html';
+    // FIX: las páginas están en app/, así que hay que subir un nivel.
+    // Antes usaba 'index.html' (relativo a app/) y rompía en algunas páginas.
+    window.location.href = '../index.html';
   };
 
   return false;
