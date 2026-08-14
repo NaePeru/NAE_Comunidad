@@ -24,15 +24,19 @@ export function getLeccionById(cursoId, leccionId) {
 // DASHBOARD — estadísticas generales
 // ============================================================================
 export async function cargarDashboard() {
-  const { count: totalUsers } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
-  const { count: totalCourses } = await supabase.from('courses').select('id', { count: 'exact', head: true });
-  const { count: totalLessons } = await supabase.from('lessons').select('id', { count: 'exact', head: true });
-  const { count: totalPosts } = await supabase.from('posts').select('id', { count: 'exact', head: true });
+  // OPTIMIZACIÓN: las 4 counts son independientes → las lanzamos en paralelo.
+  // Antes se hacían secuenciales (4 viajes a la BD uno tras otro = lento).
+  const [users, courses, lessons, posts] = await Promise.all([
+    supabase.from('profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('courses').select('id', { count: 'exact', head: true }),
+    supabase.from('lessons').select('id', { count: 'exact', head: true }),
+    supabase.from('posts').select('id', { count: 'exact', head: true }),
+  ]);
 
-  setText('ad-total-users', formatNum(totalUsers || 0));
-  setText('ad-total-courses', formatNum(totalCourses || 0));
-  setText('ad-total-lessons', formatNum(totalLessons || 0));
-  setText('ad-total-posts', formatNum(totalPosts || 0));
+  setText('ad-total-users', formatNum(users.count || 0));
+  setText('ad-total-courses', formatNum(courses.count || 0));
+  setText('ad-total-lessons', formatNum(lessons.count || 0));
+  setText('ad-total-posts', formatNum(posts.count || 0));
 }
 
 function setText(id, val) {
@@ -116,7 +120,15 @@ export async function guardarCurso(formData) {
     result = await supabase.from('courses').insert(datos);
   }
 
-  if (result.error) { toast('⚠️ Error: ' + result.error.message); return { error: true }; }
+  if (result.error) {
+    // Mensaje claro si el título ya existe (constraint UNIQUE anti-duplicados)
+    if (result.error.code === '23505' || result.error.message?.includes('duplicate key')) {
+      toast('⚠️ Ya existe un curso con ese título. Usá otro nombre.');
+    } else {
+      toast('⚠️ Error: ' + result.error.message);
+    }
+    return { error: true };
+  }
 
   toast(formData.id ? '✅ Curso actualizado' : '✅ Curso creado');
   await cargarCursosAdmin();
@@ -147,19 +159,24 @@ async function gestionarLecciones(cursoId) {
   const curso = cursosCache.find(c => c.id === cursoId);
   if (!curso) return;
 
-  // Cargar módulos y lecciones
-  const { data: modules } = await supabase
-    .from('modules').select('*').eq('course_id', cursoId).order('orden', { ascending: true });
-  const { data: lessons } = await supabase
-    .from('lessons').select('*').eq('course_id', cursoId).order('orden', { ascending: true });
+  // Renderizar vista de gestión de lecciones (guard antes de tocar el DOM)
+  const panel = document.getElementById('admin-lecciones-panel');
+  if (!panel) return;
+  const tituloEl = document.getElementById('lecciones-curso-titulo');
+
+  // OPTIMIZACIÓN: módulos y lecciones son independientes → paralelas.
+  const [modulesRes, lessonsRes] = await Promise.all([
+    supabase.from('modules').select('*').eq('course_id', cursoId).order('orden', { ascending: true }),
+    supabase.from('lessons').select('*').eq('course_id', cursoId).order('orden', { ascending: true }),
+  ]);
+  const modules = modulesRes.data;
+  const lessons = lessonsRes.data;
 
   // Guardar en cache para edición
   leccionesCache[cursoId] = lessons || [];
 
-  // Renderizar vista de gestión de lecciones
-  const panel = document.getElementById('admin-lecciones-panel');
   panel.dataset.cursoId = cursoId;
-  document.getElementById('lecciones-curso-titulo').textContent = '🎬 ' + curso.titulo;
+  if (tituloEl) tituloEl.textContent = '🎬 ' + curso.titulo;
 
   panel.innerHTML = `
     <div class="card" style="margin-bottom:18px;">
@@ -321,7 +338,10 @@ export async function cargarPagosAdmin() {
   // 2. Actualizar estadísticas
   const aprobados = (pagos || []).filter(p => p.estado === 'aprobado');
   const pendientes = (pagos || []).filter(p => p.estado !== 'aprobado');
-  const totalIngresos = aprobados.length * 50; // S/50 por curso
+  // OPTIMIZACIÓN: antes los ingresos se calculaban como count * 50 (hardcodeado).
+  // Ahora usamos el monto_detectado de cada voucher aprobado (más preciso).
+  // Si no tiene monto, asumimos S/50 (precio estándar).
+  const totalIngresos = aprobados.reduce((sum, p) => sum + (Number(p.monto_detectado) || 50), 0);
 
   const elIng = document.getElementById('stats-ingresos');
   const elVen = document.getElementById('stats-vendidos');
@@ -370,19 +390,30 @@ export async function cargarPagosAdmin() {
 
 // ============================================================================
 export async function cargarAlumnos() {
+  if (!session.user?.id) { toast('⚠️ Tu sesión expiró. Recargá la página.'); return; }
   const { data: profiles, error } = await supabase
     .from('profiles')
     .select('id, nombre, rol, puntos, avatar_url, color, activo, creado_en')
     .order('creado_en', { ascending: false });
 
-  if (error) { console.error(error); return; }
+  if (error) {
+    console.error(error);
+    toast('⚠️ No se pudo cargar la lista de alumnos.');
+    return;
+  }
 
-  // Cargar membresías
+  // Cargar membresías (con manejo de error)
   const ids = (profiles || []).map(p => p.id);
-  const { data: memberships } = await supabase
-    .from('memberships').select('*').in('user_id', ids);
-  const memMap = {};
-  (memberships || []).forEach(m => memMap[m.user_id] = m);
+  let memMap = {};
+  if (ids.length > 0) {
+    const { data: memberships, error: memErr } = await supabase
+      .from('memberships').select('*').in('user_id', ids);
+    if (memErr) {
+      console.error('Error cargando membresías:', memErr);
+    } else {
+      (memberships || []).forEach(m => memMap[m.user_id] = m);
+    }
+  }
 
   const tbody = document.getElementById('admin-alumnos-tbody');
   if (!tbody) return;
@@ -431,29 +462,51 @@ export async function cargarAlumnos() {
 }
 
 // ── APROBAR ALUMNO (Pasa a trial/activo) ──
+// Flag anti-doble-click: si el admin hace click rápido 2 veces en ✅,
+// no queremos disparar 2 updates contradictorios.
+let _accionEnCurso = false;
+
 async function aprobarAlumno(uid) {
-  const { error } = await supabase.from('memberships')
-    .update({ estado: 'trial', fecha_vence: null }).eq('user_id', uid);
-  if (error) { toast('⚠️ Error al aprobar'); return; }
-  toast('✅ Alumno aprobado');
-  await cargarAlumnos();
+  if (_accionEnCurso) return;
+  _accionEnCurso = true;
+  try {
+    const { error } = await supabase.from('memberships')
+      .update({ estado: 'trial', fecha_vence: null }).eq('user_id', uid);
+    if (error) { toast('⚠️ Error al aprobar'); return; }
+    toast('✅ Alumno aprobado');
+    await cargarAlumnos();
+  } finally {
+    _accionEnCurso = false;
+  }
 }
 
 async function activarAlumno(uid) {
-  const { error } = await supabase.from('memberships')
-    .update({ estado: 'activa', fecha_vence: null }).eq('user_id', uid);
-  if (error) { toast('⚠️ Error'); return; }
-  toast('✅ Acceso activado');
-  await cargarAlumnos();
+  if (_accionEnCurso) return;
+  _accionEnCurso = true;
+  try {
+    const { error } = await supabase.from('memberships')
+      .update({ estado: 'activa', fecha_vence: null }).eq('user_id', uid);
+    if (error) { toast('⚠️ Error'); return; }
+    toast('✅ Acceso activado');
+    await cargarAlumnos();
+  } finally {
+    _accionEnCurso = false;
+  }
 }
 
 async function suspenderAlumno(uid) {
+  if (_accionEnCurso) return;
   if (!confirm('¿Rechazar/Suspender el acceso de este alumno?')) return;
-  const { error } = await supabase.from('memberships')
-    .update({ estado: 'rechazada' }).eq('user_id', uid);
-  if (error) { toast('⚠️ Error'); return; }
-  toast('🚫 Alumno rechazado/suspendido');
-  await cargarAlumnos();
+  _accionEnCurso = true;
+  try {
+    const { error } = await supabase.from('memberships')
+      .update({ estado: 'rechazada' }).eq('user_id', uid);
+    if (error) { toast('⚠️ Error'); return; }
+    toast('🚫 Alumno rechazado/suspendido');
+    await cargarAlumnos();
+  } finally {
+    _accionEnCurso = false;
+  }
 }
 
 
