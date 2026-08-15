@@ -5,9 +5,9 @@
 // Con RAG (base de conocimiento NAE) + voz (micrófono + text-to-speech).
 // ============================================================================
 
-import { escapeHtml } from './utils.js';
+import { escapeHtml, getNivel, getSiguienteNivel } from './utils.js';
 import { supabase } from './supabase-client.js';
-import { session } from './auth.js';
+import { session, refrescarPerfil } from './auth.js';
 import { SYSTEM_PROMPT } from './prompt.js';
 
 // ── ESTADO ──────────────────────────────────────────────────────────────────
@@ -20,18 +20,38 @@ const PROMPT_BASE = SYSTEM_PROMPT;
 
 // ── LLAMADA A OPENAI (Vía Edge Function de Supabase - Segura y Rápida) ─────
 async function llamarIA(pregunta) {
-  // PERSONALIZACIÓN: inyectamos el nombre del alumno en el contexto para que
-  // Alessandra lo use de forma natural (sin tocar la Edge Function).
+  // PERSONALIZACIÓN (Nivel 4): inyectamos nombre + puntos + nivel del alumno
+  // en el contexto para que Alessandra responda con datos reales.
+  // Todo sale de session.profile (ya cargado) — sin tocar la Edge Function.
   let systemPrompt = PROMPT_BASE;
-  const nombreAlumno = session?.profile?.nombre?.trim();
-  if (nombreAlumno) {
-    systemPrompt += `
+  const p = session?.profile;
+  if (p) {
+    const pts = p.puntos ?? 0;
+    const nivel = getNivel(pts);
+    const sig = getSiguienteNivel(pts);
+
+    let ctx = `
 
 <alumno_actual>
-El alumno que te escribe ahora se llama ${nombreAlumno}.
-Puedes dirigirte a él por su nombre de forma natural y cercana (por ejemplo,
-al saludarlo o al cerrar una respuesta), sin repetirlo en cada mensaje.
+- Nombre: ${p.nombre}
+- Puntos actuales: ${pts}
+- Nivel actual: ${nivel.nombre} (nivel ${nivel.num} de 8)`;
+
+    if (sig) {
+      const faltan = sig.min - pts;
+      ctx += `
+- Siguiente nivel: ${sig.nombre} (se alcanza con ${sig.min} puntos; le faltan ${faltan})`;
+    } else {
+      ctx += `
+- Ya alcanzó el nivel máximo (Súper Saiyajin Blue)`;
+    }
+
+    ctx += `
+Puedes dirigirte a él por su nombre de forma natural y cercana (sin repetirlo
+en cada mensaje). Si pregunta por sus puntos o su nivel, respónde con estos
+datos exactos y anímalo a participar en la comunidad para sumar más.
 </alumno_actual>`;
+    systemPrompt += ctx;
   }
   const recentHistory = chatHistory.slice(-4);
 
@@ -143,6 +163,9 @@ function toggleChat() {
     // Ocultar badge
     const badge = fab.querySelector('.chat-badge');
     if (badge) badge.style.display = 'none';
+    // Refrescar puntos/nivel silenciosamente para que el contexto de la IA
+    // esté siempre fresco (por si el alumno ganó puntos recientemente).
+    refrescarPerfil().catch(() => {});
     setTimeout(() => document.getElementById('chat-input')?.focus(), 200);
   }
 }
