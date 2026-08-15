@@ -191,141 +191,189 @@ export async function generarPDFCertificado(cert, esDemo = false) {
   const W = 297; // ancho A4 landscape
   const H = 210; // alto  A4 landscape
 
+  // ── PALETA DE MARCA NAE ──
+  const NAVY   = [22, 35, 63];      // azul marino (bordes, títulos)
+  const GOLD   = [201, 162, 39];    // dorado (acentos, sello)
+  const GOLD_L = [247, 240, 219];   // dorado clarito (fondos suaves)
+  const GRAY   = [110, 117, 130];   // gris texto secundario
+  const DARK   = [25, 28, 35];      // casi negro (nombre)
+
   // ── FONDO ──
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, W, H, 'F');
 
-  // ── BORDE EXTERIOR (azul tenue) ──
-  doc.setDrawColor(70, 110, 180);
-  doc.setLineWidth(2);
-  doc.rect(8, 8, W - 16, H - 16);
-
-  // ── BORDE INTERIOR fino ──
-  doc.setDrawColor(150, 175, 215);
-  doc.setLineWidth(0.4);
-  doc.rect(13, 13, W - 26, H - 26);
-
-  // ── ENCABEZADO: LOGO + TÍTULO NAE ──
+  // ── MARCA DE AGUA: rombo NAE gigante, muy tenue, detrás de todo ──
+  doc.saveGraphicsState();
+  doc.setTextColor(243, 246, 252);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(70, 110, 180);
-  doc.setFontSize(14);
-  doc.text('◆ NAE', W / 2, 30, { align: 'center' });
+  doc.setFontSize(200);
+  doc.text('◆', W / 2, H / 2 + 40, { align: 'center' });
+  doc.restoreGraphicsState();
+
+  // ── BORDES DOBLES (marino exterior + dorado interior) ──
+  doc.setDrawColor(...NAVY);
+  doc.setLineWidth(1.6);
+  doc.rect(7, 7, W - 14, H - 14);
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.5);
+  doc.rect(10.5, 10.5, W - 21, H - 21);
+
+  // ── ORNAMENTOS DE ESQUINA (doble "L" marino+dorado) ──
+  const orn = (x, y, dx, dy) => {
+    doc.setDrawColor(...NAVY); doc.setLineWidth(1.2);
+    doc.line(x, y, x + 16 * dx, y);
+    doc.line(x, y, x, y + 16 * dy);
+    doc.setDrawColor(...GOLD); doc.setLineWidth(0.5);
+    doc.line(x + 3 * dx, y + 3 * dy, x + 11 * dx, y + 3 * dy);
+    doc.line(x + 3 * dx, y + 3 * dy, x + 3 * dx, y + 11 * dy);
+  };
+  orn(14, 14, 1, 1);   // sup. izq
+  orn(W - 14, 14, -1, 1);  // sup. der
+  orn(14, H - 14, 1, -1);  // inf. izq
+  orn(W - 14, H - 14, -1, -1); // inf. der
+
+  // ── BANDA SUPERIOR NAVY CON MARCA ──
+  doc.setFillColor(...NAVY);
+  doc.rect(10.5, 10.5, W - 21, 14, 'F');
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.5);
+  doc.line(10.5, 24.5, W - 10.5, 24.5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...GOLD);
+  doc.setFontSize(13);
+  doc.text('◆ NAE', 24, 19.8);
 
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(90, 90, 90);
-  doc.setFontSize(10);
-  doc.text('NEW ACADEMY EXCEL', W / 2, 37, { align: 'center' });
-
+  doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
-  doc.setTextColor(140, 140, 140);
-  doc.text('Centro de Capacitación NAE · Comunidad Virtual de Análisis de Datos', W / 2, 42, { align: 'center' });
+  doc.text('NEW ACADEMY EXCEL', W - 24, 19.8, { align: 'right' });
 
-  // Línea separadora
-  doc.setDrawColor(70, 110, 180);
-  doc.setLineWidth(0.6);
-  doc.line(80, 47, W - 80, 47);
-
-  // ── TÍTULO "CERTIFICADO" ──
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(40, 40, 40);
-  doc.setFontSize(26);
-  doc.text('CERTIFICADO', W / 2, 62, { align: 'center' });
+  // ── TÍTULO PRINCIPAL ──
+  doc.setFont('times', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.setFontSize(32);
+  doc.text('CERTIFICADO', W / 2, 47, { align: 'center', charSpace: 3 });
 
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
-  doc.setFontSize(11);
-  doc.text('DE APROBACIÓN', W / 2, 69, { align: 'center' });
+  doc.setTextColor(...GRAY);
+  doc.setFontSize(10.5);
+  doc.text('DE APROBACIÓN', W / 2, 55, { align: 'center', charSpace: 2.5 });
+
+  // Divisor dorado: línea + rombo + línea
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.8);
+  doc.line(W / 2 - 26, 61, W / 2 - 6, 61);
+  doc.line(W / 2 + 6, 61, W / 2 + 26, 61);
+  doc.setFontSize(9);
+  doc.setTextColor(...GOLD);
+  doc.text('◆', W / 2, 62.5, { align: 'center' });
 
   // ── OTORGADO A ──
-  doc.setFontSize(10);
-  doc.setTextColor(120, 120, 120);
-  doc.text('Otorgado a:', W / 2, 82, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...GRAY);
+  doc.text('SE OTORGA EL PRESENTE CERTIFICADO A', W / 2, 72, { align: 'center', charSpace: 1 });
 
-  // Nombre del alumno (mayúsculas)
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(20, 20, 20);
-  doc.setFontSize(22);
-  doc.text((cert.nombre_emisor || 'ALUMNO').toUpperCase(), W / 2, 92, { align: 'center' });
+  // ── NOMBRE DEL ALUMNO (con tamaño adaptativo si es muy largo) ──
+  const nombreCompleto = (cert.nombre_emisor || 'ALUMNO').toUpperCase();
+  doc.setFont('times', 'bolditalic');
+  doc.setTextColor(...DARK);
+  doc.setFontSize(nombreCompleto.length > 28 ? 20 : 26);
+  doc.text(nombreCompleto, W / 2, 85, { align: 'center' });
+
+  // Subrayado dorado del nombre
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.7);
+  doc.line(W / 2 - 38, 90, W / 2 + 38, 90);
 
   // DNI
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
   if (cert.dni) {
-    doc.text(`DNI: ${cert.dni}`, W / 2, 99, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...GRAY);
+    doc.text(`DNI: ${cert.dni}`, W / 2, 97, { align: 'center' });
   }
 
-  // ── TEXTO INTERMEDIO ──
-  doc.setFontSize(11);
-  doc.setTextColor(70, 70, 70);
-  doc.text('Por completar satisfactoriamente el programa de:', W / 2, 112, { align: 'center' });
+  // ── TEXTO INTERMEDIO + PROGRAMA ──
+  doc.setFontSize(10.5);
+  doc.setTextColor(...GRAY);
+  doc.text('Por completar satisfactoriamente el programa de', W / 2, 107, { align: 'center' });
 
-  // ── TÍTULO DEL CERTIFICADO ──
+  // Título del programa sobre fondo dorado suave
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(70, 110, 180);
-  doc.setFontSize(20);
-  doc.text(cert.titulo, W / 2, 123, { align: 'center' });
+  doc.setFontSize(18);
+  doc.setTextColor(...NAVY);
+  const tituloProg = (cert.titulo || '').toUpperCase();
+  const tw = doc.getTextWidth(tituloProg);
+  const boxW = Math.min(tw + 18, W - 90);
+  const boxX = (W - boxW) / 2;
+  doc.setFillColor(...GOLD_L);
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(boxX, 111, boxW, 12, 2, 2, 'FD');
+  doc.text(tituloProg, W / 2, 119.5, { align: 'center' });
 
-  // ── DETALLES: HORAS / MODALIDAD / FECHA ──
+  // ── DETALLES (sin emojis: los PDF estándar no los renderizan) ──
   const fechaStr = new Date(cert.emitido_en).toLocaleDateString('es-PE', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
-
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.setTextColor(90, 90, 90);
+  doc.setTextColor(...GRAY);
+  doc.text(`${cert.horas} horas académicas   ·   Modalidad ${cert.modalidad}   ·   Lima, Perú`, W / 2, 132, { align: 'center' });
+  doc.setFontSize(9);
+  doc.text(`Emitido el ${fechaStr}`, W / 2, 138, { align: 'center' });
 
-  // Tres pill-boxes
-  const pills = [
-    `⏱  ${cert.horas} horas`,
-    `💻  Modalidad ${cert.modalidad}`,
-    `📅  Emitido: ${fechaStr}`,
-  ];
-  const pillW = 70;
-  const pillH = 8;
-  const gap = 8;
-  const totalPillsW = pills.length * pillW + (pills.length - 1) * gap;
-  let xPill = (W - totalPillsW) / 2;
-  const yPill = 138;
+  // ── SELLO CIRCULAR OFICIAL (derecha) ──
+  const sx = 247, sy = 160, sr = 17;
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(1.2);
+  doc.circle(sx, sy, sr);
+  doc.setDrawColor(...NAVY);
+  doc.setLineWidth(0.4);
+  doc.circle(sx, sy, sr - 2.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...GOLD);
+  doc.text('◆ NAE ◆', sx, sy - 4, { align: 'center' });
+  doc.setFontSize(7.5);
+  doc.setTextColor(...NAVY);
+  doc.text('CERTIFICADO', sx, sy + 1.5, { align: 'center', charSpace: 0.5 });
+  doc.text('VERIFICADO', sx, sy + 5.5, { align: 'center', charSpace: 0.5 });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...GRAY);
+  doc.text(String(new Date(cert.emitido_en).getFullYear()), sx, sy + 10.5, { align: 'center' });
 
-  pills.forEach(txt => {
-    doc.setFillColor(240, 244, 252);
-    doc.setDrawColor(70, 110, 180);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(xPill, yPill, pillW, pillH, 2, 2, 'FD');
-    doc.setTextColor(60, 90, 150);
-    doc.setFontSize(9);
-    doc.text(txt, xPill + pillW / 2, yPill + 5.4, { align: 'center' });
-    xPill += pillW + gap;
-  });
-
-  // ── FIRMAS (2 firmas) ──
+  // ── FIRMAS (nombres en cursiva elegante) ──
   const firmas = [
-    { nombre: 'Geronimo Cruzado', cargo: 'Analista de Datos', x: 75 },
-    { nombre: 'Jhonny Vasquez C.', cargo: 'Arquitecto de Datos', x: W - 75 },
+    { nombre: 'Geronimo Cruzado', cargo: 'Analista de Datos · Director', x: 75 },
+    { nombre: 'Jhonny Vasquez C.', cargo: 'Arquitecto de Datos', x: 175 },
   ];
-
-  doc.setTextColor(40, 40, 40);
   firmas.forEach(f => {
-    doc.setDrawColor(70, 70, 70);
+    doc.setDrawColor(...NAVY);
     doc.setLineWidth(0.5);
-    doc.line(f.x - 45, 175, f.x + 45, 175);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text(f.nombre, f.x, 170, { align: 'center' });
+    doc.line(f.x - 40, 175, f.x + 40, 175);
+    doc.setFont('times', 'bolditalic');
+    doc.setFontSize(13);
+    doc.setTextColor(...DARK);
+    doc.text(f.nombre, f.x, 170.5, { align: 'center' });
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(110, 110, 110);
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY);
     doc.text(f.cargo, f.x, 181, { align: 'center' });
   });
 
-  // ── CÓDIGO DE VERIFICACIÓN ──
+  // ── PIE: CÓDIGO DE VERIFICACIÓN ──
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...NAVY);
+  doc.text(`Código de verificación: ${cert.codigo}`, W / 2 - 40, 196, { align: 'center' });
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text(`Código de verificación: ${cert.codigo}`, W / 2, 195, { align: 'center' });
   doc.setFontSize(7);
-  doc.text('Verifica la autenticidad en nae-comunidad.vercel.app/verificar.html', W / 2, 199, { align: 'center' });
+  doc.setTextColor(...GRAY);
+  doc.text('Verifica la autenticidad en nae-comunidad.vercel.app/verificar.html', W / 2 - 40, 200.5, { align: 'center' });
 
   // ── MARCA DE AGUA "MUESTRA" (solo si es demo) ──
   if (esDemo) {
@@ -333,9 +381,7 @@ export async function generarPDFCertificado(cert, esDemo = false) {
     doc.setTextColor(220, 220, 220);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(72);
-    // Texto diagonal centrado
     doc.text('MUESTRA', W / 2, H / 2 + 15, { align: 'center', angle: 30 });
-    // Texto pequeño "SIN VALIDEZ OFICIAL"
     doc.setTextColor(200, 200, 200);
     doc.setFontSize(10);
     doc.text('CERTIFICADO DE DEMOSTRACIÓN — SIN VALIDEZ OFICIAL', W / 2, H / 2 + 30, { align: 'center', angle: 30 });
