@@ -14,6 +14,7 @@ import { SYSTEM_PROMPT } from './prompt.js';
 let chatHistory = [];
 let isLoading = false;
 let chatOpen = false;
+let cacheProgreso = null;   // resumen de progreso de certificados (para la IA)
 
 // ── PROMPT BASE (Importado desde prompt.js) ────────────────────────────────
 const PROMPT_BASE = SYSTEM_PROMPT;
@@ -47,9 +48,23 @@ async function llamarIA(pregunta) {
     }
 
     ctx += `
+
 Puedes dirigirte a él por su nombre de forma natural y cercana (sin repetirlo
 en cada mensaje). Si pregunta por sus puntos o su nivel, respónde con estos
-datos exactos y anímalo a participar en la comunidad para sumar más.
+datos exactos y anímalo a participar en la comunidad para sumar más.`;
+
+    if (cacheProgreso) {
+      ctx += `
+
+- Progreso de certificados:
+${cacheProgreso}
+
+Si pregunta por su avance o qué le falta para un certificado, usa estos datos.
+Los certificados se emiten automáticamente desde la sección "Mis Certificados"
+(icono 🎓) cuando el módulo llega al 100%.`;
+    }
+
+    ctx += `
 </alumno_actual>`;
     systemPrompt += ctx;
   }
@@ -166,6 +181,11 @@ function toggleChat() {
     // Refrescar puntos/nivel silenciosamente para que el contexto de la IA
     // esté siempre fresco (por si el alumno ganó puntos recientemente).
     refrescarPerfil().catch(() => {});
+    // Cargar progreso de certificados (import perezoso: solo al abrir el chat)
+    import('./cert-final.js')
+      .then(m => m.resumenProgresoIA())
+      .then(txt => { cacheProgreso = txt; })
+      .catch(() => { cacheProgreso = null; });
     setTimeout(() => document.getElementById('chat-input')?.focus(), 200);
   }
 }
