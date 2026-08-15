@@ -99,7 +99,7 @@ export async function cargarPerfilCompleto() {
 // OPTIMIZACIÓN: antes traía TODAS las columnas. Ahora solo las que cambian
 // (puntos, nivel) + las que usa el navbar (rol, nombre, color, avatar_url).
 // Hace merge con el perfil existente para no perder datos.
-export async function refrescarPerfil() {
+export async function refrescarPerfil(opciones = {}) {
   if (!session.user?.id) return;
   const { data } = await supabase
     .from('profiles')
@@ -110,10 +110,14 @@ export async function refrescarPerfil() {
     const puntosAnt = session.profile?.puntos ?? 0;
     // Merge: conservamos los campos viejos que no trajimos y actualizamos los nuevos
     session.profile = { ...(session.profile || {}), ...data };
-    // Avisar a la página que el perfil cambió (para refrescar UI)
-    window.dispatchEvent(new CustomEvent('perfil-actualizado', {
-      detail: { puntos: data.puntos, puntosAnteriores: puntosAnt }
-    }));
+    // Avisar a la página que el perfil cambió (para refrescar UI).
+    // Con { silent: true } no disparamos el evento (para refrescos internos,
+    // p.ej. actualizar el contexto del chat sin re-renderizar la navbar).
+    if (opciones?.silent !== true) {
+      window.dispatchEvent(new CustomEvent('perfil-actualizado', {
+        detail: { puntos: data.puntos, puntosAnteriores: puntosAnt }
+      }));
+    }
   }
   return session;
 }
