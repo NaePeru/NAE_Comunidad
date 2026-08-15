@@ -5,7 +5,7 @@
 // Con RAG (base de conocimiento NAE) + voz (micrófono + text-to-speech).
 // ============================================================================
 
-import { escapeHtml, getNivel, getSiguienteNivel } from './utils.js';
+import { escapeHtml, getNivel, getSiguienteNivel, tiempoRelativo } from './utils.js';
 import { supabase } from './supabase-client.js';
 import { session, refrescarPerfil } from './auth.js';
 import { SYSTEM_PROMPT } from './prompt.js';
@@ -15,6 +15,7 @@ let chatHistory = [];
 let isLoading = false;
 let chatOpen = false;
 let cacheProgreso = null;   // resumen de progreso de certificados (para la IA)
+let cacheVouchers = null;   // últimos vouchers de pago del alumno (para la IA)
 
 // ── PROMPT BASE (Importado desde prompt.js) ────────────────────────────────
 const PROMPT_BASE = SYSTEM_PROMPT;
@@ -62,6 +63,34 @@ ${cacheProgreso}
 Si pregunta por su avance o qué le falta para un certificado, usa estos datos.
 Los certificados se emiten automáticamente desde la sección "Mis Certificados"
 (icono 🎓) cuando el módulo llega al 100%.`;
+    }
+
+    // Vouchers de pago (solo lectura: la IA informa estado, no ejecuta acciones)
+    if (Array.isArray(cacheVouchers)) {
+      if (cacheVouchers.length === 0) {
+        ctx += `
+
+- Vouchers de pago: no subió ningún comprobante todavía.`;
+      } else {
+        const lineasV = cacheVouchers.map(v => {
+          const curso = v.courses?.titulo || 'Curso';
+          const monto = v.monto_detectado ? `S/${v.monto_detectado}` : 'monto no legible';
+          const estado = v.estado === 'aprobado' ? 'APROBADO ✓' : 'PENDIENTE de revisión';
+          const cuando = tiempoRelativo(v.creado_en);
+          return `  · ${curso} — ${monto} — ${estado} (subido ${cuando})`;
+        });
+        ctx += `
+
+- Vouchers de pago subidos (últimos ${cacheVouchers.length}):
+${lineasV.join('\n')}`;
+      }
+      ctx += `
+
+Si pregunta por un pago o comprobante, usá estos datos exactos. Un voucher
+PENDIENTE se revisa en menos de 24 horas (o por WhatsApp 988502354). Si todo
+figura APROBADO pero un curso sigue bloqueado, indicale que recargue la página.
+Si no subió ninguno, explicale que paga S/50 escaneando el QR de Yape en la
+pantalla del curso y luego sube la captura ahí mismo.`;
     }
 
     ctx += `
@@ -187,6 +216,15 @@ function toggleChat() {
       .then(m => m.resumenProgresoIA())
       .then(txt => { cacheProgreso = txt; })
       .catch(() => { cacheProgreso = null; });
+    // Cargar últimos vouchers de pago (RLS garantiza que solo ve los suyos).
+    // SOLO LECTURA: la IA únicamente informa el estado, no ejecuta nada.
+    supabase
+      .from('payment_logs')
+      .select('monto_detectado, estado, creado_en, courses(titulo)')
+      .order('creado_en', { ascending: false })
+      .limit(3)
+      .then(res => { cacheVouchers = res.data || []; })
+      .catch(() => { cacheVouchers = null; });
     setTimeout(() => document.getElementById('chat-input')?.focus(), 200);
   }
 }
