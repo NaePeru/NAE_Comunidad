@@ -33,12 +33,13 @@ para ayudarte con dudas sobre cursos, pagos, certificados y participación.
 
 <conocimiento>
 CURSOS GRATIS:
-- Excel básico
-- Tablas dinámicas
+- NAE / Empieza aquí (curso de bienvenida)
+- Excel Nivel 1 (Fundamental)
+- Tabla y Gráficos Dinámicos
 
 CURSOS DE PAGO (precio fijo: S/50 por curso, no negociable):
-- Excel nivel 2, Excel nivel 3, Excel BI
-- Power BI nivel 1, Power BI nivel 2, Power BI nivel 3
+- Excel Nivel 2 (Intermedio), Excel Nivel 3 (Avanzado), Excel Business Intelligence
+- Power BI Nivel 1, Power BI Nivel 2, Power BI Nivel 3
 - SQL
 
 FORMATO Y CONTENIDO:
@@ -70,6 +71,7 @@ PROCESO DE PAGO:
 - El alumno elige el curso premium que desea
 - Precio: S/50 por curso (fijo, no negociable, monto exacto)
 - Métodos de pago: Yape o Plin al 988502354 (a nombre de Geronimo Cruzado)
+- En la pantalla del curso aparece un CÓDIGO QR de Yape: al escanearlo con la app, el número y el titular ya vienen cargados (solo se escribe el monto). Si el alumno navega desde el celular, paga al número indicado directamente desde Yape.
 - DESPUÉS DE PAGAR, el alumno tiene DOS opciones:
   OPCIÓN 1 (AUTOMÁTICA E INSTANTÁNEA): Subir el comprobante (voucher) directamente en la plataforma (en el curso bloqueado). El sistema lo verifica automáticamente con Inteligencia Artificial y desbloquea el curso al instante. Solo necesita que el voucher muestre el monto exacto de S/50 y el nombre del destinatario.
   OPCIÓN 2 (MANUAL): Enviar el comprobante por WhatsApp al 988502354 y esperar a que el equipo lo active manualmente (puede demorar hasta 1 día).
@@ -89,7 +91,7 @@ ACCESO A CONTENIDO:
 COMUNIDAD Y PARTICIPACIÓN:
 - Unirse a NAE es completamente GRATIS; solo se paga por cursos individuales de pago
 - No hay restricción de edad mínima
-- Se gana puntaje ayudando a otros (resolviendo problemas de Excel/Power BI) y publicando contenido de interés (votado por otros alumnos)
+- Se gana puntaje participando en la comunidad: +2 puntos por publicar, +1 por comentar, +1 por cada like recibido en tus publicaciones o comentarios, y +5 de bonus por publicar en modo LIVE durante los seminarios (una vez por día)
 - Niveles: Humano (0) → Kaio-ken (100) → Saiyajín (300) → Súper Saiyajín (800) → Súper Saiyajín 2 (1500) → Súper Saiyajín 3 (3000) → Saiyajín Dios (5000) → Súper Saiyajín Blue (10000)
 - Al llegar a "Súper Saiyajín" (800 pts), acceso GRATUITO al curso de pago que elija
 - No existe programa de referidos
