@@ -7,6 +7,7 @@
 
 import { escapeHtml } from './utils.js';
 import { supabase } from './supabase-client.js';
+import { session } from './auth.js';
 import { SYSTEM_PROMPT } from './prompt.js';
 
 // ── ESTADO ──────────────────────────────────────────────────────────────────
@@ -19,7 +20,19 @@ const PROMPT_BASE = SYSTEM_PROMPT;
 
 // ── LLAMADA A OPENAI (Vía Edge Function de Supabase - Segura y Rápida) ─────
 async function llamarIA(pregunta) {
-  const systemPrompt = PROMPT_BASE;
+  // PERSONALIZACIÓN: inyectamos el nombre del alumno en el contexto para que
+  // Alessandra lo use de forma natural (sin tocar la Edge Function).
+  let systemPrompt = PROMPT_BASE;
+  const nombreAlumno = session?.profile?.nombre?.trim();
+  if (nombreAlumno) {
+    systemPrompt += `
+
+<alumno_actual>
+El alumno que te escribe ahora se llama ${nombreAlumno}.
+Puedes dirigirte a él por su nombre de forma natural y cercana (por ejemplo,
+al saludarlo o al cerrar una respuesta), sin repetirlo en cada mensaje.
+</alumno_actual>`;
+  }
   const recentHistory = chatHistory.slice(-4);
 
   const messages = [
@@ -109,11 +122,14 @@ export function initChat() {
   `;
   document.body.appendChild(win);
 
-  // Mensaje de bienvenida (limpio y central)
+  // Mensaje de bienvenida (personalizado con el primer nombre del alumno)
   const msgs = document.getElementById('chat-messages');
   const div = document.createElement('div');
   div.className = 'chat-msg bot';
-  div.innerHTML = `Hola, soy <strong style="color:var(--gold);">Alessandra</strong> 🙋‍♀️ ¿En qué te puedo ayudar hoy?`;
+  const primerNombre = session?.profile?.nombre?.trim().split(/\s+/)[0];
+  div.innerHTML = primerNombre
+    ? `¡Hola, ${escapeHtml(primerNombre)}! Soy <strong style="color:var(--gold);">Alessandra</strong> 🙋‍♀️ ¿En qué te puedo ayudar hoy?`
+    : `Hola, soy <strong style="color:var(--gold);">Alessandra</strong> 🙋‍♀️ ¿En qué te puedo ayudar hoy?`;
   msgs.appendChild(div);
 }
 
