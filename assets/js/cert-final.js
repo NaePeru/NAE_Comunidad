@@ -202,14 +202,6 @@ export async function generarPDFCertificado(cert, esDemo = false) {
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, W, H, 'F');
 
-  // ── MARCA DE AGUA: rombo NAE gigante, muy tenue, detrás de todo ──
-  doc.saveGraphicsState();
-  doc.setTextColor(243, 246, 252);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(200);
-  doc.text('◆', W / 2, H / 2 + 40, { align: 'center' });
-  doc.restoreGraphicsState();
-
   // ── BORDES DOBLES (marino exterior + dorado interior) ──
   doc.setDrawColor(...NAVY);
   doc.setLineWidth(1.6);
@@ -375,22 +367,10 @@ export async function generarPDFCertificado(cert, esDemo = false) {
   doc.setTextColor(...GRAY);
   doc.text('Verifica la autenticidad en nae-comunidad.vercel.app/verificar.html', W / 2 - 40, 200.5, { align: 'center' });
 
-  // ── MARCA DE AGUA "MUESTRA" (solo si es demo) ──
-  if (esDemo) {
-    doc.saveGraphicsState();
-    doc.setTextColor(220, 220, 220);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(72);
-    doc.text('MUESTRA', W / 2, H / 2 + 15, { align: 'center', angle: 30 });
-    doc.setTextColor(200, 200, 200);
-    doc.setFontSize(10);
-    doc.text('CERTIFICADO DE DEMOSTRACIÓN — SIN VALIDEZ OFICIAL', W / 2, H / 2 + 30, { align: 'center', angle: 30 });
-    doc.restoreGraphicsState();
-  }
-
   // ── DESCARGAR ──
-  const sufijo = esDemo ? '_MUESTRA' : '';
-  const nombreArchivo = `Certificado_NAE_${(cert.tipo || '').toUpperCase()}_${(cert.nombre_emisor || 'alumno').replace(/\s+/g, '_')}${sufijo}.pdf`;
+  // UN SOLO FORMATO: se eliminó la marca de agua "MUESTRA" — el PDF de vista
+  // previa y el emitido oficial comparten exactamente el mismo diseño limpio.
+  const nombreArchivo = `Certificado_NAE_${(cert.tipo || '').toUpperCase()}_${(cert.nombre_emisor || 'alumno').replace(/\s+/g, '_')}.pdf`;
   doc.save(nombreArchivo);
 }
 
