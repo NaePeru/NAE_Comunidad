@@ -179,8 +179,9 @@ function toggleChat() {
     const badge = fab.querySelector('.chat-badge');
     if (badge) badge.style.display = 'none';
     // Refrescar puntos/nivel silenciosamente para que el contexto de la IA
-    // esté siempre fresco (por si el alumno ganó puntos recientemente).
-    refrescarPerfil().catch(() => {});
+    // esté siempre fresco. silent:true evita el evento 'perfil-actualizado'
+    // que re-renderizaba la navbar (bug de navbar duplicada).
+    refrescarPerfil({ silent: true }).catch(() => {});
     // Cargar progreso de certificados (import perezoso: solo al abrir el chat)
     import('./cert-final.js')
       .then(m => m.resumenProgresoIA())
