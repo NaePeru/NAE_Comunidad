@@ -297,6 +297,26 @@ export async function crearPost(contenido, categoria, esLive = false, imagenUrl 
   return { error: null };
 }
 
+// ── EMAIL "TE DIERON LIKE" (vía Edge Function send-email) ───────────────────
+// Fire-and-forget: cualquier error se ignora silenciosamente para no afectar
+// la experiencia del que da el like.
+async function notificarLike(autorId) {
+  try {
+    const { data: { session: s } } = await supabase.auth.getSession();
+    if (!s) return;
+    await fetch('https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/send-email', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${s.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ tipo: 'like', recipient_user_id: autorId }),
+    });
+  } catch (e) {
+    /* silencioso: el email es un bonus, nunca debe romper el like */
+  }
+}
+
 // ── TOGGLE LIKE EN POST ─────────────────────────────────────────────────────
 // Importante: el que da el like NO gana puntos. El AUTOR del post gana +1.
 async function toggleLike(postId) {
@@ -323,6 +343,9 @@ async function toggleLike(postId) {
     }
     post.likedByMe = true;
     post.likes_count = (post.likes_count || 0) + 1;
+    // Email "te dieron like" al autor (fire-and-forget: no bloquea la UI).
+    // La Edge Function decide si envía o no (dedup 24h, modo test, etc.).
+    notificarLike(post.autor_id);
   }
   // OPTIMIZACIÓN: antes re-renderizábamos TODO el post (outerHTML).
   // Eso destruía y recreaba el nodo completo (videos, imágenes, etc.).
