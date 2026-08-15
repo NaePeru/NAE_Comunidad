@@ -191,185 +191,139 @@ export async function generarPDFCertificado(cert, esDemo = false) {
   const W = 297; // ancho A4 landscape
   const H = 210; // alto  A4 landscape
 
-  // ── PALETA DE MARCA NAE ──
-  const NAVY   = [22, 35, 63];      // azul marino (bordes, títulos)
-  const GOLD   = [201, 162, 39];    // dorado (acentos, sello)
-  const GOLD_L = [247, 240, 219];   // dorado clarito (fondos suaves)
-  const GRAY   = [110, 117, 130];   // gris texto secundario
-  const DARK   = [25, 28, 35];      // casi negro (nombre)
+  // ── PALETA ESTILO MICROSOFT LEARN ──
+  const MSBLUE = [0, 120, 212];    // azul Microsoft (acento principal)
+  const DARK   = [27, 27, 27];     // texto principal
+  const GRAY   = [96, 94, 92];     // texto secundario
+  const LGRAY  = [210, 208, 206];  // líneas divisorias suaves
+  const GOLD   = [201, 162, 39];   // medalla
+  const NAVY   = [22, 35, 63];     // marca NAE
 
-  // ── FONDO ──
+  // ── FONDO BLANCO LIMPIO (estilo MS: mucho espacio en blanco) ──
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, W, H, 'F');
 
-  // ── BORDES DOBLES (marino exterior + dorado interior) ──
-  doc.setDrawColor(...NAVY);
-  doc.setLineWidth(1.6);
-  doc.rect(7, 7, W - 14, H - 14);
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.5);
-  doc.rect(10.5, 10.5, W - 21, H - 21);
+  // Línea superior fina azul Microsoft (firma visual del estilo)
+  doc.setFillColor(...MSBLUE);
+  doc.rect(0, 0, W, 3, 'F');
 
-  // ── ORNAMENTOS DE ESQUINA (doble "L" marino+dorado) ──
-  const orn = (x, y, dx, dy) => {
-    doc.setDrawColor(...NAVY); doc.setLineWidth(1.2);
-    doc.line(x, y, x + 16 * dx, y);
-    doc.line(x, y, x, y + 16 * dy);
-    doc.setDrawColor(...GOLD); doc.setLineWidth(0.5);
-    doc.line(x + 3 * dx, y + 3 * dy, x + 11 * dx, y + 3 * dy);
-    doc.line(x + 3 * dx, y + 3 * dy, x + 3 * dx, y + 11 * dy);
-  };
-  orn(14, 14, 1, 1);   // sup. izq
-  orn(W - 14, 14, -1, 1);  // sup. der
-  orn(14, H - 14, 1, -1);  // inf. izq
-  orn(W - 14, H - 14, -1, -1); // inf. der
-
-  // ── BANDA SUPERIOR NAVY CON MARCA ──
-  doc.setFillColor(...NAVY);
-  doc.rect(10.5, 10.5, W - 21, 14, 'F');
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.5);
-  doc.line(10.5, 24.5, W - 10.5, 24.5);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...GOLD);
-  doc.setFontSize(13);
-  doc.text('◆ NAE', 24, 19.8);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.text('NEW ACADEMY EXCEL', W - 24, 19.8, { align: 'right' });
-
-  // ── TÍTULO PRINCIPAL ──
-  doc.setFont('times', 'bold');
+  // ── ENCABEZADO: MARCA ARRIBA-IZQUIERDA (como el logo MS) ──
+  // Rombo NAE como isotipo geométrico
   doc.setTextColor(...NAVY);
-  doc.setFontSize(32);
-  doc.text('CERTIFICADO', W / 2, 47, { align: 'center', charSpace: 3 });
-
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.text('◆', 22, 26);
+  doc.setFontSize(15);
+  doc.text('NAE', 31, 25.5, { charSpace: 1 });
   doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
   doc.setTextColor(...GRAY);
-  doc.setFontSize(10.5);
-  doc.text('DE APROBACIÓN', W / 2, 55, { align: 'center', charSpace: 2.5 });
+  doc.text('Centro de Capacitación · New Academy Excel', 22, 32);
 
-  // Divisor dorado: línea + rombo + línea
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.8);
-  doc.line(W / 2 - 26, 61, W / 2 - 6, 61);
-  doc.line(W / 2 + 6, 61, W / 2 + 26, 61);
+  // Arriba-derecha: año
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.setTextColor(...GOLD);
-  doc.text('◆', W / 2, 62.5, { align: 'center' });
-
-  // ── OTORGADO A ──
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
   doc.setTextColor(...GRAY);
-  doc.text('SE OTORGA EL PRESENTE CERTIFICADO A', W / 2, 72, { align: 'center', charSpace: 1 });
+  doc.text(String(new Date(cert.emitido_en).getFullYear()), W - 22, 26, { align: 'right' });
 
-  // ── NOMBRE DEL ALUMNO (con tamaño adaptativo si es muy largo) ──
-  const nombreCompleto = (cert.nombre_emisor || 'ALUMNO').toUpperCase();
-  doc.setFont('times', 'bolditalic');
+  // ── MEDALLA CENTRAL (equivalente al trofeo de Microsoft Learn) ──
+  const mx = W / 2, my = 52, mr = 11;
+  // Cintas de la medalla (dos rectángulos en V)
+  doc.setFillColor(...GOLD);
+  doc.triangle(mx - 8, my + 6, mx - 2, my + 6, mx - 5, my + 20, 'F');
+  doc.triangle(mx + 2, my + 6, mx + 8, my + 6, mx + 5, my + 20, 'F');
+  // Círculo exterior dorado + interior blanco + anillo azul
+  doc.setFillColor(...GOLD);
+  doc.circle(mx, my, mr, 'F');
+  doc.setFillColor(255, 255, 255);
+  doc.circle(mx, my, mr - 2.2, 'F');
+  doc.setDrawColor(...MSBLUE);
+  doc.setLineWidth(0.8);
+  doc.circle(mx, my, mr - 4.5);
+  // Check estilizado dentro (dibujado con líneas, como el badge MS)
+  doc.setDrawColor(...MSBLUE);
+  doc.setLineWidth(1.4);
+  doc.line(mx - 3.5, my, mx - 1, my + 3);
+  doc.line(mx - 1, my + 3, mx + 4, my - 3.5);
+
+  // ── TÍTULO (estilo MS: sobrio, centrado, espaciado) ──
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(...DARK);
-  doc.setFontSize(nombreCompleto.length > 28 ? 20 : 26);
-  doc.text(nombreCompleto, W / 2, 85, { align: 'center' });
+  doc.setFontSize(23);
+  doc.text('CERTIFICADO DE FINALIZACIÓN', W / 2, 88, { align: 'center', charSpace: 1.5 });
 
-  // Subrayado dorado del nombre
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.7);
-  doc.line(W / 2 - 38, 90, W / 2 + 38, 90);
+  // ── PRESENTADO A ──
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.setTextColor(...GRAY);
+  doc.text('Este certificado se presenta a', W / 2, 100, { align: 'center' });
 
-  // DNI
+  // ── NOMBRE (grande, protagonista — como en MS) ──
+  const nombreCompleto = cert.nombre_emisor || 'ALUMNO';
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...DARK);
+  doc.setFontSize(nombreCompleto.length > 28 ? 19 : 24);
+  doc.text(nombreCompleto.toUpperCase(), W / 2, 114, { align: 'center' });
+
+  // DNI (necesario en Perú, discreto debajo del nombre)
   if (cert.dni) {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setTextColor(...GRAY);
-    doc.text(`DNI: ${cert.dni}`, W / 2, 97, { align: 'center' });
+    doc.text(`DNI: ${cert.dni}`, W / 2, 121, { align: 'center' });
   }
 
-  // ── TEXTO INTERMEDIO + PROGRAMA ──
+  // ── TEXTO Y NOMBRE DE LA CERTIFICACIÓN (en azul Microsoft) ──
   doc.setFontSize(10.5);
   doc.setTextColor(...GRAY);
-  doc.text('Por completar satisfactoriamente el programa de', W / 2, 107, { align: 'center' });
+  doc.text('por completar satisfactoriamente los requisitos de', W / 2, 133, { align: 'center' });
 
-  // Título del programa sobre fondo dorado suave
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(...NAVY);
-  const tituloProg = (cert.titulo || '').toUpperCase();
-  const tw = doc.getTextWidth(tituloProg);
-  const boxW = Math.min(tw + 18, W - 90);
-  const boxX = (W - boxW) / 2;
-  doc.setFillColor(...GOLD_L);
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(boxX, 111, boxW, 12, 2, 2, 'FD');
-  doc.text(tituloProg, W / 2, 119.5, { align: 'center' });
+  doc.setTextColor(...MSBLUE);
+  doc.setFontSize(17);
+  doc.text(cert.titulo || '', W / 2, 143, { align: 'center' });
 
-  // ── DETALLES (sin emojis: los PDF estándar no los renderizan) ──
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...GRAY);
+  doc.text(`${cert.horas} horas académicas · Modalidad ${cert.modalidad} · Lima, Perú`, W / 2, 153, { align: 'center' });
+
+  // ── DIVISORIA FINA (línea gris suave, como MS) ──
+  doc.setDrawColor(...LGRAY);
+  doc.setLineWidth(0.5);
+  doc.line(60, 163, W - 60, 163);
+
+  // ── BLOQUE DE CREDENCIAL (estilo Microsoft: 3 columnas con etiqueta gris) ──
   const fechaStr = new Date(cert.emitido_en).toLocaleDateString('es-PE', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(...GRAY);
-  doc.text(`${cert.horas} horas académicas   ·   Modalidad ${cert.modalidad}   ·   Lima, Perú`, W / 2, 132, { align: 'center' });
-  doc.setFontSize(9);
-  doc.text(`Emitido el ${fechaStr}`, W / 2, 138, { align: 'center' });
-
-  // ── SELLO CIRCULAR OFICIAL (derecha) ──
-  const sx = 247, sy = 160, sr = 17;
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(1.2);
-  doc.circle(sx, sy, sr);
-  doc.setDrawColor(...NAVY);
-  doc.setLineWidth(0.4);
-  doc.circle(sx, sy, sr - 2.5);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(...GOLD);
-  doc.text('◆ NAE ◆', sx, sy - 4, { align: 'center' });
-  doc.setFontSize(7.5);
-  doc.setTextColor(...NAVY);
-  doc.text('CERTIFICADO', sx, sy + 1.5, { align: 'center', charSpace: 0.5 });
-  doc.text('VERIFICADO', sx, sy + 5.5, { align: 'center', charSpace: 0.5 });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.setTextColor(...GRAY);
-  doc.text(String(new Date(cert.emitido_en).getFullYear()), sx, sy + 10.5, { align: 'center' });
-
-  // ── FIRMAS (nombres en cursiva elegante) ──
-  const firmas = [
-    { nombre: 'Geronimo Cruzado', cargo: 'Analista de Datos · Director', x: 75 },
-    { nombre: 'Jhonny Vasquez C.', cargo: 'Arquitecto de Datos', x: 175 },
+  const cols = [
+    { label: 'EMITIDO', valor: fechaStr, x: 82 },
+    { label: 'ID DE CREDENCIAL', valor: cert.codigo, x: W / 2 },
+    { label: 'VALIDEZ', valor: 'Sin vencimiento', x: W - 82 },
   ];
-  firmas.forEach(f => {
-    doc.setDrawColor(...NAVY);
-    doc.setLineWidth(0.5);
-    doc.line(f.x - 40, 175, f.x + 40, 175);
-    doc.setFont('times', 'bolditalic');
-    doc.setFontSize(13);
-    doc.setTextColor(...DARK);
-    doc.text(f.nombre, f.x, 170.5, { align: 'center' });
+  cols.forEach(c => {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setTextColor(...GRAY);
-    doc.text(f.cargo, f.x, 181, { align: 'center' });
+    doc.text(c.label, c.x, 173, { align: 'center', charSpace: 1 });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...DARK);
+    doc.text(c.valor, c.x, 180, { align: 'center' });
   });
 
-  // ── PIE: CÓDIGO DE VERIFICACIÓN ──
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(...NAVY);
-  doc.text(`Código de verificación: ${cert.codigo}`, W / 2 - 40, 196, { align: 'center' });
+  // ── PIE: VERIFICACIÓN (como el "Verify this certificate" de MS) ──
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
+  doc.setFontSize(8);
   doc.setTextColor(...GRAY);
-  doc.text('Verifica la autenticidad en nae-comunidad.vercel.app/verificar.html', W / 2 - 40, 200.5, { align: 'center' });
+  doc.text('Verifica la autenticidad de este certificado en', W / 2, 194, { align: 'center' });
+  doc.setTextColor(...MSBLUE);
+  doc.setFontSize(9);
+  doc.text('nae-comunidad.vercel.app/verificar.html', W / 2, 200, { align: 'center' });
 
   // ── DESCARGAR ──
-  // UN SOLO FORMATO: se eliminó la marca de agua "MUESTRA" — el PDF de vista
-  // previa y el emitido oficial comparten exactamente el mismo diseño limpio.
+  // UN SOLO FORMATO: mismo diseño limpio para vista previa y certificado real.
   const nombreArchivo = `Certificado_NAE_${(cert.tipo || '').toUpperCase()}_${(cert.nombre_emisor || 'alumno').replace(/\s+/g, '_')}.pdf`;
   doc.save(nombreArchivo);
 }
