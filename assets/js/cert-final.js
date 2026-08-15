@@ -142,6 +142,38 @@ async function cargarProgresoModulos() {
   return resultado;
 }
 
+// ── RESUMEN DE PROGRESO PARA LA IA (chatbot Alessandra) ─────────────────────
+// Devuelve un resumen compacto en texto del progreso de certificados del
+// alumno actual. Lo usa chat-ia.js para responder con datos reales cuando
+// preguntan "¿qué me falta para mi certificado?".
+export async function resumenProgresoIA() {
+  if (!session.user?.id) return null;
+  try {
+    const prog = await cargarProgresoModulos();
+    const lineas = [];
+    for (const [key, mod] of Object.entries(prog)) {
+      if (!mod.total || mod.total === 0) {
+        lineas.push(`- ${mod.titulo}: todavía no hay lecciones cargadas`);
+        continue;
+      }
+      const estado = mod.pct >= 100 ? '¡COMPLETO, listo para emitir!' : `${mod.pct}%`;
+      lineas.push(`- ${mod.titulo}: ${mod.done}/${mod.total} lecciones (${estado})`);
+      if (mod.pct < 100) {
+        const pendientes = (mod.cursos || [])
+          .filter(c => c.pct < 100)
+          .map(c => `${c.titulo} (${c.done}/${c.total})`);
+        if (pendientes.length > 0) {
+          lineas.push(`  · Cursos pendientes: ${pendientes.join(', ')}`);
+        }
+      }
+    }
+    return lineas.join('\n');
+  } catch (e) {
+    console.warn('No se pudo cargar progreso para IA:', e);
+    return null;
+  }
+}
+
 // ── CARGAR CERTIFICADOS YA EMITIDOS ─────────────────────────────────────────
 async function cargarCertificadosEmitidos() {
   const { data, error } = await supabase.rpc('mis_certificados');
