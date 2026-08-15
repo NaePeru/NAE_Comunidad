@@ -182,148 +182,229 @@ async function cargarJsPDF() {
   throw new Error('No se pudo cargar el generador de PDF desde ningún CDN');
 }
 
+// ── html2canvas (para renderizar el diseño HTML/CSS del certificado) ────────
+const H2C_URLS = [
+  'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+  'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js',
+];
+
+async function cargarHtml2Canvas() {
+  if (window.html2canvas) return;
+  for (const url of H2C_URLS) {
+    try {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('CDN falló: ' + url));
+        document.head.appendChild(s);
+      });
+      return;
+    } catch (e) {
+      console.warn(url, 'falló, probando siguiente CDN...');
+    }
+  }
+  throw new Error('No se pudo cargar html2canvas desde ningún CDN');
+}
+
+// ── FUENTES PREMIUM (Playfair Display + Great Vibes) ────────────────────────
+async function asegurarFuentesCert() {
+  if (!document.querySelector('link[data-cert-fonts]')) {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.dataset.certFonts = '1';
+    l.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,600;1,700&family=Great+Vibes&display=swap';
+    document.head.appendChild(l);
+  }
+  try { await document.fonts.ready; } catch (e) { /* seguimos con fallback serif */ }
+}
+
+// ── PLANTILLA HTML DEL CERTIFICADO (diseño premium marfil & oro) ────────────
+function htmlCertificado(cert) {
+  const nombre = (cert.nombre_emisor || 'ALUMNO').toUpperCase();
+  const fecha = new Date(cert.emitido_en).toLocaleDateString('es-PE', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  });
+  const anio = new Date(cert.emitido_en).getFullYear();
+  const nombreLargo = nombre.length > 30;
+  const dniHtml = cert.dni ? `<div style="font-family:'Playfair Display',serif;font-size:22px;color:#6b6353;letter-spacing:2px;margin-top:10px;">DNI: ${cert.dni}</div>` : '';
+
+  // Ornamento de esquina (SVG dorado, se rota con CSS para cada esquina)
+  const esquina = (rot) => `
+    <svg width="120" height="120" viewBox="0 0 120 120" style="position:absolute;${rot};opacity:0.9;">
+      <path d="M6,114 C6,52 52,6 114,6" stroke="#b8912e" stroke-width="3.5" fill="none"/>
+      <path d="M18,114 C18,62 62,18 114,18" stroke="#d4af37" stroke-width="1.6" fill="none"/>
+      <circle cx="114" cy="6" r="4.5" fill="#b8912e"/>
+      <circle cx="6" cy="114" r="4.5" fill="#b8912e"/>
+      <path d="M114,30 C104,30 96,22 96,12" stroke="#d4af37" stroke-width="1.4" fill="none"/>
+      <path d="M30,114 C30,104 22,96 12,96" stroke="#d4af37" stroke-width="1.4" fill="none"/>
+    </svg>`;
+
+  return `
+  <div id="cert-canvas-root" style="width:1480px;height:1046px;position:fixed;left:-99999px;top:0;z-index:-1;">
+    <!-- Papel marfil con viñeta sutil -->
+    <div style="width:100%;height:100%;background:
+        radial-gradient(ellipse at center,#fbf7ee 0%,#f3ecd9 78%,#ece2c8 100%);
+        padding:30px;box-sizing:border-box;">
+
+      <!-- Marco dorado metálico exterior -->
+      <div style="width:100%;height:100%;background:linear-gradient(135deg,
+          #8a6d1f 0%,#d4af37 18%,#f5e08a 38%,#d4af37 58%,#a8842a 78%,#8a6d1f 100%);
+          padding:7px;box-sizing:border-box;">
+
+        <!-- Filete interior oscuro -->
+        <div style="width:100%;height:100%;background:#faf6ec;
+            border:1px solid rgba(138,109,31,0.55);padding:5px;box-sizing:border-box;">
+
+          <!-- Marco dorado fino principal -->
+          <div style="width:100%;height:100%;border:3px solid #b8912e;position:relative;
+              box-sizing:border-box;padding:64px 100px 56px;display:flex;
+              flex-direction:column;align-items:center;">
+
+            ${esquina('top:14px;left:14px;')}
+            ${esquina('top:14px;right:14px;transform:scaleX(-1);')}
+            ${esquina('bottom:14px;left:14px;transform:scaleY(-1);')}
+            ${esquina('bottom:14px;right:14px;transform:scale(-1,-1);')}
+
+            <!-- Monograma NAE: rombo dorado -->
+            <div style="position:relative;width:132px;height:132px;margin-bottom:18px;">
+              <svg width="132" height="132" viewBox="0 0 132 132">
+                <defs>
+                  <linearGradient id="oroD" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#8a6d1f"/><stop offset="0.35" stop-color="#e8c766"/>
+                    <stop offset="0.6" stop-color="#f7e7a8"/><stop offset="1" stop-color="#a8842a"/>
+                  </linearGradient>
+                </defs>
+                <rect x="27" y="27" width="78" height="78" transform="rotate(45 66 66)" fill="url(#oroD)"/>
+                <rect x="36" y="36" width="60" height="60" transform="rotate(45 66 66)" fill="#faf6ec"/>
+                <rect x="41" y="41" width="50" height="50" transform="rotate(45 66 66)" fill="none" stroke="#b8912e" stroke-width="1.6"/>
+              </svg>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+                  font-family:'Playfair Display',serif;font-weight:900;font-size:30px;color:#1d2340;
+                  letter-spacing:1px;">NAE</div>
+            </div>
+
+            <!-- Encabezado institucional -->
+            <div style="font-family:'Playfair Display',serif;font-size:23px;color:#6b6353;
+                letter-spacing:6px;margin-bottom:6px;">NEW ACADEMY EXCEL</div>
+            <div style="font-family:'Playfair Display',serif;font-size:16px;color:#9a8f78;
+                letter-spacing:2px;margin-bottom:22px;">Centro de Capacitación · Comunidad de Análisis de Datos</div>
+
+            <!-- Título -->
+            <div style="font-family:'Playfair Display',serif;font-weight:900;font-size:64px;
+                color:#1d2340;letter-spacing:14px;text-indent:14px;">CERTIFICADO</div>
+            <div style="font-family:'Playfair Display',serif;font-size:21px;color:#6b6353;
+                letter-spacing:9px;text-indent:9px;margin-top:2px;">DE APROBACIÓN</div>
+
+            <!-- Divisor: línea — rombo — línea -->
+            <div style="display:flex;align-items:center;gap:14px;margin:26px 0 24px;">
+              <div style="width:150px;height:2px;background:linear-gradient(90deg,transparent,#b8912e);"></div>
+              <div style="width:12px;height:12px;background:linear-gradient(135deg,#d4af37,#8a6d1f);transform:rotate(45deg);"></div>
+              <div style="width:150px;height:2px;background:linear-gradient(90deg,#b8912e,transparent);"></div>
+            </div>
+
+            <!-- Otorgado a + nombre -->
+            <div style="font-family:'Playfair Display',serif;font-size:19px;color:#9a8f78;
+                letter-spacing:5px;">SE OTORGA A</div>
+            <div style="font-family:'Playfair Display',serif;font-weight:700;font-style:italic;
+                font-size:${nombreLargo ? '52px' : '64px'};color:#161a2e;margin-top:14px;
+                text-align:center;line-height:1.1;max-width:1100px;">${nombre}</div>
+            ${dniHtml}
+
+            <!-- Adorno bajo el nombre -->
+            <div style="display:flex;align-items:center;gap:10px;margin:18px 0 20px;">
+              <div style="width:220px;height:1.5px;background:#c9a544;"></div>
+              <div style="width:8px;height:8px;background:#b8912e;transform:rotate(45deg);"></div>
+              <div style="width:220px;height:1.5px;background:#c9a544;"></div>
+            </div>
+
+            <!-- Programa -->
+            <div style="font-family:'Playfair Display',serif;font-size:20px;color:#6b6353;">Por completar satisfactoriamente el programa de</div>
+            <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:38px;
+                color:#8a6d1f;margin-top:10px;text-align:center;">${cert.titulo || ''}</div>
+            <div style="font-family:'Playfair Display',serif;font-size:19px;color:#6b6353;
+                margin-top:12px;">${cert.horas} horas académicas · Modalidad ${cert.modalidad} · Lima, Perú</div>
+
+            <!-- Zona inferior: firmas + sello -->
+            <div style="display:flex;align-items:flex-end;justify-content:center;gap:130px;
+                width:100%;margin-top:auto;padding-top:30px;">
+
+              <div style="text-align:center;width:300px;">
+                <div style="font-family:'Great Vibes',cursive;font-size:44px;color:#1d2340;
+                    line-height:1;">Geronimo Cruzado</div>
+                <div style="width:260px;height:1.5px;background:#6b6353;margin:10px auto 8px;"></div>
+                <div style="font-family:'Playfair Display',serif;font-size:15px;color:#6b6353;
+                    letter-spacing:1px;">Analista de Datos · Director</div>
+              </div>
+
+              <!-- Sello de lacre dorado -->
+              <div style="width:150px;height:150px;border-radius:50%;position:relative;
+                  background:radial-gradient(circle at 35% 30%,#f0d98a 0%,#d4af37 40%,#8a6d1f 100%);
+                  box-shadow:0 3px 10px rgba(90,70,20,0.45), inset 0 0 0 6px rgba(255,248,220,0.25);
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <div style="position:absolute;inset:16px;border-radius:50%;
+                    border:2px dashed rgba(70,55,15,0.55);"></div>
+                <div style="text-align:center;font-family:'Playfair Display',serif;color:#3d2f0e;">
+                  <div style="font-size:15px;letter-spacing:2px;">◆ NAE ◆</div>
+                  <div style="font-size:11px;font-weight:700;letter-spacing:1px;margin-top:4px;">CERTIFICADO<br>VERIFICADO</div>
+                  <div style="font-size:12px;margin-top:4px;">${anio}</div>
+                </div>
+              </div>
+
+              <div style="text-align:center;width:300px;">
+                <div style="font-family:'Great Vibes',cursive;font-size:44px;color:#1d2340;
+                    line-height:1;">Jhonny Vasquez C.</div>
+                <div style="width:260px;height:1.5px;background:#6b6353;margin:10px auto 8px;"></div>
+                <div style="font-family:'Playfair Display',serif;font-size:15px;color:#6b6353;
+                    letter-spacing:1px;">Arquitecto de Datos</div>
+              </div>
+            </div>
+
+            <!-- Pie de verificación -->
+            <div style="margin-top:26px;text-align:center;">
+              <div style="font-family:'Playfair Display',serif;font-size:15px;color:#6b6353;">
+                Emitido el ${fecha} · Código de verificación: <b>${cert.codigo}</b></div>
+              <div style="font-family:'Playfair Display',serif;font-size:13px;color:#9a8f78;
+                  margin-top:4px;">Verifica la autenticidad en nae-comunidad.vercel.app/verificar.html</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
 export async function generarPDFCertificado(cert, esDemo = false) {
+  // DISEÑO PREMIUM: el certificado se construye en HTML/CSS (gradientes dorados,
+  // tipografías elegantes, ornamentos SVG) y se convierte a PDF con html2canvas.
   await cargarJsPDF();
+  await cargarHtml2Canvas();
+  await asegurarFuentesCert();
+
+  // Limpiar render anterior si existiera
+  document.getElementById('cert-canvas-root')?.remove();
+
+  // Insertar la plantilla fuera de pantalla
+  document.body.insertAdjacentHTML('beforeend', htmlCertificado(cert));
+  const el = document.getElementById('cert-canvas-root');
+
+  // Pequeña espera para que fuentes y layout se estabilicen
+  await new Promise(r => setTimeout(r, 150));
+
+  const canvas = await html2canvas(el, {
+    scale: 2,               // 2x = calidad de impresión (~250 dpi en A4)
+    backgroundColor: null,
+    useCORS: true,
+    logging: false,
+  });
+  el.remove();
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 297, 210);
 
-  const W = 297; // ancho A4 landscape
-  const H = 210; // alto  A4 landscape
-
-  // ── PALETA ESTILO MICROSOFT LEARN ──
-  const MSBLUE = [0, 120, 212];    // azul Microsoft (acento principal)
-  const DARK   = [27, 27, 27];     // texto principal
-  const GRAY   = [96, 94, 92];     // texto secundario
-  const LGRAY  = [210, 208, 206];  // líneas divisorias suaves
-  const GOLD   = [201, 162, 39];   // medalla
-  const NAVY   = [22, 35, 63];     // marca NAE
-
-  // ── FONDO BLANCO LIMPIO (estilo MS: mucho espacio en blanco) ──
-  doc.setFillColor(255, 255, 255);
-  doc.rect(0, 0, W, H, 'F');
-
-  // Línea superior fina azul Microsoft (firma visual del estilo)
-  doc.setFillColor(...MSBLUE);
-  doc.rect(0, 0, W, 3, 'F');
-
-  // ── ENCABEZADO: MARCA ARRIBA-IZQUIERDA (como el logo MS) ──
-  // Rombo NAE como isotipo geométrico
-  doc.setTextColor(...NAVY);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text('◆', 22, 26);
-  doc.setFontSize(15);
-  doc.text('NAE', 31, 25.5, { charSpace: 1 });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...GRAY);
-  doc.text('Centro de Capacitación · New Academy Excel', 22, 32);
-
-  // Arriba-derecha: año
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...GRAY);
-  doc.text(String(new Date(cert.emitido_en).getFullYear()), W - 22, 26, { align: 'right' });
-
-  // ── MEDALLA CENTRAL (equivalente al trofeo de Microsoft Learn) ──
-  const mx = W / 2, my = 52, mr = 11;
-  // Cintas de la medalla (dos rectángulos en V)
-  doc.setFillColor(...GOLD);
-  doc.triangle(mx - 8, my + 6, mx - 2, my + 6, mx - 5, my + 20, 'F');
-  doc.triangle(mx + 2, my + 6, mx + 8, my + 6, mx + 5, my + 20, 'F');
-  // Círculo exterior dorado + interior blanco + anillo azul
-  doc.setFillColor(...GOLD);
-  doc.circle(mx, my, mr, 'F');
-  doc.setFillColor(255, 255, 255);
-  doc.circle(mx, my, mr - 2.2, 'F');
-  doc.setDrawColor(...MSBLUE);
-  doc.setLineWidth(0.8);
-  doc.circle(mx, my, mr - 4.5);
-  // Check estilizado dentro (dibujado con líneas, como el badge MS)
-  doc.setDrawColor(...MSBLUE);
-  doc.setLineWidth(1.4);
-  doc.line(mx - 3.5, my, mx - 1, my + 3);
-  doc.line(mx - 1, my + 3, mx + 4, my - 3.5);
-
-  // ── TÍTULO (estilo MS: sobrio, centrado, espaciado) ──
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...DARK);
-  doc.setFontSize(23);
-  doc.text('CERTIFICADO DE FINALIZACIÓN', W / 2, 88, { align: 'center', charSpace: 1.5 });
-
-  // ── PRESENTADO A ──
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10.5);
-  doc.setTextColor(...GRAY);
-  doc.text('Este certificado se presenta a', W / 2, 100, { align: 'center' });
-
-  // ── NOMBRE (grande, protagonista — como en MS) ──
-  const nombreCompleto = cert.nombre_emisor || 'ALUMNO';
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...DARK);
-  doc.setFontSize(nombreCompleto.length > 28 ? 19 : 24);
-  doc.text(nombreCompleto.toUpperCase(), W / 2, 114, { align: 'center' });
-
-  // DNI (necesario en Perú, discreto debajo del nombre)
-  if (cert.dni) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...GRAY);
-    doc.text(`DNI: ${cert.dni}`, W / 2, 121, { align: 'center' });
-  }
-
-  // ── TEXTO Y NOMBRE DE LA CERTIFICACIÓN (en azul Microsoft) ──
-  doc.setFontSize(10.5);
-  doc.setTextColor(...GRAY);
-  doc.text('por completar satisfactoriamente los requisitos de', W / 2, 133, { align: 'center' });
-
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...MSBLUE);
-  doc.setFontSize(17);
-  doc.text(cert.titulo || '', W / 2, 143, { align: 'center' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(...GRAY);
-  doc.text(`${cert.horas} horas académicas · Modalidad ${cert.modalidad} · Lima, Perú`, W / 2, 153, { align: 'center' });
-
-  // ── DIVISORIA FINA (línea gris suave, como MS) ──
-  doc.setDrawColor(...LGRAY);
-  doc.setLineWidth(0.5);
-  doc.line(60, 163, W - 60, 163);
-
-  // ── BLOQUE DE CREDENCIAL (estilo Microsoft: 3 columnas con etiqueta gris) ──
-  const fechaStr = new Date(cert.emitido_en).toLocaleDateString('es-PE', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  });
-  const cols = [
-    { label: 'EMITIDO', valor: fechaStr, x: 82 },
-    { label: 'ID DE CREDENCIAL', valor: cert.codigo, x: W / 2 },
-    { label: 'VALIDEZ', valor: 'Sin vencimiento', x: W - 82 },
-  ];
-  cols.forEach(c => {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...GRAY);
-    doc.text(c.label, c.x, 173, { align: 'center', charSpace: 1 });
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(...DARK);
-    doc.text(c.valor, c.x, 180, { align: 'center' });
-  });
-
-  // ── PIE: VERIFICACIÓN (como el "Verify this certificate" de MS) ──
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...GRAY);
-  doc.text('Verifica la autenticidad de este certificado en', W / 2, 194, { align: 'center' });
-  doc.setTextColor(...MSBLUE);
-  doc.setFontSize(9);
-  doc.text('nae-comunidad.vercel.app/verificar.html', W / 2, 200, { align: 'center' });
-
-  // ── DESCARGAR ──
-  // UN SOLO FORMATO: mismo diseño limpio para vista previa y certificado real.
+  // UN SOLO FORMATO: mismo diseño para vista previa y certificado real.
   const nombreArchivo = `Certificado_NAE_${(cert.tipo || '').toUpperCase()}_${(cert.nombre_emisor || 'alumno').replace(/\s+/g, '_')}.pdf`;
   doc.save(nombreArchivo);
 }
