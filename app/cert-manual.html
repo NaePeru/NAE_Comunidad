@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certificado Manual — NAE</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/base.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/components.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/layout.css?v=20240710v1">
+
+  <!-- Red de seguridad: captura errores antes que cualquier otro JS -->
+  <script src="../assets/js/error-guard.js"></script>
+</head>
+<body>
+
+  <div class="container" style="max-width:560px;margin-top:24px;">
+
+    <div class="page-header">
+      <h1 class="page-title">Certificado manual 🎓</h1>
+      <p class="page-sub">Emite un certificado para una persona sin cuenta en la plataforma.</p>
+    </div>
+
+    <div class="card" id="manual-form-card" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Nombre completo *</label>
+        <input type="text" class="form-input" id="manual-nombre" placeholder="Ej: Valesia Alessandra Zapata Días">
+      </div>
+      <div class="form-group">
+        <label class="form-label">DNI</label>
+        <input type="text" class="form-input" id="manual-dni" placeholder="12345678" maxlength="8">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de certificado *</label>
+        <select class="form-select" id="manual-tipo">
+          <option value="excel">Analista de Datos en Excel</option>
+          <option value="powerbi">Analista de Datos en Power BI</option>
+          <option value="completo">Analista de Datos (completo)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Horas académicas</label>
+        <input type="number" class="form-input" id="manual-horas" value="60" min="1" max="500">
+      </div>
+      <button class="btn btn-primary btn-block" id="manual-btn" onclick="window.__generarManual()">⬇️ Generar y descargar PDF</button>
+
+      <p style="font-size:11.5px;color:var(--muted2);margin-top:14px;line-height:1.5;">
+        ⚠️ Nota: los certificados manuales son para personas externas. No quedan registrados
+        en la verificación en línea (esa es solo para alumnos que completaron sus cursos en la plataforma).
+      </p>
+    </div>
+
+    <div id="manual-loading" style="text-align:center;padding:60px 20px;color:var(--muted);">
+      <div class="spinner" style="margin:0 auto 16px;width:32px;height:32px;border-width:3px;"></div>
+      Verificando acceso...
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, session, esAdmin } from '../assets/js/auth.js';
+    import { generarPDFCertificado } from '../assets/js/cert-final.js';
+    import { toast } from '../assets/js/utils.js';
+
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) {
+      window.location.href = '../index.html';
+    } else {
+      await cargarPerfilCompleto();
+      if (!esAdmin()) {
+        document.getElementById('manual-loading').innerHTML =
+          '<div class="empty-state"><div class="empty-icon">🔒</div>Solo el administrador puede usar esta herramienta.</div>';
+      } else {
+        document.getElementById('manual-loading').style.display = 'none';
+        document.getElementById('manual-form-card').style.display = 'block';
+      }
+    }
+
+    window.__generarManual = async () => {
+      const nombre = document.getElementById('manual-nombre').value.trim();
+      const dni = document.getElementById('manual-dni').value.trim();
+      const tipo = document.getElementById('manual-tipo').value;
+      const horas = parseInt(document.getElementById('manual-horas').value) || 60;
+
+      if (!nombre || nombre.length < 3) { toast('⚠️ Escribí el nombre completo'); return; }
+      if (dni && !/^\d{8}$/.test(dni)) { toast('⚠️ El DNI debe tener 8 dígitos (o dejalo vacío)'); return; }
+
+      const titulos = {
+        excel: 'Analista de Datos en Excel',
+        powerbi: 'Analista de Datos en Power BI',
+        completo: 'Analista de Datos',
+      };
+
+      // Código con sufijo -M para distinguir manuales
+      const codigo = 'NAE-' + new Date().getFullYear() + '-' +
+        String(Math.floor(Math.random() * 100000)).padStart(5, '0') + '-M';
+
+      const cert = {
+        tipo,
+        titulo: titulos[tipo],
+        codigo,
+        dni: dni || null,
+        nombre_emisor: nombre,
+        horas,
+        modalidad: 'Virtual',
+        emitido_en: new Date().toISOString(),
+      };
+
+      try {
+        await generarPDFCertificado(cert, false);
+        toast('✅ Certificado generado');
+      } catch (e) {
+        console.error(e);
+        toast('⚠️ No se pudo generar el PDF');
+      }
+    };
+  </script>
+</body>
+</html>
