@@ -97,7 +97,11 @@ export function renderNavbar(activoId) {
     </a>
   `).join('');
 
-  // Insertar la navbar al principio del body
+  // Insertar la navbar al principio del body.
+  // FIX DUPLICACIÓN: si ya existía una navbar (el evento 'perfil-actualizado'
+  // re-renderiza), la eliminamos antes de insertar la nueva. Antes cada
+  // refresco de perfil agregaba una navbar encima de la otra.
+  document.querySelectorAll('nav.navbar').forEach(n => n.remove());
   document.body.insertBefore(navbar, document.body.firstChild);
 
   // Lógica para ocultar navbar al hacer scroll hacia abajo (solo una vez)
