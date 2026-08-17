@@ -4,10 +4,9 @@
 // Este módulo es independiente y desmontable del sistema principal.
 // ============================================================================
 
-import { supabase } from './supabase-client.js';
+import { supabase, SUPABASE_URL } from './supabase-client.js';
 import { session } from './auth.js';
 
-const SUPABASE_URL = 'https://dlpsvbrctccnmvkbcsfp.supabase.co';
 const PRECIO_CURSO = 50; // S/50
 
 // ── Verificar si el alumno ya compró un curso específico ───────────────────

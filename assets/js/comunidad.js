@@ -3,7 +3,7 @@
 // Puntos por RECIBIR likes + bonus LIVE. Likes en comentarios también.
 // ============================================================================
 
-import { supabase } from './supabase-client.js';
+import { supabase, SUPABASE_URL } from './supabase-client.js';
 import { session, refrescarPerfil, esAdmin } from './auth.js';
 import { escapeHtml, iniciales, colorAvatar, tiempoRelativo, getNivel, toast } from './utils.js';
 import { parseMarkdown } from './markdown.js';
@@ -311,7 +311,7 @@ async function notificarAnuncio(contenido) {
   try {
     const { data: { session: s } } = await supabase.auth.getSession();
     if (!s) return;
-    await fetch('https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/send-email', {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${s.access_token}`,

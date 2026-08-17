@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { escapeHtml, getNivel, getSiguienteNivel, tiempoRelativo } from './utils.js';
-import { supabase } from './supabase-client.js';
+import { supabase, SUPABASE_URL } from './supabase-client.js';
 import { session, refrescarPerfil } from './auth.js';
 import { SYSTEM_PROMPT } from './prompt.js';
 
@@ -118,7 +118,7 @@ pantalla del curso y luego sube la captura ahí mismo.`;
     // Llamar a nuestra Edge Function en Supabase
     let response;
     try {
-      response = await fetch('https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/chat-ai', {
+      response = await fetch(`${SUPABASE_URL}/functions/v1/chat-ai`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -13,7 +13,9 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 // ─── TU CONFIGURACIÓN DE SUPABASE ──────────────────────────────────────────
-const SUPABASE_URL = 'https://dlpsvbrctccnmvkbcsfp.supabase.co';
+// ÚNICA fuente de la URL en todo el proyecto: los demás módulos la importan
+// de acá (chat-ia.js, comunidad.js, pago-voucher.js).
+export const SUPABASE_URL = 'https://dlpsvbrctccnmvkbcsfp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRscHN2YnJjdGNjbm12a2Jjc2ZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjYwNTMsImV4cCI6MjA5ODM0MjA1M30.sMjCrC0wDEks9YBcoxHK4xf1ODCKD6SRJqwRjdea9pU';
 // ────────────────────────────────────────────────────────────────────────────
 

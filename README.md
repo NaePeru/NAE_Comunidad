@@ -1,132 +1,83 @@
-# Proyecto Z — Plataforma tipo Skool (uso personal)
+# NAE — Comunidad de Análisis de Datos (Proyecto Z)
 
-Plataforma de comunidad + cursos + eventos con gamificación, para un solo dueño,
-optimizada para **hasta 500 usuarios simultáneos**. Backend en **Supabase**.
+Plataforma de comunidad + cursos + gamificación para **Centro de Capacitación NAE**.
+Frontend vanilla (HTML/CSS/JS módulos) · Backend 100% Supabase · Deploy en Vercel.
+
+**Web:** https://nae-comunidad.vercel.app
 
 ---
 
-## 📁 Estructura
+## ✨ Funcionalidades
+
+- **Comunidad:** feed con posts, likes, comentarios, imágenes, modo LIVE, presencia "en línea"
+- **Cursos:** catálogo, módulos, lecciones con video, progreso y descarga de material
+- **Pagos:** QR de Yape + subida de voucher con **verificación automática por IA** (Edge Function)
+- **Gamificación:** niveles Dragon Ball (8), puntos híbridos (+2 post, +1 comentario, +1 like recibido, +5 LIVE), ranking semanal
+- **Certificados:** autoemisión al completar módulo, PDF premium (marfil/oro), código verificable públicamente en `/verificar.html`, herramienta de certificados manuales para externos (`app/cert-manual.html`)
+- **Chatbot "Alessandra"** (Nivel 4): IA que conoce nombre, puntos, nivel, progreso y vouchers de cada alumno
+- **Emails:** anuncio broadcast cuando el admin publica + recordatorio de seminario sábados 08:00 (vía Resend)
+- **Eventos:** seminarios con link de reunión y "agregar al calendario"
+
+## 🗂️ Estructura
 
 ```
-proyecto-z/
-├── index.html                  ← Landing + Login / Registro
-├── app/
-│   ├── aula.html               ← Panel principal (Fase 1 ✅)
-│   ├── comunidad.html          ← (Fase 2)
-│   ├── cursos.html             ← (Fase 3)
-│   ├── eventos.html            ← (Fase 4)
-│   ├── miembros.html           ← (Fase 4)
-│   ├── perfil.html             ← (Fase 4)
-│   └── admin.html              ← (Fase 6)
+├── index.html / verificar.html / test.html
+├── app/            ← 9 páginas privadas (comunidad, cursos, cert-manual, admin...)
 ├── assets/
-│   ├── css/                    ← base, components, layout, gamificacion
-│   └── js/                     ← supabase-client, auth, utils (✅) + resto por fases
-└── supabase/
-    ├── schema.sql              ← ✅ Tablas + índices
-    ├── rls.sql                 ← ✅ Seguridad por fila
-    └── triggers.sql            ← ✅ Lógica automática (puntos, niveles, perfiles)
+│   ├── css/ (10)   ← estilos por módulo
+│   ├── img/        ← qr-yape.jpg
+│   └── js/ (19)    ← lógica modular (ver error-guard.js = red anti crashes)
+├── legacy/         ← archivos retirados (aula, debug)
+├── supabase/
+│   ├── schema-completo.sql · rls-completo.sql · triggers-completo.sql  ← FUENTE ÚNICA
+│   ├── GUIA-ADMIN.sql       ← comandos: clave, hacer admin, ver admins
+│   ├── migrations/          ← cambios numerados (01..05)
+│   └── functions/send-email ← Edge Function de emails (en repo ✅)
+├── publicar.bat    ← deploy en 1 clic (git push → Vercel)
+└── vercel.json     ← cache + headers de seguridad
 ```
 
----
+> ⚠️ Las Edge Functions `chat-ai` y `verify-payment` viven solo en el dashboard
+> de Supabase (respaldarlas en `supabase/functions/` es pendiente).
 
-## 🚀 Instalación (3 pasos)
+## 🚀 Instalación (BD nueva)
 
-### PASO 1 — Crear la base de datos en Supabase
-1. Entra a tu proyecto en https://supabase.com
-2. Ve a **SQL Editor → New query**
-3. Copia y pega el contenido de `supabase/schema.sql` → **Run**
-4. Repite con `supabase/rls.sql` → **Run**
-5. Repite con `supabase/triggers.sql` → **Run**
+1. Supabase → SQL Editor → ejecutar en orden:
+   `schema-completo.sql` → `rls-completo.sql` → `triggers-completo.sql`
+2. Crear buckets de Storage: `avatars` (público), `comunidad-img` (público), `vouchers`
+3. `assets/js/supabase-client.js` → URL + anon key del proyecto
+4. Edge Functions (dashboard): crear `chat-ai`, `verify-payment`, `send-email`
+   (código de esta última en `supabase/functions/send-email/index.ts`)
+5. Secrets de `send-email`: `RESEND_API_KEY`, `OWNER_EMAIL`, `CRON_SECRET`
+6. Ejecutar migraciones pendientes de `supabase/migrations/`
 
-### PASO 2 — Configurar las credenciales
-1. En Supabase: **Project Settings → API**
-2. Copia tu **Project URL** y tu **anon public key**
-3. Abre `assets/js/supabase-client.js`
-4. Reemplaza:
-   ```js
-   const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
-   const SUPABASE_ANON_KEY = 'TU-ANON-KEY-AQUI';
-   ```
-   con tus valores reales.
+## 🛠️ Operación diaria
 
-### PASO 3 — Activar Auth y darte rol de ADMIN
-1. En Supabase: **Authentication → Providers → Email** → asegúrate de que esté habilitado.
-   *(Opcional: desactiva "Confirm email" en Authentication → Settings si quieres login inmediato en pruebas).*
-2. Regístrate desde `index.html` (serás el primer usuario).
-3. En **SQL Editor**, ejecuta para darte rol admin:
-   ```sql
-   update profiles set rol = 'admin' where email = 'TU_EMAIL@ejemplo.com';
-   ```
-   *(Reemplaza con el email que usaste).*
+| Tarea | Cómo |
+|---|---|
+| Publicar cambios en la web | Doble clic en `publicar.bat` |
+| Correr tests de lógica | Abrir `/test.html` (36 pruebas) |
+| Nueva clave a un alumno | `GUIA-ADMIN.sql` § 1 |
+| Hacer admin a alguien | `GUIA-ADMIN.sql` § 2 |
+| Ver admins | `GUIA-ADMIN.sql` § 3 |
+| Emails a alumnos | Requiere dominio verificado en Resend (hoy: modo test, solo al dueño) |
 
-### PASO 4 — Probarlo
-Abre `index.html` en tu navegador. Si tienes problemas con los módulos ES (CORS),
-necesitarás un servidor local:
-```bash
-# Dentro de la carpeta proyecto-z/
-npx serve .
-# o
-python -m http.server 8000
-```
+## 🔐 Seguridad
 
----
+- RLS en las 16 tablas · lógica de puntos en triggers (no hackeable desde cliente)
+- API keys solo en Edge Functions · `escapeHtml` en todo contenido de usuario
+- Trigger anti-escalada de rol/puntos (`prevent_profile_tampering`, fix migración 03)
+- Constraint UNIQUE anti-duplicados de cursos (migración 01)
 
-## ✅ Lo que YA funciona (Fase 1)
+## 📊 Escalabilidad
 
-- **Registro y login** con cuentas individuales (email + contraseña)
-- **Sesión persistente** (no te pide login cada vez)
-- **Perfiles automáticos** al registrarse (trigger)
-- **Membresía trial de 7 días** automática al registrarse
-- **Sistema de niveles NAE** (5 niveles, igual al original)
-- **Panel del aula** con tarjeta de nivel y barra de progreso
-- **Detección de rol admin** (muestra el acceso al panel de admin)
-- **Validación de membresía** (muestra días restantes / vencida)
+Plan Free de Supabase: ~50-60 usuarios simultáneos (límite Realtime).
+Plan Pro ($25/mes): hasta ~3.000 simultáneos. 50.000+ usuarios registrados en Free.
 
----
+## 🧭 Roadmap pendiente
 
-## 🎮 Sistema de niveles NAE
-
-| Nivel | Puntos | Nombre | Emoji |
-|-------|--------|--------|-------|
-| 1 | 0–49 | Aprendiz | 🌱 |
-| 2 | 50–149 | Analista Junior | 📊 |
-| 3 | 150–349 | Analista de Datos | ⚡ |
-| 4 | 350–699 | Analista Senior | 🏆 |
-| 5 | 700+ | Experto NAE | 🌟 |
-
-**Puntos que otorga el sistema automáticamente (triggers):**
-- +10 → crear publicación
-- +3 → comentar
-- +1 → dar like
-- +15 → completar una lección
-
----
-
-## ⚠️ Seguridad
-
-- La **anon key** es pública por diseño (está protegida por RLS).
-- **NUNCA** pongas la `service_role` key en el frontend.
-- Si vienes del archivo `Index.html` anterior: **revoca la API key de OpenAI** que estaba expuesta. En la Fase 5 migraremos el chat a una Edge Function segura.
-
----
-
-## 📅 Próximas fases
-
-- **Fase 2:** Comunidad (feed, posts, likes, comentarios con Realtime)
-- **Fase 3:** Cursos (catálogo, lecciones, progreso)
-- **Fase 4:** Eventos + Miembros (calendario, leaderboard en vivo)
-- **Fase 5:** Chat IA Alessandra (Edge Function segura) + voz
-- **Fase 6:** Panel Admin (gestión de alumnos, suspensiones, stats)
-
----
-
-## 🆘 Problemas comunes
-
-**"Falta configurar Supabase" en la pantalla de login**
-→ Aún tienes los placeholders en `supabase-client.js`. Revisa el Paso 2.
-
-**El registro funciona pero no puedo entrar**
-→ Probablemente necesitas confirmar el email, o desactiva "Confirm email" en Auth Settings para pruebas.
-
-**Los módulos ES no cargan (error de CORS al abrir como `file://`)**
-→ Sirve la carpeta con un servidor local (Paso 4).
+- Dominio propio + emails a alumnos (activo el broadcast y recordatorios reales)
+- Eventos recurrentes ("cada sábado" automático)
+- Migración 02 (leaderboard materializado) — creada, sin ejecutar
+- Respaldar Edge Functions chat-ai y verify-payment al repo
+- A 200+ usuarios: anti-spam por nivel, links de invitación
