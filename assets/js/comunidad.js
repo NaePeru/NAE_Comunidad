@@ -288,6 +288,13 @@ export async function crearPost(contenido, categoria, esLive = false, imagenUrl 
     await agregarPostRealtime(data);
   }
 
+  // ANUNCIO POR EMAIL: cuando el ADMIN publica, se notifica a los alumnos.
+  // (Los posts de alumnos normales NO disparan email — decisión de diseño:
+  // evitar ruido; solo los anuncios del admin son broadcast.)
+  if (esAdmin()) {
+    notificarAnuncio(data?.contenido || contenido.trim());
+  }
+
   if (esLive) {
     toast('🔴 ¡Estás en vivo! +5 pts bonus');
   } else {
@@ -297,10 +304,10 @@ export async function crearPost(contenido, categoria, esLive = false, imagenUrl 
   return { error: null };
 }
 
-// ── EMAIL "TE DIERON LIKE" (vía Edge Function send-email) ───────────────────
-// Fire-and-forget: cualquier error se ignora silenciosamente para no afectar
-// la experiencia del que da el like.
-async function notificarLike(autorId) {
+// ── EMAIL DE ANUNCIO (cuando el ADMIN publica en la comunidad) ──────────────
+// Fire-and-forget: nunca bloquea la publicación. La Edge Function decide
+// si envía (modo test → 1 email al dueño; producción → todos los alumnos).
+async function notificarAnuncio(contenido) {
   try {
     const { data: { session: s } } = await supabase.auth.getSession();
     if (!s) return;
@@ -310,10 +317,10 @@ async function notificarLike(autorId) {
         Authorization: `Bearer ${s.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ tipo: 'like', recipient_user_id: autorId }),
+      body: JSON.stringify({ tipo: 'anuncio', contenido }),
     });
   } catch (e) {
-    /* silencioso: el email es un bonus, nunca debe romper el like */
+    /* silencioso: el email es un bonus, nunca debe romper la publicación */
   }
 }
 
@@ -343,9 +350,6 @@ async function toggleLike(postId) {
     }
     post.likedByMe = true;
     post.likes_count = (post.likes_count || 0) + 1;
-    // Email "te dieron like" al autor (fire-and-forget: no bloquea la UI).
-    // La Edge Function decide si envía o no (dedup 24h, modo test, etc.).
-    notificarLike(post.autor_id);
   }
   // OPTIMIZACIÓN: antes re-renderizábamos TODO el post (outerHTML).
   // Eso destruía y recreaba el nodo completo (videos, imágenes, etc.).
