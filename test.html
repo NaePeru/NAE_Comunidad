@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Tests NAE — Lógica crítica</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0B0F19; color: #E5E7EB; padding: 30px; max-width: 760px; margin: 0 auto; }
+    h1 { color: #F2A900; font-size: 22px; }
+    .res { padding: 10px 14px; border-radius: 8px; margin: 6px 0; font-size: 14px; font-family: monospace; }
+    .ok  { background: rgba(61,214,140,0.12); border: 1px solid rgba(61,214,140,0.4); color: #3DD68C; }
+    .fail{ background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.4); color: #FF9B9B; }
+    #summary { margin-top: 20px; font-size: 18px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>◆ NAE — Tests de lógica crítica</h1>
+  <p style="color:#9CA3AF;font-size:13px;">Pruebas automáticas de las funciones puras. Si algo sale ROJO, no publiques sin revisar.</p>
+  <div id="results"></div>
+  <div id="summary"></div>
+
+  <script type="module">
+    import { getNivel, getSiguienteNivel, escapeHtml, esEmailValido, iniciales, colorAvatar, tiempoRelativo } from './assets/js/utils.js';
+
+    const results = [];
+    function test(nombre, condicion, detalle = '') {
+      results.push({ nombre, ok: !!condicion, detalle });
+    }
+
+    // ── 1. NIVELES (umbrales exactos Dragon Ball) ──
+    const casosNivel = [
+      [0, 1, 'Humano'], [99, 1, 'Humano'], [100, 2, 'Kaio-ken'], [299, 2, 'Kaio-ken'],
+      [300, 3, 'Saiyajín'], [799, 3, 'Saiyajín'], [800, 4, 'Súper Saiyajín'],
+      [1499, 4, 'Súper Saiyajín'], [1500, 5, 'Súper Saiyajín 2'], [2999, 5, 'Súper Saiyajín 2'],
+      [3000, 6, 'Súper Saiyajín 3'], [4999, 6, 'Súper Saiyajín 3'], [5000, 7, 'Saiyajin Dios'],
+      [9999, 7, 'Saiyajin Dios'], [10000, 8, 'Súper Saiyajin Blue'], [999999, 8, 'Súper Saiyajin Blue'],
+    ];
+    for (const [pts, num, nombre] of casosNivel) {
+      const n = getNivel(pts);
+      test(`getNivel(${pts}) → ${nombre} (${num})`, n.num === num && n.nombre === nombre, `dio: ${n.nombre} (${n.num})`);
+    }
+    // Edge: puntos negativos o null no debe crashear
+    test('getNivel(null) no crashea (fallback Humano)', getNivel(null)?.num === 1);
+    test('getNivel(-5) no crashea (fallback Humano)', getNivel(-5)?.num === 1);
+
+    // ── 2. SIGUIENTE NIVEL ──
+    test('getSiguienteNivel(50) → Kaio-ken (100)', getSiguienteNivel(50)?.min === 100);
+    test('getSiguienteNivel(9999) → Blue (10000)', getSiguienteNivel(9999)?.min === 10000);
+    test('getSiguienteNivel(10000) → null (nivel máximo)', getSiguienteNivel(10000) === null);
+
+    // ── 3. ESCAPE HTML (anti-XSS) ──
+    const ataque = '<img src=x onerror=alert(1)>"><script>evil()</script>';
+    const escapado = escapeHtml(ataque);
+    test('escapeHtml neutraliza <script>', !escapado.includes('<script'));
+    test('escapeHtml neutraliza <img onerror', !escapado.includes('<img'));
+    test('escapeHtml conserva el texto', escapado.includes('evil()'));
+    test('escapeHtml(null) → string vacío sin crashear', escapeHtml(null) === '');
+
+    // ── 4. VALIDACIÓN DE EMAIL ──
+    test('esEmailValido: correo correcto ✓', esEmailValido('alumno@correo.com') === true);
+    test('esEmailValido: sin arroba ✗', esEmailValido('alumno.correo.com') === false);
+    test('esEmailValido: vacío ✗', esEmailValido('') === false);
+    test('esEmailValido: con espacios ✗', esEmailValido('a b@c.com') === false);
+
+    // ── 5. INICIALES DE AVATAR ──
+    test('iniciales("Juan Perez") → JP', iniciales('Juan Perez') === 'JP');
+    test('iniciales("Madonna") → MA', iniciales('Madonna') === 'MA');
+
+    // ── 6. COLOR DE AVATAR DETERMINÍSTICO ──
+    test('colorAvatar: mismo nombre → mismo color', JSON.stringify(colorAvatar('Valeria')) === JSON.stringify(colorAvatar('Valeria')));
+
+    // ── 7. TIEMPO RELATIVO ──
+    test('tiempoRelativo(ahora) → "Ahora mismo"', tiempoRelativo(new Date().toISOString()) === 'Ahora mismo');
+
+    // ── RENDER ──
+    const cont = document.getElementById('results');
+    cont.innerHTML = results.map(r =>
+      `<div class="res ${r.ok ? 'ok' : 'fail'}">${r.ok ? '✅' : '❌'} ${r.nombre}${r.ok ? '' : ' → ' + r.detalle}</div>`
+    ).join('');
+
+    const okCount = results.filter(r => r.ok).length;
+    document.getElementById('summary').innerHTML =
+      `<span style="color:${okCount === results.length ? '#3DD68C' : '#FF9B9B'}">
+       ${okCount}/${results.length} tests OK ${okCount === results.length ? '🎉' : '⚠️ REVISAR'}</span>`;
+  </script>
+</body>
+</html>
