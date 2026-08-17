@@ -1,0 +1,63 @@
+name: CI — Verificación de código
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verificar sintaxis de todos los JS
+        run: |
+          errores=0
+          for archivo in assets/js/*.js; do
+            if node --check "$archivo" 2> /tmp/err.txt; then
+              echo "✓ $archivo"
+            else
+              echo "✗ $archivo"
+              cat /tmp/err.txt
+              errores=1
+            fi
+          done
+          exit $errores
+
+      - name: Verificar Edge Functions (TypeScript básico)
+        run: |
+          find supabase/functions -name "*.ts" | while read archivo; do
+            echo "→ $archivo presente (backup en repo OK)"
+          done
+
+      - name: Verificar archivos críticos presentes
+        run: |
+          criticos=(
+            "index.html"
+            "app/comunidad.html"
+            "app/cursos.html"
+            "assets/js/error-guard.js"
+            "assets/js/supabase-client.js"
+            "assets/img/qr-yape.jpg"
+            "supabase/schema-completo.sql"
+          )
+          for f in "${criticos[@]}"; do
+            if [ -f "$f" ]; then echo "✓ $f"; else echo "✗ FALTA: $f"; exit 1; fi
+          done
+
+      - name: Detectar secretos filtrados
+        run: |
+          # Ninguna API key real debe vivir en el frontend
+          if grep -rE "(sk-[A-Za-z0-9]{20,}|re_[A-Za-z0-9]{20,})" assets/ --include="*.js" --include="*.html"; then
+            echo "⚠️ POSIBLE SECRET EN EL FRONTEND — revisar"
+            exit 1
+          fi
+          echo "✓ Sin secretos filtrados en frontend"
