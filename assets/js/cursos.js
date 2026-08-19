@@ -98,9 +98,12 @@ function renderCatalogo(courses, lessonCounts, lessonsByCourse, myDone) {
     const bloqueado = c.requiere_pago && !acceso;
     const cs = catStyle(c.categoria);
 
-    const pagoBadge = c.requiere_pago
+    // "NAE / Empieza aquí" no es un curso: es información de bienvenida,
+    // por eso NO lleva etiqueta de GRATIS ni PREMIUM.
+    const esSoloInfo = (c.slug === 'nae-empieza-aqui');
+    const pagoBadge = esSoloInfo ? '' : (c.requiere_pago
       ? (bloqueado ? '<span class="badge badge-muted">🔒 PREMIUM</span>' : '<span class="badge badge-gold">PREMIUM</span>')
-      : '<span class="badge badge-green">GRATIS</span>';
+      : '<span class="badge badge-green">GRATIS</span>');
 
     return `
       <div class="course-card${bloqueado ? ' locked' : ''}"
