@@ -55,10 +55,6 @@ export function renderNavbar(activoId) {
         <a href="certificados.html" class="navbar-icon-btn" id="navbar-cert-btn" title="Mis certificados" style="text-decoration:none;">
           🎓
         </a>
-        ${esAdminUser ? `
-        <a href="matricula.html" class="navbar-icon-btn" id="navbar-matricula-btn" title="Matrícula: programar cursos en vivo" style="text-decoration:none;">
-          📅
-        </a>` : ''}
         <button class="navbar-icon-btn" id="navbar-bell-btn" title="Notificaciones" onclick="window.__toggleNotif()">
           🔔<span class="navbar-badge" id="navbar-badge"></span>
         </button>

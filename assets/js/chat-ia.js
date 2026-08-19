@@ -16,7 +16,6 @@ let isLoading = false;
 let chatOpen = false;
 let cacheProgreso = null;   // resumen de progreso de certificados (para la IA)
 let cacheVouchers = null;   // últimos vouchers de pago del alumno (para la IA)
-let cacheCursosLive = null; // cursos en vivo programados (para la IA)
 
 // ── PROMPT BASE (Importado desde prompt.js) ────────────────────────────────
 const PROMPT_BASE = SYSTEM_PROMPT;
@@ -92,23 +91,6 @@ PENDIENTE se revisa en menos de 24 horas (o por WhatsApp 988502354). Si todo
 figura APROBADO pero un curso sigue bloqueado, indicale que recargue la página.
 Si no subió ninguno, explicale que paga S/50 escaneando el QR de Yape en la
 pantalla del curso y luego sube la captura ahí mismo.`;
-    }
-
-    // Cursos en vivo programados (para "¿qué cursos van a dictar?")
-    if (Array.isArray(cacheCursosLive) && cacheCursosLive.length > 0) {
-      const lineasC = cacheCursosLive.map(c => {
-        const fechas = c.fecha_fin && c.fecha_fin !== c.fecha_inicio
-          ? `del ${c.fecha_inicio} al ${c.fecha_fin}` : `inicia ${c.fecha_inicio}`;
-        return `  · ${c.titulo} — ${fechas}${c.horario ? ', ' + c.horario : ''} (S/${c.precio}, ${c.estado.replace('_',' ')})`;
-      });
-      ctx += `
-
-- Cursos en VIVO programados (próximos):
-${lineasC.join('\n')}
-
-Si pregunta qué cursos en vivo se dictarán, próximas fechas, horarios o cómo
-matricularse, usá ESTA lista exacta. La matrícula se coordina por WhatsApp
-988502354.`;
     }
 
     ctx += `
@@ -243,17 +225,6 @@ function toggleChat() {
       .limit(3)
       .then(res => { cacheVouchers = res.data || []; })
       .catch(() => { cacheVouchers = null; });
-    // Cargar cursos en vivo programados (los que el admin agendó en matricula.html)
-    const hoyISO = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
-    supabase
-      .from('cursos_programados')
-      .select('titulo, fecha_inicio, fecha_fin, horario, precio, estado')
-      .in('estado', ['programado', 'en_curso'])
-      .or(`fecha_fin.gte.${hoyISO},fecha_fin.is.null`)  // vigentes o sin fecha fin
-      .order('fecha_inicio', { ascending: true })
-      .limit(5)
-      .then(res => { cacheCursosLive = res.data || []; })
-      .catch(() => { cacheCursosLive = null; });
     setTimeout(() => document.getElementById('chat-input')?.focus(), 200);
   }
 }
