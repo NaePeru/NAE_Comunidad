@@ -186,11 +186,12 @@ export function initChat() {
   `;
   document.body.appendChild(win);
 
-  // Mensaje de bienvenida (simple, sin personalizar)
+  // Mensaje de bienvenida (simple + nombre del alumno)
   const msgs = document.getElementById('chat-messages');
   const div = document.createElement('div');
   div.className = 'chat-msg bot';
-  div.innerHTML = `Hola, soy <strong style="color:var(--gold);">Alessandra</strong>. ¿En qué puedo ayudar?`;
+  const primerNombre = session?.profile?.nombre?.trim().split(/\s+/)[0];
+  div.innerHTML = `Hola${primerNombre ? ', ' + escapeHtml(primerNombre) : ''}, soy <strong style="color:var(--gold);">Alessandra</strong>. ¿En qué puedo ayudar?`;
   msgs.appendChild(div);
 }
 
