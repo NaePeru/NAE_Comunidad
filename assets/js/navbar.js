@@ -46,7 +46,7 @@ export function renderNavbar(activoId) {
   navbar.innerHTML = `
     <div class="navbar-top">
       <a href="comunidad.html" class="navbar-brand">
-        <span class="brand-mark">◆</span> NAE
+        <img src="../assets/img/logo-nae.svg" alt="NAE" style="width:20px;height:20px;"> NAE
       </a>
       <div class="navbar-actions">
         <button class="navbar-icon-btn" id="navbar-search-btn" title="Buscar" onclick="window.__toggleSearch()">

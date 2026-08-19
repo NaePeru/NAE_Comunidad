@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- NAE — El Rombo de Datos (logo oficial) -->
+  <!-- Rombo construido con celdas de hoja de cálculo, gradiente dorado → naranja -->
+  <rect x="54" y="2"  width="12" height="12" rx="2" fill="#F5E08A"/>
+  <rect x="46" y="18" width="12" height="12" rx="2" fill="#F5E08A"/><rect x="62" y="18" width="12" height="12" rx="2" fill="#F5DC79"/>
+  <rect x="38" y="34" width="12" height="12" rx="2" fill="#F5D865"/><rect x="54" y="34" width="12" height="12" rx="2" fill="#F2A900"/><rect x="70" y="34" width="12" height="12" rx="2" fill="#F5D865"/>
+  <rect x="30" y="50" width="12" height="12" rx="2" fill="#F2A900"/><rect x="46" y="50" width="12" height="12" rx="2" fill="#EFA010"/><rect x="62" y="50" width="12" height="12" rx="2" fill="#F2A900"/><rect x="78" y="50" width="12" height="12" rx="2" fill="#EFA010"/>
+  <rect x="22" y="66" width="12" height="12" rx="2" fill="#E8921F"/><rect x="38" y="66" width="12" height="12" rx="2" fill="#E05C2A"/><rect x="54" y="66" width="12" height="12" rx="2" fill="#E8921F"/><rect x="70" y="66" width="12" height="12" rx="2" fill="#E05C2A"/><rect x="86" y="66" width="12" height="12" rx="2" fill="#E8921F"/>
+  <rect x="30" y="82" width="12" height="12" rx="2" fill="#E05C2A"/><rect x="46" y="82" width="12" height="12" rx="2" fill="#D64F22"/><rect x="62" y="82" width="12" height="12" rx="2" fill="#E05C2A"/><rect x="78" y="82" width="12" height="12" rx="2" fill="#D64F22"/>
+  <rect x="38" y="98" width="12" height="12" rx="2" fill="#C74520"/><rect x="54" y="98" width="12" height="12" rx="2" fill="#D64F22"/><rect x="70" y="98" width="12" height="12" rx="2" fill="#C74520"/>
+</svg>
