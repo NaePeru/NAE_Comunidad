@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matrícula — Cursos en vivo (Admin)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/base.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/components.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/layout.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/admin.css?v=20240710v1">
+
+  <script src="../assets/js/error-guard.js"></script>
+
+  <style>
+    .oferta-card { display:flex; align-items:center; gap:14px; background:var(--card);
+      border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; }
+    .oferta-fecha { width:64px; text-align:center; background:var(--bg); border-radius:10px; padding:8px 4px; flex-shrink:0; }
+    .oferta-fecha .d { font-size:22px; font-weight:800; color:var(--gold); font-family:var(--font-mono); }
+    .oferta-fecha .m { font-size:10px; color:var(--muted2); text-transform:uppercase; }
+    .estado-pill { font-size:11px; padding:3px 10px; border-radius:12px; font-weight:700; }
+    .estado-programado { background:rgba(59,130,246,.15); color:#6BA3F2; }
+    .estado-en_curso   { background:rgba(61,214,140,.15); color:#3DD68C; }
+    .estado-finalizado { background:rgba(148,163,184,.15); color:#94A3B8; }
+    .estado-cancelado  { background:rgba(255,107,107,.15); color:#FF9B9B; }
+    .modal-back { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100;
+      display:none; align-items:center; justify-content:center; padding:20px; }
+    .modal-back.open { display:flex; }
+    .modal-box { background:var(--card); border:1px solid var(--border); border-radius:16px;
+      padding:24px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+  </style>
+</head>
+<body>
+
+  <div class="container" style="max-width:840px;margin-top:24px;">
+
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h1 class="page-title">📅 Matrícula — Cursos en vivo</h1>
+        <p class="page-sub">Programá tus cursos virtuales. Alessandra los informará automáticamente en el chat.</p>
+      </div>
+      <button class="btn btn-primary" onclick="window.__nuevaOferta()">+ Programar curso</button>
+    </div>
+
+    <div id="ofertas-list" style="margin-top:20px;">
+      <div class="empty-state"><div class="empty-icon">⏳</div>Cargando...</div>
+    </div>
+
+  </div>
+
+  <!-- ═══ MODAL: PROGRAMAR CURSO ═══ -->
+  <div class="modal-back" id="modal-oferta">
+    <div class="modal-box">
+      <div style="font-weight:800;font-size:18px;margin-bottom:16px;" id="modal-titulo">Programar curso en vivo</div>
+
+      <div class="form-group">
+        <label class="form-label">Título *</label>
+        <input type="text" class="form-input" id="f-titulo" placeholder="Ej: Excel Intermedio en vivo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <textarea class="form-input" id="f-desc" style="min-height:60px;" placeholder="Qué se verá, para quién es..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha inicio *</label>
+          <input type="date" class="form-input" id="f-inicio">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha fin</label>
+          <input type="date" class="form-input" id="f-fin">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Horario</label>
+        <input type="text" class="form-input" id="f-horario" placeholder="Ej: Lunes y Miércoles 7-9pm">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Cupos</label>
+          <input type="number" class="form-input" id="f-cupos" placeholder="Vacío = ilimitado">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio (S/)</label>
+          <input type="number" class="form-input" id="f-precio" value="50">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Link de la sesión (Zoom/Meet)</label>
+        <input type="text" class="form-input" id="f-link" placeholder="https://zoom.us/...">
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="window.__cerrarModal()">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="window.__guardarOferta()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, session, esAdmin } from '../assets/js/auth.js';
+    import { escapeHtml, toast } from '../assets/js/utils.js';
+
+    // ── Guard: solo admin ──
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) {
+      window.location.href = '../index.html';
+    } else {
+      await cargarPerfilCompleto();
+      if (!esAdmin()) {
+        document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted);">🔒 Solo el administrador puede acceder.</div>';
+      } else {
+        cargarOfertas();
+      }
+    }
+
+    // ── ESTADO ──
+    let editandoId = null;
+    const MESES = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+
+    // ── CARGAR LISTA ──
+    async function cargarOfertas() {
+      const list = document.getElementById('ofertas-list');
+      const { data, error } = await supabase
+        .from('cursos_programados')
+        .select('*, matriculas(count)')
+        .order('fecha_inicio', { ascending: true });
+
+      if (error) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div>Error al cargar (¿corriste la migración 06?).</div>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div>No hay cursos programados aún.<br>Creá el primero con el botón de arriba.</div>';
+        return;
+      }
+
+      list.innerHTML = data.map(o => {
+        const f = new Date(o.fecha_inicio + 'T00:00:00');
+        const matriculados = o.matriculas?.[0]?.count ?? 0;
+        const cuposTxt = o.cupos ? `${matriculados}/${o.cupos}` : `${matriculados} (∞)`;
+        return `
+        <div class="oferta-card">
+          <div class="oferta-fecha">
+            <div class="d">${f.getDate()}</div>
+            <div class="m">${MESES[f.getMonth()]}</div>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;">${escapeHtml(o.titulo)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+              ${o.fecha_fin ? `hasta ${o.fecha_fin}` : ''} ${o.horario ? '· ' + escapeHtml(o.horario) : ''}
+              · 👥 ${cuposTxt} · S/${o.precio}
+            </div>
+          </div>
+          <span class="estado-pill estado-${o.estado}">${o.estado.replace('_',' ')}</span>
+          <div style="display:flex;gap:6px;">
+            <button class="icon-btn" title="Editar" onclick="window.__editarOferta('${o.id}')">✏️</button>
+            <button class="icon-btn danger" title="Eliminar" onclick="window.__borrarOferta('${o.id}')">🗑️</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── MODAL ──
+    window.__nuevaOferta = () => {
+      editandoId = null;
+      ['f-titulo','f-desc','f-inicio','f-fin','f-horario','f-cupos','f-link'].forEach(i => document.getElementById(i).value = '');
+      document.getElementById('f-precio').value = 50;
+      document.getElementById('modal-titulo').textContent = 'Programar curso en vivo';
+      document.getElementById('modal-oferta').classList.add('open');
+    };
+
+    window.__editarOferta = async (id) => {
+      const { data: o } = await supabase.from('cursos_programados').select('*').eq('id', id).single();
+      if (!o) return;
+      editandoId = id;
+      document.getElementById('f-titulo').value = o.titulo || '';
+      document.getElementById('f-desc').value = o.descripcion || '';
+      document.getElementById('f-inicio').value = o.fecha_inicio || '';
+      document.getElementById('f-fin').value = o.fecha_fin || '';
+      document.getElementById('f-horario').value = o.horario || '';
+      document.getElementById('f-cupos').value = o.cupos ?? '';
+      document.getElementById('f-precio').value = o.precio ?? 50;
+      document.getElementById('f-link').value = o.link_sesion || '';
+      document.getElementById('modal-titulo').textContent = 'Editar curso programado';
+      document.getElementById('modal-oferta').classList.add('open');
+    };
+
+    window.__cerrarModal = () => document.getElementById('modal-oferta').classList.remove('open');
+
+    window.__guardarOferta = async () => {
+      const datos = {
+        titulo: document.getElementById('f-titulo').value.trim(),
+        descripcion: document.getElementById('f-desc').value.trim() || null,
+        fecha_inicio: document.getElementById('f-inicio').value,
+        fecha_fin: document.getElementById('f-fin').value || null,
+        horario: document.getElementById('f-horario').value.trim() || null,
+        cupos: parseInt(document.getElementById('f-cupos').value) || null,
+        precio: parseInt(document.getElementById('f-precio').value) || 50,
+        link_sesion: document.getElementById('f-link').value.trim() || null,
+      };
+      if (!datos.titulo || !datos.fecha_inicio) { toast('⚠️ Falta título y fecha de inicio'); return; }
+
+      const result = editandoId
+        ? await supabase.from('cursos_programados').update(datos).eq('id', editandoId)
+        : await supabase.from('cursos_programados').insert(datos);
+
+      if (result.error) { toast('⚠️ ' + result.error.message); return; }
+      toast(editandoId ? '✅ Curso actualizado' : '✅ Curso programado');
+      window.__cerrarModal();
+      await cargarOfertas();
+    };
+
+    window.__borrarOferta = async (id) => {
+      if (!confirm('¿Eliminar este curso programado? Se borrarán sus matrículas.')) return;
+      const { error } = await supabase.from('cursos_programados').delete().eq('id', id);
+      if (error) { toast('⚠️ No se pudo eliminar'); return; }
+      toast('🗑️ Eliminado');
+      await cargarOfertas();
+    };
+  </script>
+</body>
+</html>

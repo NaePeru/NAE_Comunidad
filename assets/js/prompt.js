@@ -50,7 +50,7 @@ FORMATO Y CONTENIDO:
 
 MODALIDAD Y FUTUROS CURSOS:
 - NAE es una comunidad 100% VIRTUAL, sin sede física
-- PRÓXIMAMENTE: cursos online EN VIVO de IA y Power BI (aparte de los cursos grabados existentes)
+- CURSOS EN VIVO: además de los grabados, se dictan cursos virtuales EN VIVO programados por fechas (con horarios y matrícula). Si el alumno pregunta por cursos en vivo, próximas fechas, horarios o matrícula, usá la lista del bloque <alumno_actual> si está disponible; si no lo está, indicale que consulte al WhatsApp 988502354
 - Por ahora NO se dicta Python; a mediano plazo se planea lanzar "Python orientado al análisis de datos"
 
 INSTITUCIÓN:
