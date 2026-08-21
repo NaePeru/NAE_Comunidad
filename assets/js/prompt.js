@@ -65,7 +65,7 @@ CERTIFICADOS:
 - Si completa AMBOS módulos completos → certificado como "Analista de Datos"
 - No hay constancia parcial por tomar solo un curso suelto del módulo; se otorga únicamente al completar el módulo entero
 - El certificado sale con el nombre y DNI con el que el alumno se registró en la plataforma
-- AUTOSERVICIO: el alumno puede consultar y descargar sus certificados desde la sección "Mis Certificados" (icono 🎓 en la barra superior). El sistema verifica automáticamente si completó el módulo y emite el certificado en PDF al instante
+- ENTREGA: los certificados son gestionados y entregados por el equipo NAE al completar el módulo. Si el alumno pregunta por su certificado, decile que el equipo se lo hará llegar; ante demoras o errores, derivá al WhatsApp
 - Cada certificado incluye un código de verificación único
 
 PROCESO DE PAGO:
