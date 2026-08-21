@@ -397,7 +397,7 @@ function htmlCertificado(cert) {
               <div style="font-family:'Playfair Display',serif;font-size:15px;color:#6b6353;">
                 Emitido el ${fecha} · Código de verificación: <b>${cert.codigo}</b></div>
               <div style="font-family:'Playfair Display',serif;font-size:13px;color:#9a8f78;
-                  margin-top:4px;">Verifica la autenticidad en nae-comunidad.vercel.app/verificar.html</div>
+                  margin-top:4px;">Verifica la autenticidad en www.naeacademia.com/verificar.html</div>
             </div>
 
           </div>

@@ -24,9 +24,11 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const OWNER_EMAIL = Deno.env.get('OWNER_EMAIL') ?? '';
 const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 
-const TEST_MODE = true;
-const FROM = TEST_MODE ? 'NAE <onboarding@resend.dev>' : 'NAE <no-reply@tudominio.com>';
-const BASE_URL = 'https://nae-comunidad.vercel.app';
+// 🎉 DOMINIO VERIFICADO (naeacademia.com en Resend) → PRODUCCIÓN ACTIVADA:
+// los emails llegan a TODOS los alumnos desde no-reply@naeacademia.com.
+const TEST_MODE = false;
+const FROM = 'NAE <no-reply@naeacademia.com>';
+const BASE_URL = 'https://www.naeacademia.com';
 
 // Email base con branding NAE (contenido central parametrizable)
 function emailNAE(titulo: string, cuerpo: string, ctaUrl: string, ctaTexto: string, subtitulo = ''): string {
