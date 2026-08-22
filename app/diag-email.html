@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnóstico de Emails — NAE</title>
+  <link rel="stylesheet" href="../assets/css/base.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/components.css?v=20240710v1">
+  <script src="../assets/js/error-guard.js"></script>
+</head>
+<body>
+  <div class="container" style="max-width:560px;margin-top:40px;">
+    <h1 style="font-size:22px;">🔧 Diagnóstico de Emails</h1>
+    <p style="color:var(--muted);font-size:14px;">
+      Tocá el botón y esperá la respuesta. Copiala o sacale captura y pasamela.
+    </p>
+
+    <button class="btn btn-primary btn-block" id="btn-test" onclick="window.__probar()" style="margin-top:20px;">
+      📡 Probar envío de anuncio
+    </button>
+
+    <div id="resultado" style="margin-top:20px;"></div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, esAdmin } from '../assets/js/auth.js';
+
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) window.location.href = '../index.html';
+    else {
+      await cargarPerfilCompleto();
+      if (!esAdmin()) {
+        document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted);">🔒 Solo admin.</div>';
+      }
+    }
+
+    window.__probar = async () => {
+      const btn = document.getElementById('btn-test');
+      const res = document.getElementById('resultado');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Probando... (puede tardar 30-60s si envía a todos)';
+      res.innerHTML = '';
+
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        const r = await fetch('https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/send-email', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + s.access_token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ tipo: 'anuncio', contenido: 'Diagnóstico: prueba de anuncio desde panel' })
+        });
+        const texto = await r.text();
+        res.innerHTML = `
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;">
+            <div style="font-size:12px;color:var(--muted2);margin-bottom:8px;">RESPUESTA DEL SERVIDOR (HTTP ${r.status}):</div>
+            <pre style="white-space:pre-wrap;font-family:var(--font-mono);font-size:13px;color:var(--text);margin:0;">${texto}</pre>
+          </div>`;
+      } catch (e) {
+        res.innerHTML = `
+          <div style="background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);border-radius:12px;padding:18px;">
+            <pre style="white-space:pre-wrap;font-size:13px;margin:0;">ERROR: ${e.message}</pre>
+          </div>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '📡 Probar envío de anuncio';
+      }
+    };
+  </script>
+</body>
+</html>
