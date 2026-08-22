@@ -117,13 +117,19 @@ Geronimo — Profesor de NAE</textarea>
       const filas = [];
       const invalidas = [];
       for (const linea of lineas) {
-        // separar por tabulador o 2+ espacios
-        const partes = linea.split(/\t|\s{2,}/).map(p => p.trim()).filter(Boolean);
-        const email = partes.find(p => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p));
-        if (!email) { invalidas.push(linea); continue; }
-        const tel = partes.find(p => /^9\d{8}$/.test(p)) || null;
-        const otras = partes.filter(p => p !== email && p !== tel);
-        // curso = la parte con menos palabras "de curso" o la primera; nombre = la más larga
+        // PARSER BLINDADO: extrae email y teléfono DESDE CUALQUIERE parte de la
+        // línea (aunque vengan pegados con espacios simples o tabuladores).
+        const emailM = linea.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
+        if (!emailM) { invalidas.push(linea); continue; }
+        const email = emailM[0].toLowerCase();
+
+        let resto = linea.replace(emailM[0], ' ');
+        const telM = resto.match(/\b9\d{8}\b/);
+        const tel = telM ? telM[0] : null;
+        if (tel) resto = resto.replace(tel, ' ');
+
+        // lo que queda: curso + nombre (separados por tab o 2+ espacios)
+        const otras = resto.split(/\t|\s{2,}/).map(p => p.trim()).filter(Boolean);
         let nombre = '', curso = '';
         if (otras.length >= 2) {
           curso = otras[0];
@@ -131,10 +137,14 @@ Geronimo — Profesor de NAE</textarea>
         } else if (otras.length === 1) {
           nombre = otras[0];
         }
-        filas.push({ nombre, curso, telefono: tel, email: email.toLowerCase() });
+        filas.push({ nombre, curso, telefono: tel, email });
       }
 
-      if (filas.length === 0) { res.innerHTML = '<span style="color:#FF9B9B;">No se detectaron emails válidos. Revisá el pegado.</span>'; return; }
+      if (filas.length === 0) {
+        res.innerHTML = '<span style="color:#FF9B9B;">No se detectaron emails válidos en ' + lineas.length + ' líneas. Revisá que tenga correos.</span>';
+        toast('⚠️ 0 importados — revisá el mensaje rojo');
+        return;
+      }
 
       // insertar (ignorando duplicados por email)
       let insertados = 0;
