@@ -52,8 +52,21 @@ function emailNAE(titulo: string, cuerpo: string, ctaUrl: string, ctaTexto: stri
 }
 
 Deno.serve(async (req) => {
+  // CORS: sin esto los navegadores reciben "Failed to fetch" (falta del rewrite)
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
   const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+
+  // Respuesta al preflight CORS de los navegadores
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
 
   try {
     if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
