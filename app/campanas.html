@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campañas — Invitar ex-alumnos (Admin)</title>
+  <link rel="stylesheet" href="../assets/css/base.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/components.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/layout.css?v=20240710v1">
+  <script src="../assets/js/error-guard.js"></script>
+  <style>
+    .step { background: var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:16px; }
+    .step h3 { margin:0 0 6px; font-size:15px; }
+    .step .hint { font-size:12px; color:var(--muted2); margin-bottom:12px; }
+    textarea { width:100%; box-sizing:border-box; }
+    .stats { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+    .stat { flex:1; min-width:110px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; text-align:center; }
+    .stat b { display:block; font-size:24px; font-family:var(--font-mono); }
+    .stat span { font-size:11px; color:var(--muted); text-transform:uppercase; }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width:720px;margin-top:24px;">
+
+    <div class="page-header">
+      <h1 class="page-title">📣 Campañas — Invitar ex-alumnos</h1>
+      <p class="page-sub">Importá tu lista, redactá la invitación y enviá en oleadas de hasta 100/día (protege tu dominio de spam).</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b id="s-pendientes">—</b><span>Pendientes</span></div>
+      <div class="stat"><b id="s-enviados">—</b><span>Enviados</span></div>
+      <div class="stat"><b id="s-hoy">—</b><span>Hoy</span></div>
+      <div class="stat"><b id="s-cupo">—</b><span>Cupo hoy</span></div>
+    </div>
+
+    <!-- PASO 1: IMPORTAR -->
+    <div class="step">
+      <h3>1️⃣ Importar lista (desde tu Excel)</h3>
+      <p class="hint">Copiá y pegá las filas del Excel tal cual (Curso · Nombre · Teléfono · Email). Una fila por línea.</p>
+      <textarea id="lista" rows="7" class="form-input" style="font-family:var(--font-mono);font-size:12px;" placeholder="MS EXCEL BÁSICO	ARROYO VILLANUEVA DIEGO MARTIN	949554342	diegoarr0202@gmail.com
+MS EXCEL BÁSICO	GUTIERREZ BARRETO MAIRA ALEJANDRA	955632863	maira.gutierrez0497@gmail.com"></textarea>
+      <button class="btn btn-primary" style="margin-top:10px;" onclick="window.__importar()">📥 Importar a la lista</button>
+      <div id="import-result" style="font-size:13px;margin-top:10px;"></div>
+    </div>
+
+    <!-- PASO 2: MENSAJE -->
+    <div class="step">
+      <h3>2️⃣ La invitación</h3>
+      <p class="hint">Variables: <b>[nombre]</b> (primer nombre) · <b>[nombre_completo]</b> · <b>[curso]</b> (el que tomó contigo)</p>
+      <div class="form-group">
+        <label class="form-label">Asunto</label>
+        <input type="text" class="form-input" id="asunto" value="De tu profe Geronimo — algo nuevo para vos 📊">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mensaje</label>
+        <textarea id="mensaje" rows="8" class="form-input">Hola [nombre],
+
+Fuiste mi alumno en [curso], y me gustaría contarte algo que lancé después de años dictando cursos: NAE, mi propia comunidad de análisis de datos (Excel, Power BI, SQL e IA).
+
+Unirte es GRATIS y hay un curso de Excel sin costo para empezar hoy mismo:
+www.naeacademia.com
+
+Cualquier duda, respondé este correo — lo leo yo mismo.
+
+Un abrazo,
+Geronimo — Profesor de NAE</textarea>
+      </div>
+    </div>
+
+    <!-- PASO 3: ENVIAR -->
+    <div class="step">
+      <h3>3️⃣ Enviar oleada</h3>
+      <p class="hint">Envía a los pendientes, hasta completar el cupo de hoy (100). Podés repetir mañana.</p>
+      <button class="btn btn-primary btn-block" id="btn-enviar" onclick="window.__enviar()">🚀 Enviar oleada de hoy</button>
+      <div id="enviar-result" style="font-size:13px;margin-top:12px;white-space:pre-line;"></div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, esAdmin } from '../assets/js/auth.js';
+    import { toast, escapeHtml } from '../assets/js/utils.js';
+
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) window.location.href = '../index.html';
+    else {
+      await cargarPerfilCompleto();
+      if (!esAdmin()) {
+        document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted);">🔒 Solo admin.</div>';
+      } else {
+        cargarStats();
+      }
+    }
+
+    // ── ESTADÍSTICAS ──
+    async function cargarStats() {
+      const { count: pend } = await supabase.from('leads_campana').select('id', { count: 'exact', head: true }).eq('estado', 'pendiente');
+      const { count: env } = await supabase.from('leads_campana').select('id', { count: 'exact', head: true }).eq('estado', 'enviado');
+      document.getElementById('s-pendientes').textContent = pend ?? 0;
+      document.getElementById('s-enviados').textContent = env ?? 0;
+      const inicioHoy = new Date(); inicioHoy.setUTCHours(0,0,0,0);
+      const { count: hoy } = await supabase.from('email_log').select('id', { count: 'exact', head: true }).eq('tipo', 'campana').gte('creado_en', inicioHoy.toISOString());
+      const hoyN = hoy ?? 0;
+      document.getElementById('s-hoy').textContent = hoyN;
+      document.getElementById('s-cupo').textContent = Math.max(0, 100 - hoyN);
+    }
+
+    // ── PARSEAR + IMPORTAR ──
+    window.__importar = async () => {
+      const texto = document.getElementById('lista').value.trim();
+      const res = document.getElementById('import-result');
+      if (!texto) { toast('⚠️ Pegá la lista primero'); return; }
+
+      const lineas = texto.split(/\r?\n/).filter(l => l.trim());
+      const filas = [];
+      const invalidas = [];
+      for (const linea of lineas) {
+        // separar por tabulador o 2+ espacios
+        const partes = linea.split(/\t|\s{2,}/).map(p => p.trim()).filter(Boolean);
+        const email = partes.find(p => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p));
+        if (!email) { invalidas.push(linea); continue; }
+        const tel = partes.find(p => /^9\d{8}$/.test(p)) || null;
+        const otras = partes.filter(p => p !== email && p !== tel);
+        // curso = la parte con menos palabras "de curso" o la primera; nombre = la más larga
+        let nombre = '', curso = '';
+        if (otras.length >= 2) {
+          curso = otras[0];
+          nombre = otras.slice(1).join(' ');
+        } else if (otras.length === 1) {
+          nombre = otras[0];
+        }
+        filas.push({ nombre, curso, telefono: tel, email: email.toLowerCase() });
+      }
+
+      if (filas.length === 0) { res.innerHTML = '<span style="color:#FF9B9B;">No se detectaron emails válidos. Revisá el pegado.</span>'; return; }
+
+      // insertar (ignorando duplicados por email)
+      let insertados = 0;
+      for (let i = 0; i < filas.length; i += 200) {
+        const chunk = filas.slice(i, i + 200);
+        const { data, error } = await supabase
+          .from('leads_campana')
+          .upsert(chunk, { onConflict: 'email', ignoreDuplicates: true })
+          .select('id');
+        insertados += data?.length ?? 0;
+      }
+
+      res.innerHTML = `✅ <b>${insertados}</b> importados (duplicados ignorados)` +
+        (invalidas.length ? ` · <span style="color:#FFB86B;">${invalidas.length} líneas sin email válido (ignoradas)</span>` : '');
+      await cargarStats();
+    };
+
+    // ── ENVIAR OLEADA ──
+    window.__enviar = async () => {
+      const btn = document.getElementById('btn-enviar');
+      const res = document.getElementById('enviar-result');
+      const asunto = document.getElementById('asunto').value.trim();
+      const mensaje = document.getElementById('mensaje').value.trim();
+      if (!asunto || !mensaje) { toast('⚠️ Completá asunto y mensaje'); return; }
+
+      // hasta 100 pendientes
+      const { data: pendientes } = await supabase
+        .from('leads_campana').select('id, nombre, curso, email')
+        .eq('estado', 'pendiente')
+        .order('creado_en', { ascending: true })
+        .limit(100);
+
+      if (!pendientes || pendientes.length === 0) {
+        res.textContent = 'No hay pendientes — todo enviado ✅ (o importá más en el paso 1)';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Enviando ' + pendientes.length + ' correos (tarda ~1 min)...';
+
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        const r = await fetch('https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/send-email', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + s.access_token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo: 'campana', leads: pendientes, asunto, mensaje }),
+        });
+        const out = await r.json();
+
+        if (out.error) { res.textContent = '⚠️ ' + out.error; return; }
+
+        // marcar como enviado en la BD
+        const okEmails = new Set((out.resultados || []).filter(x => x.ok).map(x => x.email));
+        const idsOk = pendientes.filter(p => okEmails.has(p.email.toLowerCase())).map(p => p.id);
+        for (let i = 0; i < idsOk.length; i += 100) {
+          await supabase.from('leads_campana')
+            .update({ estado: 'enviado', enviado_en: new Date().toISOString() })
+            .in('id', idsOk.slice(i, i + 100));
+        }
+
+        res.textContent = `✅ Enviados: ${out.enviados} · Fallidos: ${out.fallidos} · Cupo restante hoy: ${out.cupo_restante}` +
+          (out.cupo_restante === 0 ? '\n\n🏁 Cupo diario agotado — continuá mañana con el mismo botón.' : '');
+        await cargarStats();
+      } catch (e) {
+        res.textContent = '⚠️ Error: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🚀 Enviar oleada de hoy';
+      }
+    };
+  </script>
+</body>
+</html>

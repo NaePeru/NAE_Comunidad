@@ -99,11 +99,11 @@ Deno.serve(async (req) => {
     );
 
     // Envía un email a un destinatario vía Resend. Devuelve true/false.
-    const enviarResend = async (to: string, subject: string, html: string): Promise<boolean> => {
+    const enviarResend = async (to: string, subject: string, html: string, fromOverride?: string): Promise<boolean> => {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: FROM, to, subject, html }),
+        body: JSON.stringify({ from: fromOverride ?? FROM, to, subject, html }),
       });
       return res.ok;
     };
@@ -145,6 +145,78 @@ Deno.serve(async (req) => {
       }
       return json({ ok: true, enviados, test: false });
     };
+    // ═══════════════ TIPO: CAMPAÑA (invitación a ex-alumnos, solo admin) ═══════════════
+    if (tipo === 'campana') {
+      if (esLlamadaSistema) return json({ error: 'Requiere sesión de admin' }, 403);
+      const { data: perfilLlamador } = await admin
+        .from('profiles').select('rol').eq('id', userId).single();
+      if (perfilLlamador?.rol !== 'admin') return json({ error: 'Solo el administrador' }, 403);
+
+      const leads = Array.isArray(body?.leads) ? body.leads : [];
+      const asunto = String(body?.asunto ?? 'NAE');
+      const mensaje = String(body?.mensaje ?? '');
+      if (leads.length === 0) return json({ error: 'Sin destinatarios' }, 400);
+
+      // ── Límite diario: protege la reputación del dominio (oleadas) ──
+      const LIMITE_DIARIO = 100;
+      const inicioHoy = new Date();
+      inicioHoy.setUTCHours(0, 0, 0, 0);
+      const { count: enviadosHoy } = await admin
+        .from('email_log').select('id', { count: 'exact', head: true })
+        .eq('tipo', 'campana').gte('creado_en', inicioHoy.toISOString());
+      const cupo = Math.max(0, LIMITE_DIARIO - (enviadosHoy ?? 0));
+      if (cupo === 0) {
+        return json({ ok: false, error: 'Límite diario alcanzado (100). Continuá mañana — así cuidamos la reputación del dominio.' });
+      }
+
+      const lote = leads.slice(0, cupo);
+      const FROM_CAMPAIGN = 'Geronimo - NAE <geronimo@naeacademia.com>';
+      const titleCase = (s: string) =>
+        (s || '').toLocaleLowerCase('es-PE').replace(/(^|\s)\S/g, c => c.toUpperCase());
+
+      let enviados = 0;
+      const resultados: { email: string; ok: boolean }[] = [];
+      for (const l of lote) {
+        const email = String(l.email ?? '').trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          resultados.push({ email, ok: false });
+          continue;
+        }
+        // Personalización: [nombre] = primer nombre, [nombre_completo], [curso]
+        const palabras = String(l.nombre ?? '').trim().split(/\s+/);
+        const primerNombre = titleCase(palabras[0] ?? '');
+        const nombreCorto = titleCase(palabras.slice(0, 2).join(' '));
+        const texto = mensaje
+          .replaceAll('[nombre]', primerNombre)
+          .replaceAll('[nombre_completo]', nombreCorto)
+          .replaceAll('[curso]', titleCase(String(l.curso ?? '')));
+
+        const ok = await enviarResend(
+          email,
+          asunto,
+          emailNAE(
+            'Una invitación de tu profe 📊',
+            `<p style="font-size:15px;color:#E5E7EB;line-height:1.7;margin:0;white-space:pre-line;">${texto}</p>`,
+            `${BASE_URL}`, 'Unirme a NAE — es gratis →'),
+          FROM_CAMPAIGN,
+        );
+        if (ok) {
+          enviados++;
+          await logEmail(userId ?? '00000000-0000-0000-0000-000000000000', 'campana', email);
+        }
+        resultados.push({ email, ok });
+      }
+
+      return json({
+        ok: true,
+        enviados,
+        fallidos: resultados.filter(r => !r.ok).length,
+        procesados: lote.length,
+        cupo_restante: cupo - enviados,
+        limite_diario: LIMITE_DIARIO,
+        resultados,
+      });
+    }
 
     // ═══════════════ TIPO: SEMINARIO (recordatorio sábado) ═══════════════
     if (tipo === 'seminario') {
