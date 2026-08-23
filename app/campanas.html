@@ -37,9 +37,14 @@
     <!-- PASO 1: IMPORTAR -->
     <div class="step">
       <h3>1️⃣ Importar lista (desde tu Excel)</h3>
-      <p class="hint">Copiá y pegá las filas del Excel tal cual (Curso · Nombre · Teléfono · Email). Una fila por línea.</p>
-      <textarea id="lista" rows="7" class="form-input" style="font-family:var(--font-mono);font-size:12px;" placeholder="MS EXCEL BÁSICO	ARROYO VILLANUEVA DIEGO MARTIN	949554342	diegoarr0202@gmail.com
-MS EXCEL BÁSICO	GUTIERREZ BARRETO MAIRA ALEJANDRA	955632863	maira.gutierrez0497@gmail.com"></textarea>
+      <p class="hint">Subí tu archivo Excel/CSV directamente — o pegá las filas abajo (Curso · Nombre · Teléfono · Email).</p>
+
+      <input type="file" id="file-excel" accept=".xlsx,.xls,.csv,.txt" style="display:none;" onchange="window.__manejarArchivo(this)">
+      <button class="btn btn-primary" id="btn-subir" onclick="document.getElementById('file-excel').click()" style="margin-bottom:10px;">
+        📤 Subir archivo Excel (.xlsx / .csv)
+      </button>
+
+      <textarea id="lista" rows="7" class="form-input" style="font-family:var(--font-mono);font-size:12px;" placeholder="...o pegá acá las filas copiadas del Excel (una por línea)"></textarea>
       <button class="btn btn-primary" style="margin-top:10px;" onclick="window.__importar()">📥 Importar a la lista</button>
       <div id="import-result" style="font-size:13px;margin-top:10px;"></div>
     </div>
@@ -109,6 +114,59 @@ Geronimo — Profesor de NAE</textarea>
       document.getElementById('s-hoy').textContent = hoyN;
       document.getElementById('s-cupo').textContent = Math.max(0, 100 - hoyN);
     }
+
+    // ── SUBIDA DE ARCHIVO EXCEL/CSV (vía SheetJS, carga perezosa) ──
+    const SHEETJS_URLS = [
+      'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+      'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
+    ];
+    async function cargarSheetJS() {
+      if (window.XLSX) return;
+      for (const url of SHEETJS_URLS) {
+        try {
+          await new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = url; s.onload = res; s.onerror = () => rej(new Error(url));
+            document.head.appendChild(s);
+          });
+          return;
+        } catch (e) { /* siguiente CDN */ }
+      }
+      throw new Error('No se pudo cargar el lector de Excel');
+    }
+
+    window.__manejarArchivo = async (input) => {
+      const archivo = input.files[0];
+      const res = document.getElementById('import-result');
+      if (!archivo) return;
+      const btn = document.getElementById('btn-subir');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Leyendo ' + archivo.name + '...';
+
+      try {
+        await cargarSheetJS();
+        const buffer = await archivo.arrayBuffer();
+        const libro = XLSX.read(buffer, { type: 'array' });
+        const hoja = libro.Sheets[libro.SheetNames[0]];
+        // raw:false → celdas como texto visible (evita teléfonos en notación científica)
+        const filas = XLSX.utils.sheet_to_json(hoja, { header: 1, raw: false, defval: '' });
+
+        // Convertir filas a líneas separadas por tabulador (el parser de abajo las procesa)
+        const lineas = filas
+          .map(f => f.map(c => String(c ?? '').trim()).join('\t'))
+          .filter(l => l.replace(/\t/g, '').length > 0);
+
+        document.getElementById('lista').value = lineas.join('\n');
+        res.textContent = `📄 ${archivo.name}: ${lineas.length} filas leídas — importando...`;
+        await window.__importar();
+      } catch (e) {
+        res.innerHTML = '<span style="color:#FF9B9B;">⚠️ ' + e.message + '</span>';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '📤 Subir archivo Excel (.xlsx / .csv)';
+        input.value = '';
+      }
+    };
 
     // ── PARSEAR + IMPORTAR ──
     window.__importar = async () => {
