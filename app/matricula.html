@@ -264,8 +264,11 @@
     };
 
     function tablaHTML(filas, cols, filasHTML) {
-      if (!filas || filas.length === 0) return '<p style="color:var(--muted2);font-size:13px;">Sin registros aún.</p>';
-      return `<table class="m-table"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${filasHTML}</tbody></table>`;
+      // El encabezado se muestra SIEMPRE (así se ve el diseño aunque no haya datos)
+      const cuerpo = (!filas || filas.length === 0)
+        ? `<tr><td colspan="${cols.length}" style="color:var(--muted2);text-align:center;padding:18px;">Sin registros aún${window.__tablasListas === false ? ' — ⚠️ falta ejecutar los bloques SQL (A→B→C)' : ''}</td></tr>`
+        : filasHTML;
+      return `<table class="m-table"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${cuerpo}</tbody></table>`;
     }
 
     // Fecha ISO (2026-08-23) → formato peruano (23-08-26)
@@ -276,6 +279,9 @@
     };
 
     async function __cargarTodo() {
+      // Detectar si las tablas del módulo ya existen (bloques SQL A→B→C)
+      const { error: prueba } = await supabase.from('t_cursos').select('codcurso').limit(1);
+      window.__tablasListas = !prueba;
       await Promise.all([__loadCursos(), __loadProfes(), __loadAlumnos(), __loadCursop(), __loadMatriculas()]);
     }
 
