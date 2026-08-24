@@ -575,21 +575,40 @@
     async function __loadMatriculas() {
       const { data } = await supabase
         .from('t_matricula')
-        .select('id, cursop, dni, fecha_matricula, estado, t_cursop(t_cursos(nombre)), t_alumnos(nombres)')
+        .select('id, cursop, dni, fecha_matricula, estado, t_cursop(t_cursos(nombre)), t_alumnos(nombres), t_pago(id, estado, monto)')
         .order('fecha_matricula', { ascending: false })
         .limit(30);
       document.getElementById('lista-matriculas').innerHTML = tablaHTML(
-        data, ['Alumno', 'DNI', 'Cursop', 'Curso', 'Fecha', 'Estado'],
-        (data || []).map(m => `
+        data, ['Alumno', 'DNI', 'Cursop', 'Curso', 'Fecha', 'Estado', ''],
+        (data || []).map(m => {
+          const pagoPend = (m.t_pago || []).find(p => p.estado === 'pendiente');
+          const accion = (m.estado === 'pendiente' && pagoPend)
+            ? `<button class="btn btn-sm btn-primary" onclick="window.__confirmarPago('${pagoPend.id}', ${pagoPend.monto})" title="Al confirmar, el trigger confirma la matrícula solo">💰 Confirmar pago</button>`
+            : '';
+          return `
           <tr><td>${escapeHtml(m.t_alumnos?.nombres || '?')}</td>
           <td class="m-code">${m.dni}</td>
           <td class="m-code" style="color:var(--gold);">${m.cursop}</td>
           <td>${escapeHtml(m.t_cursop?.t_cursos?.nombre || '?')}</td>
           <td>${fDMA(m.fecha_matricula)}</td>
-          <td class="${m.estado === 'confirmada' ? 'm-ok' : 'm-pend'}">${m.estado.toUpperCase()}</td></tr>`).join('')
+          <td class="${m.estado === 'confirmada' ? 'm-ok' : 'm-pend'}">${m.estado.toUpperCase()}</td>
+          <td>${accion}</td></tr>`;
+        }).join('')
       );
     }
     window.__loadMatriculas = __loadMatriculas;
+
+    // Confirmar pago de una matrícula pendiente → el TRIGGER la confirma solo
+    window.__confirmarPago = async (pagoId, monto) => {
+      if (!confirm('¿Confirmar el pago de S/ ' + monto + '?\nAl confirmarlo, el sistema confirma la matrícula automáticamente.')) return;
+      const hoy = new Date().toISOString().slice(0, 10);
+      const { error } = await supabase.from('t_pago')
+        .update({ estado: 'pagado', fecha_pago: hoy })
+        .eq('id', pagoId);
+      if (error) return toast('⚠️ ' + error.message);
+      toast('💰 Pago confirmado — matrícula CONFIRMADA por el sistema ✨');
+      await __loadMatriculas();
+    };
 
     // ═════════ INFORME 1: MATRICULADOS ═════════
     window.__inf1 = async () => {

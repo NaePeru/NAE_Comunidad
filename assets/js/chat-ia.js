@@ -16,6 +16,7 @@ let isLoading = false;
 let chatOpen = false;
 let cacheProgreso = null;   // resumen de progreso de certificados (para la IA)
 let cacheVouchers = null;   // últimos vouchers de pago del alumno (para la IA)
+let cacheMatriculables = null; // cursos programados de matrícula (t_cursop) para la IA
 
 // ── PROMPT BASE (Importado desde prompt.js) ────────────────────────────────
 const PROMPT_BASE = SYSTEM_PROMPT;
@@ -91,6 +92,26 @@ PENDIENTE se revisa en menos de 24 horas (o por WhatsApp 988502354). Si todo
 figura APROBADO pero un curso sigue bloqueado, indicale que recargue la página.
 Si no subió ninguno, explicale que paga S/50 escaneando el QR de Yape en la
 pantalla del curso y luego sube la captura ahí mismo.`;
+    }
+
+    // Cursos programados de MATRÍCULA (FASE 3 — Alessandra puede matricular)
+    if (Array.isArray(cacheMatriculables) && cacheMatriculables.length > 0) {
+      const lineasM = cacheMatriculables.map(cp => {
+        const fechas = cp.fecha_fin && cp.fecha_fin !== cp.fecha_inicio
+          ? `${cp.fecha_inicio} al ${cp.fecha_fin}` : `inicia ${cp.fecha_inicio}`;
+        return `  · [${cp.cursop}] ${cp.t_cursos?.nombre} — ${cp.t_profesor?.nombre} — S/${cp.t_cursos?.costo} — ${fechas}${cp.horario ? ' · ' + cp.horario : ''}`;
+      });
+      ctx += `
+
+- Cursos programados con MATRÍCULA ABIERTA (código entre corchetes):
+${lineasM.join('\n')}
+
+PUEDES MATRICULAR por chat: si el alumno quiere inscribirse en un curso de esta
+lista, pedile su DNI (8 dígitos) y su nombre completo (como está en su DNI).
+Confirmale curso (por código) + DNI + nombre, y cuando estén TODOS los datos,
+terminá tu respuesta con ESTE bloque exacto (el sistema lo ejecuta solo):
+[[MATRICULAR:{"dni":"12345678","nombres":"APELLIDOS Y NOMBRES","cursop":"260801"}]]
+Reemplazá los valores por los reales. Sin ese bloque no se matricula nada.`;
     }
 
     ctx += `
@@ -223,6 +244,17 @@ function toggleChat() {
       .limit(3)
       .then(res => { cacheVouchers = res.data || []; })
       .catch(() => { cacheVouchers = null; });
+    // Cargar cursos programados de MATRÍCULA (t_cursop) — para que Alessandra
+    // informe qué cursos hay y pueda matricular por chat (FASE 3).
+    const hoyISO2 = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+    supabase
+      .from('t_cursop')
+      .select('cursop, horario, fecha_inicio, fecha_fin, t_cursos(nombre, costo), t_profesor(nombre)')
+      .or(`fecha_fin.gte.${hoyISO2},fecha_fin.is.null`)
+      .order('fecha_inicio', { ascending: true })
+      .limit(10)
+      .then(res => { cacheMatriculables = res.data || []; })
+      .catch(() => { cacheMatriculables = null; }); // sin tablas → sin matrícula por chat
     setTimeout(() => document.getElementById('chat-input')?.focus(), 200);
   }
 }
@@ -304,11 +336,45 @@ async function sendMsg(text) {
   // Antes había un setTimeout de 5s aquí para "simular que piensa".
   // Lo eliminamos: el indicador addTyping() ya cubre la espera, y el delay
   // solo duplicaba el tiempo total de respuesta (5s fijos + latencia real de la IA).
-  const reply = await llamarIA(text);
+  let reply = await llamarIA(text);
+
+  // ── FASE 3: detección del bloque [[MATRICULAR:{...}]] ──
+  // Si Alessandra cerró la conversación de matrícula con el bloque, se ejecuta
+  // la acción real (Edge Function bot-matricula) y el bloque no se muestra.
+  const mMatch = reply.match(/\[\[MATRICULAR:\s*(\{[\s\S]*?\})\s*\]\]/);
+  let matriculaAviso = null;
+  if (mMatch) {
+    reply = reply.replace(mMatch[0], '').trim(); // limpiarlo del texto visible
+    try {
+      const datos = JSON.parse(mMatch[1]);
+      const { data: { session: sM } } = await supabase.auth.getSession();
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/bot-matricula`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${sM.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dni: datos.dni,
+          nombres: datos.nombres,
+          cursop: datos.cursop,
+          // el mail real lo resuelve el servidor (user.email de la sesión)
+          telefono: datos.telefono || null,
+        }),
+      });
+      const out = await r.json();
+      matriculaAviso = out.ok
+        ? `✅ ¡Matrícula registrada en ${out.curso} (código ${datos.cursop})!\nPago pendiente: S/ ${out.monto}. El equipo de NAE confirmará tu pago y quedarás matriculado oficialmente.`
+        : `⚠️ No pude completar la matrícula: ${out.error || 'intenta de nuevo o escribí al WhatsApp 988502354'}`;
+    } catch (e) {
+      matriculaAviso = '⚠️ Error procesando la matrícula. Escribinos al WhatsApp 988502354.';
+    }
+  }
 
   removeTyping();
-  addBotMsg(reply); // Sin 'true', forzamos el escape seguro
-  chatHistory.push({ role: 'assistant', content: reply });
+  addBotMsg(reply || 'Procesando tu matrícula...'); // Sin 'true', forzamos el escape seguro
+  if (matriculaAviso) addBotMsg(matriculaAviso);
+  chatHistory.push({ role: 'assistant', content: (reply + (matriculaAviso ? '\n' + matriculaAviso : '')) });
 
   isLoading = false;
   document.getElementById('chat-send').disabled = false;
