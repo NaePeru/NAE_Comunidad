@@ -159,14 +159,14 @@
       <p style="font-size:12px;color:var(--muted2);margin:0 0 14px;">Requiere alumno (3️⃣ y curso programado (4️⃣. Si registrás el pago como <b>pagado</b>, la matrícula se confirma sola (regla del sistema).</p>
 
       <div class="filter-row">
-        <div class="form-group">
-          <label class="form-label">Buscar alumno por DNI *</label>
-          <input type="text" class="form-input" id="mat-dni" placeholder="12345678" maxlength="8">
-          <button class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="window.__buscarAlumnoDNI()">🔍 Buscar</button>
+        <div class="form-group" style="flex:2;position:relative;">
+          <label class="form-label">Buscar alumno por apellidos (o DNI) *</label>
+          <input type="text" class="form-input" id="mat-buscar" placeholder="Escribí los apellidos... aparecen solos ✨" autocomplete="off" oninput="window.__buscarLive()">
+          <div id="mat-sugerencias" style="display:none;position:absolute;top:100%;left:0;right:0;background:#0d1525;border:1px solid var(--border);border-radius:0 0 10px 10px;z-index:50;max-height:260px;overflow-y:auto;box-shadow:0 8px 20px rgba(0,0,0,.45);"></div>
         </div>
-        <div class="form-group" style="flex:2;">
-          <label class="form-label">Alumno</label>
-          <input type="text" class="form-input" id="mat-alumno" disabled placeholder="(buscar por DNI...)">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Alumno seleccionado</label>
+          <input type="text" class="form-input" id="mat-alumno" disabled placeholder="(elegí de la lista...)">
         </div>
       </div>
 
@@ -444,13 +444,69 @@
       await __loadCursop(); await __loadMatriculas();
     };
 
-    // ═════════ 5. MATRÍCULA MANUAL ═════════
-    window.__buscarAlumnoDNI = async () => {
-      const dni = document.getElementById('mat-dni').value.trim();
-      if (!/^\d{8}$/.test(dni)) return toast('⚠️ DNI de 8 dígitos');
-      const { data } = await supabase.from('t_alumnos').select('dni, nombres').eq('dni', dni).maybeSingle();
-      document.getElementById('mat-alumno').value = data ? data.nombres : '❌ NO existe — registrálo en la pestaña 3';
-      window.__alumnoOK = !!data;
+    // ═════════ 5. MATRÍCULA MANUAL — BÚSQUEDA INTELIGENTE ═════════
+    // Resalta el texto buscado dentro del nombre
+    const resaltar = (texto, q) => {
+      const esc = escapeHtml(texto);
+      const idx = esc.toLowerCase().indexOf(q.toLowerCase());
+      if (idx < 0) return esc;
+      return esc.slice(0, idx) +
+        '<span style="color:var(--gold);font-weight:700;">' + esc.slice(idx, idx + q.length) + '</span>' +
+        esc.slice(idx + q.length);
+    };
+
+    window.__buscarLive = () => {
+      clearTimeout(window.__busT);
+      const q = document.getElementById('mat-buscar').value.trim();
+      const box = document.getElementById('mat-sugerencias');
+      // Si el usuario re-escribe, anula la selección previa
+      window.__alumnoOK = false;
+      window.__alumnoDNI = null;
+      document.getElementById('mat-alumno').value = '';
+
+      if (q.length < 2) { box.style.display = 'none'; return; }
+
+      window.__busT = setTimeout(async () => {
+        const { data } = await supabase
+          .from('t_alumnos')
+          .select('dni, nombres, mail')
+          .or(`nombres.ilike.%${q}%,dni.ilike.%${q}%`)
+          .order('nombres')
+          .limit(8);
+
+        if (!data || data.length === 0) {
+          box.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--muted2);">❌ Sin coincidencias — registrálo en la pestaña 3️⃣</div>';
+          box.style.display = 'block';
+          return;
+        }
+        box.innerHTML = data.map(a => `
+          <div style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);" onmouseover="this.style.background='rgba(242,169,0,.08)'" onmouseout="this.style.background='none'" onclick="window.__elegirAlumno('${a.dni}')">
+            <div style="font-size:13.5px;">${resaltar(a.nombres, q)}</div>
+            <div class="m-code" style="margin-top:2px;">DNI ${a.dni}${a.mail ? ' · ' + escapeHtml(a.mail) : ''}</div>
+          </div>`).join('');
+        box.style.display = 'block';
+      }, 250);
+    };
+
+    // Cerrar el desplegable al hacer clic fuera
+    document.addEventListener('click', (e) => {
+      const box = document.getElementById('mat-sugerencias');
+      if (box && !e.target.closest('#mat-buscar') && !e.target.closest('#mat-sugerencias')) {
+        box.style.display = 'none';
+      }
+    });
+
+    window.__elegirAlumno = (dni) => {
+      // Buscar en el último resultado cacheado (sin consulta extra)
+      const q = document.getElementById('mat-buscar').value.trim();
+      supabase.from('t_alumnos').select('dni, nombres').eq('dni', dni).maybeSingle()
+        .then(({ data }) => {
+          window.__alumnoDNI = dni;
+          window.__alumnoOK = !!data;
+          document.getElementById('mat-buscar').value = data?.nombres || q;
+          document.getElementById('mat-alumno').value = data ? `${data.nombres} — DNI ${dni} ✓` : '';
+          document.getElementById('mat-sugerencias').style.display = 'none';
+        });
     };
 
     window.__cursopElegido = () => {
@@ -461,11 +517,11 @@
     };
 
     window.__guardarMatricula = async () => {
-      const dni = document.getElementById('mat-dni').value.trim();
+      const dni = window.__alumnoDNI;
       const cursop = document.getElementById('mat-cursop').value;
       const monto = parseFloat(document.getElementById('mat-monto').value) || 0;
       const estadoPago = document.getElementById('mat-estado-pago').value;
-      if (!window.__alumnoOK) return toast('⚠️ Buscá el alumno por DNI primero');
+      if (!window.__alumnoOK || !dni) return toast('⚠️ Buscá y elegí el alumno de la lista');
       if (!cursop) return toast('⚠️ Elegí un curso programado');
       if (monto <= 0) return toast('⚠️ Ingresá el monto');
 
@@ -489,9 +545,10 @@
       if (e2) return toast('⚠️ Matrícula creada pero el pago falló: ' + e2.message);
 
       toast(estadoPago === 'pagado' ? '🎉 Matrícula CONFIRMADA (pago registrado)' : '✅ Matrícula registrada (pendiente de pago)');
-      document.getElementById('mat-dni').value = '';
+      document.getElementById('mat-buscar').value = '';
       document.getElementById('mat-alumno').value = '';
       window.__alumnoOK = false;
+      window.__alumnoDNI = null;
       await __loadMatriculas();
     };
 
