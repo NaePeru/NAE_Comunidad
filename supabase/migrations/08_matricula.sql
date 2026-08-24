@@ -4,10 +4,13 @@
 -- 6 tablas aisladas (prefijo t_ = cero contacto con las tablas de la comunidad)
 -- Roles: secretaria (humano) · bot (solo RPC) · trigger (único que confirma)
 --
--- EJECUTAR EN: Supabase → SQL Editor → Run (tarda ~10 segundos)
+-- ⚠️  EJECUTAR EN 2 PASOS (limitación de PostgreSQL con enums nuevos):
+--   PASO 1: correr SOLO la línea "alter type ... 'secretaria'" → Run → commit
+--   PASO 2: correr este archivo completo → Run
+--   (sin el paso 1 previo falla con "unsafe use of new value")
 -- ============================================================================
 
--- ── 0. ROL SECRETARIA ──────────────────────────────────────────────────────
+-- ── 0. ROL SECRETARIA (si ya lo corriste solo en el PASO 1, esto se ignora) ─
 alter type public.user_role add value if not exists 'secretaria';
 
 create or replace function public.is_secretaria()
