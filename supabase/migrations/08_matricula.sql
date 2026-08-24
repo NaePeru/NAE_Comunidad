@@ -45,7 +45,7 @@ create table if not exists public.t_profesor (
 
 -- Curso programado (edición con fechas — sin límite de vacantes)
 create table if not exists public.t_cursop (
-  cursop       text primary key default 'CP-' || lpad(nextval('t_cursop_seq')::text, 4, '0'),
+  cursop       text primary key default to_char(now(), 'YYMM') || lpad(nextval('t_cursop_seq')::text, 2, '0'),
   codcurso     text not null references public.t_cursos(codcurso),
   codprofesor  text not null references public.t_profesor(codprofesor),
   horario      text,
