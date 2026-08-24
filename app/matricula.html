@@ -171,8 +171,12 @@
       </div>
 
       <div class="filter-row">
+        <div class="form-group" style="max-width:160px;">
+          <label class="form-label">Código cursop</label>
+          <input type="text" class="form-input" id="mat-codigo" placeholder="260801" oninput="window.__codigoRapido(this.value)">
+        </div>
         <div class="form-group" style="flex:2;">
-          <label class="form-label">Curso programado *</label>
+          <label class="form-label">Curso programado (código único) *</label>
           <select class="form-select" id="mat-cursop" onchange="window.__cursopElegido()"></select>
         </div>
         <div class="form-group">
@@ -411,11 +415,12 @@
           <td>${escapeHtml(cp.t_profesor?.nombre || '?')}</td>
           <td><button class="icon-btn" onclick="window.__delCursop('${cp.cursop}')">🗑️</button></td></tr>`).join('')
       );
-      // dropdown de matrícula (todos los programados vigentes)
+      // dropdown de matrícula — el CÓDIGO va primero porque es el identificador
+      // único (puede haber varias ediciones del mismo curso)
       const sel = document.getElementById('mat-cursop');
       sel.innerHTML = window.__cursopData
         .filter(cp => !cp.fecha_fin || cp.fecha_fin >= new Date().toISOString().slice(0, 10))
-        .map(cp => `<option value="${cp.cursop}">${escapeHtml(cp.t_cursos?.nombre)} — ${escapeHtml(cp.t_profesor?.nombre)} — inicia ${fDMA(cp.fecha_inicio)}${cp.horario ? ' (' + cp.horario + ')' : ''}</option>`)
+        .map(cp => `<option value="${cp.cursop}">[${cp.cursop}] ${escapeHtml(cp.t_cursos?.nombre)} — ${escapeHtml(cp.t_profesor?.nombre)} — inicia ${fDMA(cp.fecha_inicio)}${cp.horario ? ' · ' + cp.horario : ''}</option>`)
         .join('') || '<option value="">(primero programá un curso)</option>';
     }
     window.__loadCursop = __loadCursop;
@@ -516,6 +521,21 @@
       if (cp) document.getElementById('mat-monto').value = cp.t_cursos?.costo ?? 50;
     };
 
+    // Atajo: escribir el código de cursop directo (ej: 260801) → selecciona solo
+    window.__codigoRapido = (valor) => {
+      const cod = valor.trim();
+      if (!cod) return;
+      const sel = document.getElementById('mat-cursop');
+      const existe = [...sel.options].some(o => o.value === cod);
+      if (existe) {
+        sel.value = cod;
+        window.__cursopElegido();
+        document.getElementById('mat-codigo').style.borderColor = 'var(--green, #3DD68C)';
+      } else {
+        document.getElementById('mat-codigo').style.borderColor = 'var(--border)';
+      }
+    };
+
     window.__guardarMatricula = async () => {
       const dni = window.__alumnoDNI;
       const cursop = document.getElementById('mat-cursop').value;
@@ -559,10 +579,11 @@
         .order('fecha_matricula', { ascending: false })
         .limit(30);
       document.getElementById('lista-matriculas').innerHTML = tablaHTML(
-        data, ['Alumno', 'DNI', 'Curso', 'Fecha', 'Estado'],
+        data, ['Alumno', 'DNI', 'Cursop', 'Curso', 'Fecha', 'Estado'],
         (data || []).map(m => `
           <tr><td>${escapeHtml(m.t_alumnos?.nombres || '?')}</td>
           <td class="m-code">${m.dni}</td>
+          <td class="m-code" style="color:var(--gold);">${m.cursop}</td>
           <td>${escapeHtml(m.t_cursop?.t_cursos?.nombre || '?')}</td>
           <td>${fDMA(m.fecha_matricula)}</td>
           <td class="${m.estado === 'confirmada' ? 'm-ok' : 'm-pend'}">${m.estado.toUpperCase()}</td></tr>`).join('')
