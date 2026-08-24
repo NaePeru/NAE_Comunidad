@@ -268,6 +268,13 @@
       return `<table class="m-table"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${filasHTML}</tbody></table>`;
     }
 
+    // Fecha ISO (2026-08-23) → formato peruano (23-08-26)
+    const fDMA = (iso) => {
+      if (!iso) return '—';
+      const [y, m, d] = String(iso).slice(0, 10).split('-');
+      return `${d}-${m}-${y.slice(2)}`;
+    };
+
     async function __cargarTodo() {
       await Promise.all([__loadCursos(), __loadProfes(), __loadAlumnos(), __loadCursop(), __loadMatriculas()]);
     }
@@ -388,20 +395,21 @@
         .order('fecha_inicio', { ascending: false });
       window.__cursopData = data || [];
       document.getElementById('lista-cursop').innerHTML = tablaHTML(
-        window.__cursopData, ['Código', 'Curso', 'Profesor', 'Horario', 'Inicio', 'Fin', ''],
+        window.__cursopData, ['cursop', 'Nombre curso', 'Horario', 'F. inicio', 'F. final', 'Profesor', ''],
         window.__cursopData.map(cp => `
           <tr><td class="m-code">${cp.cursop}</td>
           <td>${escapeHtml(cp.t_cursos?.nombre || '?')}</td>
-          <td>${escapeHtml(cp.t_profesor?.nombre || '?')}</td>
           <td>${cp.horario || '—'}</td>
-          <td>${cp.fecha_inicio}</td><td>${cp.fecha_fin || '—'}</td>
+          <td>${fDMA(cp.fecha_inicio)}</td>
+          <td>${fDMA(cp.fecha_fin)}</td>
+          <td>${escapeHtml(cp.t_profesor?.nombre || '?')}</td>
           <td><button class="icon-btn" onclick="window.__delCursop('${cp.cursop}')">🗑️</button></td></tr>`).join('')
       );
       // dropdown de matrícula (todos los programados vigentes)
       const sel = document.getElementById('mat-cursop');
       sel.innerHTML = window.__cursopData
         .filter(cp => !cp.fecha_fin || cp.fecha_fin >= new Date().toISOString().slice(0, 10))
-        .map(cp => `<option value="${cp.cursop}">${escapeHtml(cp.t_cursos?.nombre)} — ${escapeHtml(cp.t_profesor?.nombre)} — ${cp.fecha_inicio}${cp.horario ? ' (' + cp.horario + ')' : ''}</option>`)
+        .map(cp => `<option value="${cp.cursop}">${escapeHtml(cp.t_cursos?.nombre)} — ${escapeHtml(cp.t_profesor?.nombre)} — inicia ${fDMA(cp.fecha_inicio)}${cp.horario ? ' (' + cp.horario + ')' : ''}</option>`)
         .join('') || '<option value="">(primero programá un curso)</option>';
     }
     window.__loadCursop = __loadCursop;
@@ -418,7 +426,7 @@
         horario: document.getElementById('cp-horario').value.trim() || null,
       });
       if (error) return toast('⚠️ ' + error.message);
-      toast('✅ Curso programado (CP-XXXX generado)');
+      toast('✅ Curso programado (código numérico generado)');
       ['cp-horario','cp-inicio','cp-fin'].forEach(i => document.getElementById(i).value = '');
       await __loadCursop();
     };
@@ -493,7 +501,7 @@
           <tr><td>${escapeHtml(m.t_alumnos?.nombres || '?')}</td>
           <td class="m-code">${m.dni}</td>
           <td>${escapeHtml(m.t_cursop?.t_cursos?.nombre || '?')}</td>
-          <td>${m.fecha_matricula}</td>
+          <td>${fDMA(m.fecha_matricula)}</td>
           <td class="${m.estado === 'confirmada' ? 'm-ok' : 'm-pend'}">${m.estado.toUpperCase()}</td></tr>`).join('')
       );
     }
@@ -515,7 +523,7 @@
         (data || []).map(r => `
           <tr><td>${escapeHtml(r.nombres)}</td><td class="m-code">${r.dni}</td>
           <td>${escapeHtml(r.curso)}</td><td>${r.horario || '—'}</td>
-          <td>${r.fecha_matricula}</td><td>S/ ${r.monto_pagado ?? '—'}</td></tr>`).join('')
+          <td>${fDMA(r.fecha_matricula)}</td><td>S/ ${r.monto_pagado ?? '—'}</td></tr>`).join('')
       );
     };
     window.__inf1Todo = () => { document.getElementById('inf1-desde').value = ''; document.getElementById('inf1-hasta').value = ''; window.__inf1(); };
@@ -532,7 +540,7 @@
         data, ['Profesor', 'Curso', 'Horario', 'Inicio', 'Fin', 'Alumnos matriculados'],
         (data || []).map(r => `
           <tr><td>${escapeHtml(r.profesor)}</td><td>${escapeHtml(r.curso)}</td>
-          <td>${r.horario || '—'}</td><td>${r.fecha_inicio}</td><td>${r.fecha_fin || '—'}</td>
+          <td>${r.horario || '—'}</td><td>${fDMA(r.fecha_inicio)}</td><td>${r.fecha_fin || '—'}</td>
           <td><b style="color:var(--gold);">${r.alumnos_matriculados}</b></td></tr>`).join('')
       );
     };
