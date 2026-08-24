@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matrícula — Secretaría NAE</title>
+  <link rel="icon" type="image/png" href="../assets/img/favicon.png">
+  <link rel="stylesheet" href="../assets/css/base.css?v=20240710v1">
+  <link rel="stylesheet" href="../assets/css/components.css?v=20240710v1">
+  <script src="../assets/js/error-guard.js"></script>
+  <style>
+    /* Estilos propios del módulo (aislado — no toca CSS compartido) */
+    .m-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; }
+    .m-tab { padding:9px 16px; border-radius:10px 10px 0 0; background:var(--bg);
+             border:1px solid var(--border); border-bottom:none; cursor:pointer;
+             font-size:13px; font-weight:600; color:var(--muted); user-select:none; }
+    .m-tab.active { background:var(--card); color:var(--gold); border-color:var(--gold); }
+    .m-panel { background:var(--card); border:1px solid var(--border); border-radius:0 12px 12px 12px; padding:22px; }
+    .m-panel.hidden { display:none; }
+    .m-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:14px; }
+    .m-table th { text-align:left; color:var(--muted2); font-size:11px; text-transform:uppercase;
+                  padding:8px 10px; border-bottom:1px solid var(--border); }
+    .m-table td { padding:9px 10px; border-bottom:1px solid rgba(255,255,255,.04); }
+    .m-code { font-family:var(--font-mono); font-size:11px; color:var(--muted2); }
+    .m-ok { color:#3DD68C; font-weight:700; }
+    .m-pend { color:#F2A900; font-weight:700; }
+    .icon-btn { background:none; border:none; cursor:pointer; font-size:14px; padding:4px; }
+    .filter-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:14px; }
+    .filter-row .form-group { margin:0; flex:1; min-width:140px; }
+  </style>
+</head>
+<body>
+
+  <div class="container" style="max-width:960px;margin-top:24px;">
+
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h1 class="page-title">🎓 Módulo de Matrícula</h1>
+        <p class="page-sub">Panel de secretaría — cursos, profesores, alumnos, matrículas e informes.</p>
+      </div>
+      <a href="comunidad.html" class="btn btn-ghost btn-sm">← Comunidad</a>
+    </div>
+
+    <!-- Pestañas (orden de dependencia de la especificación) -->
+    <div class="m-tabs">
+      <div class="m-tab active" data-t="cursos" onclick="window.__tab('cursos')">1️⃣ Cursos</div>
+      <div class="m-tab" data-t="profes" onclick="window.__tab('profes')">2️⃣ Profesores</div>
+      <div class="m-tab" data-t="alumnos" onclick="window.__tab('alumnos')">3️⃣ Alumnos</div>
+      <div class="m-tab" data-t="cursop" onclick="window.__tab('cursop')">4️⃣ Programar curso</div>
+      <div class="m-tab" data-t="matricula" onclick="window.__tab('matricula')">5️⃣ Matrícula</div>
+      <div class="m-tab" data-t="inf1" onclick="window.__tab('inf1')">📊 Matriculados</div>
+      <div class="m-tab" data-t="inf2" onclick="window.__tab('inf2')">📊 Por profesor</div>
+    </div>
+
+    <!-- ═══════════ 1. CURSOS ═══════════ -->
+    <div class="m-panel" id="p-cursos">
+      <h3 style="margin:0 0 14px;">Registrar curso</h3>
+      <div class="filter-row">
+        <div class="form-group" style="flex:2;">
+          <label class="form-label">Nombre del curso *</label>
+          <input type="text" class="form-input" id="cur-nombre" placeholder="Ej: MS Excel Básico">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Costo (S/) *</label>
+          <input type="number" class="form-input" id="cur-costo" placeholder="50" min="0" step="0.5">
+        </div>
+        <button class="btn btn-primary" onclick="window.__guardarCurso()">+ Guardar</button>
+      </div>
+      <p class="hint" style="font-size:11px;color:var(--muted2);margin:0 0 6px;">El código (CUR-XXXX) se genera solo.</p>
+      <div id="lista-cursos"></div>
+    </div>
+
+    <!-- ═══════════ 2. PROFESORES ═══════════ -->
+    <div class="m-panel hidden" id="p-profes">
+      <h3 style="margin:0 0 14px;">Registrar profesor</h3>
+      <div class="filter-row">
+        <div class="form-group" style="flex:2;">
+          <label class="form-label">Nombre *</label>
+          <input type="text" class="form-input" id="pro-nombre" placeholder="Ej: Geronimo Cruzado">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono</label>
+          <input type="text" class="form-input" id="pro-fono" placeholder="988502354">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo</label>
+          <input type="email" class="form-input" id="pro-mail" placeholder="profe@correo.com">
+        </div>
+        <button class="btn btn-primary" onclick="window.__guardarProfe()">+ Guardar</button>
+      </div>
+      <p class="hint" style="font-size:11px;color:var(--muted2);margin:0 0 6px;">El código (PRF-XXXX) se genera solo.</p>
+      <div id="lista-profes"></div>
+    </div>
+
+    <!-- ═══════════ 3. ALUMNOS ═══════════ -->
+    <div class="m-panel hidden" id="p-alumnos">
+      <h3 style="margin:0 0 14px;">Registrar alumno</h3>
+      <div class="filter-row">
+        <div class="form-group">
+          <label class="form-label">DNI (8 dígitos) *</label>
+          <input type="text" class="form-input" id="alu-dni" placeholder="12345678" maxlength="8">
+        </div>
+        <div class="form-group" style="flex:2;">
+          <label class="form-label">Nombres *</label>
+          <input type="text" class="form-input" id="alu-nombres" placeholder="Apellidos y nombres">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo</label>
+          <input type="email" class="form-input" id="alu-mail" placeholder="alumno@correo.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono</label>
+          <input type="text" class="form-input" id="alu-tel" placeholder="987654321">
+        </div>
+        <button class="btn btn-primary" onclick="window.__guardarAlumno()">+ Guardar</button>
+      </div>
+      <div class="filter-row" style="margin-top:6px;">
+        <div class="form-group" style="flex:2;">
+          <label class="form-label">Buscar en la lista</label>
+          <input type="text" class="form-input" id="alu-buscar" placeholder="DNI o nombre..." oninput="window.__buscarAlumnos()">
+        </div>
+      </div>
+      <div id="lista-alumnos"></div>
+    </div>
+
+    <!-- ═══════════ 4. PROGRAMAR CURSO ═══════════ -->
+    <div class="m-panel hidden" id="p-cursop">
+      <h3 style="margin:0 0 14px;">Programar curso (edición con fechas)</h3>
+      <p style="font-size:12px;color:var(--muted2);margin:0 0 14px;">⚠️ Requiere haber registrado antes el curso (1️⃣ y el profesor (2️⃣. Curso y profesor se eligen de listas — nunca texto libre.</p>
+      <div class="filter-row">
+        <div class="form-group">
+          <label class="form-label">Curso *</label>
+          <select class="form-select" id="cp-curso"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Profesor *</label>
+          <select class="form-select" id="cp-profe"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Horario</label>
+          <input type="text" class="form-input" id="cp-horario" placeholder="Lun y Mié 7-9pm">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha inicio *</label>
+          <input type="date" class="form-input" id="cp-inicio">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha fin</label>
+          <input type="date" class="form-input" id="cp-fin">
+        </div>
+        <button class="btn btn-primary" onclick="window.__guardarCursop()">+ Programar</button>
+      </div>
+      <div id="lista-cursop"></div>
+    </div>
+
+    <!-- ═══════════ 5. MATRÍCULA MANUAL ═══════════ -->
+    <div class="m-panel hidden" id="p-matricula">
+      <h3 style="margin:0 0 14px;">Matrícula manual (alumno + pago)</h3>
+      <p style="font-size:12px;color:var(--muted2);margin:0 0 14px;">Requiere alumno (3️⃣ y curso programado (4️⃣. Si registrás el pago como <b>pagado</b>, la matrícula se confirma sola (regla del sistema).</p>
+
+      <div class="filter-row">
+        <div class="form-group">
+          <label class="form-label">Buscar alumno por DNI *</label>
+          <input type="text" class="form-input" id="mat-dni" placeholder="12345678" maxlength="8">
+          <button class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="window.__buscarAlumnoDNI()">🔍 Buscar</button>
+        </div>
+        <div class="form-group" style="flex:2;">
+          <label class="form-label">Alumno</label>
+          <input type="text" class="form-input" id="mat-alumno" disabled placeholder="(buscar por DNI...)">
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="form-group" style="flex:2;">
+          <label class="form-label">Curso programado *</label>
+          <select class="form-select" id="mat-cursop" onchange="window.__cursopElegido()"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto (S/) *</label>
+          <input type="number" class="form-input" id="mat-monto" placeholder="50" min="0" step="0.5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pasarela</label>
+          <select class="form-select" id="mat-pasarela">
+            <option value="yape">Yape</option>
+            <option value="plin">Plin</option>
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado del pago</label>
+          <select class="form-select" id="mat-estado-pago">
+            <option value="pendiente">Pendiente</option>
+            <option value="pagado">Pagado (confirma matrícula)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="window.__guardarMatricula()">✅ Matricular</button>
+      </div>
+      <div id="lista-matriculas"></div>
+    </div>
+
+    <!-- ═══════════ INFORME 1: MATRICULADOS ═══════════ -->
+    <div class="m-panel hidden" id="p-inf1">
+      <h3 style="margin:0 0 14px;">📊 Informe — Alumnos matriculados (confirmadas)</h3>
+      <div class="filter-row">
+        <div class="form-group">
+          <label class="form-label">Desde</label>
+          <input type="date" class="form-input" id="inf1-desde">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hasta</label>
+          <input type="date" class="form-input" id="inf1-hasta">
+        </div>
+        <button class="btn btn-primary" onclick="window.__inf1()">Filtrar</button>
+        <button class="btn btn-ghost" onclick="window.__inf1Todo()">Ver todo</button>
+      </div>
+      <div id="res-inf1" style="font-size:13px;margin-bottom:10px;"></div>
+      <div id="tabla-inf1"></div>
+    </div>
+
+    <!-- ═══════════ INFORME 2: POR PROFESOR ═══════════ -->
+    <div class="m-panel hidden" id="p-inf2">
+      <h3 style="margin:0 0 14px;">📊 Informe — Cursos dictados por profesor</h3>
+      <div class="filter-row">
+        <div class="form-group">
+          <label class="form-label">Desde (inicio del curso)</label>
+          <input type="date" class="form-input" id="inf2-desde">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hasta</label>
+          <input type="date" class="form-input" id="inf2-hasta">
+        </div>
+        <button class="btn btn-primary" onclick="window.__inf2()">Filtrar</button>
+        <button class="btn btn-ghost" onclick="window.__inf2Todo()">Ver todo</button>
+      </div>
+      <div id="tabla-inf2"></div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { supabase } from '../assets/js/supabase-client.js';
+    import { cargarPerfilCompleto, session } from '../assets/js/auth.js';
+    import { toast, escapeHtml } from '../assets/js/utils.js';
+
+    // ── GUARD: solo secretaría/admin ──
+    const { data: { session: sess } } = await supabase.auth.getSession();
+    if (!sess) window.location.href = '../index.html';
+    else {
+      await cargarPerfilCompleto();
+      const rol = session.profile?.rol;
+      if (rol !== 'admin' && rol !== 'secretaria') {
+        document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted);">🔒 Acceso exclusivo de secretaría.</div>';
+      } else {
+        __cargarTodo();
+      }
+    }
+
+    // ── PESTAÑAS ──
+    window.__tab = (t) => {
+      document.querySelectorAll('.m-tab').forEach(x => x.classList.toggle('active', x.dataset.t === t));
+      document.querySelectorAll('.m-panel').forEach(p => p.classList.toggle('hidden', p.id !== 'p-' + t));
+    };
+
+    function tablaHTML(filas, cols, filasHTML) {
+      if (!filas || filas.length === 0) return '<p style="color:var(--muted2);font-size:13px;">Sin registros aún.</p>';
+      return `<table class="m-table"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${filasHTML}</tbody></table>`;
+    }
+
+    async function __cargarTodo() {
+      await Promise.all([__loadCursos(), __loadProfes(), __loadAlumnos(), __loadCursop(), __loadMatriculas()]);
+    }
+
+    // ═════════ 1. CURSOS ═════════
+    async function __loadCursos() {
+      const { data } = await supabase.from('t_cursos').select('*').order('codcurso');
+      window.__cursosData = data || [];
+      document.getElementById('lista-cursos').innerHTML = tablaHTML(
+        window.__cursosData, ['Código', 'Nombre', 'Costo', ''],
+        window.__cursosData.map(c => `
+          <tr><td class="m-code">${c.codcurso}</td><td>${escapeHtml(c.nombre)}</td>
+          <td>S/ ${c.costo}</td>
+          <td><button class="icon-btn" title="Eliminar" onclick="window.__delCurso('${c.codcurso}')">🗑️</button></td></tr>`).join('')
+      );
+      // llenar dropdown de programar curso
+      const sel = document.getElementById('cp-curso');
+      sel.innerHTML = window.__cursosData.map(c => `<option value="${c.codcurso}">${escapeHtml(c.nombre)} (S/${c.costo})</option>`).join('');
+    }
+    window.__loadCursos = __loadCursos;
+
+    window.__guardarCurso = async () => {
+      const nombre = document.getElementById('cur-nombre').value.trim();
+      const costo = parseFloat(document.getElementById('cur-costo').value) || 0;
+      if (!nombre) return toast('⚠️ Falta el nombre del curso');
+      const { error } = await supabase.from('t_cursos').insert({ nombre, costo });
+      if (error) return toast('⚠️ ' + error.message);
+      toast('✅ Curso registrado'); document.getElementById('cur-nombre').value = ''; document.getElementById('cur-costo').value = '';
+      await __loadCursos();
+    };
+
+    window.__delCurso = async (cod) => {
+      if (!confirm('¿Eliminar el curso ' + cod + '?')) return;
+      const { error } = await supabase.from('t_cursos').delete().eq('codcurso', cod);
+      toast(error ? '⚠️ No se puede eliminar (tiene cursos programados)' : '🗑️ Eliminado');
+      await __loadCursos(); await __loadCursop();
+    };
+
+    // ═════════ 2. PROFESORES ═════════
+    async function __loadProfes() {
+      const { data } = await supabase.from('t_profesor').select('*').order('codprofesor');
+      window.__profesData = data || [];
+      document.getElementById('lista-profes').innerHTML = tablaHTML(
+        window.__profesData, ['Código', 'Nombre', 'Teléfono', 'Correo', ''],
+        window.__profesData.map(p => `
+          <tr><td class="m-code">${p.codprofesor}</td><td>${escapeHtml(p.nombre)}</td>
+          <td>${p.fono || '—'}</td><td>${p.mail || '—'}</td>
+          <td><button class="icon-btn" onclick="window.__delProfe('${p.codprofesor}')">🗑️</button></td></tr>`).join('')
+      );
+      const sel = document.getElementById('cp-profe');
+      sel.innerHTML = window.__profesData.map(p => `<option value="${p.codprofesor}">${escapeHtml(p.nombre)}</option>`).join('');
+    }
+    window.__loadProfes = __loadProfes;
+
+    window.__guardarProfe = async () => {
+      const nombre = document.getElementById('pro-nombre').value.trim();
+      if (!nombre) return toast('⚠️ Falta el nombre');
+      const { error } = await supabase.from('t_profesor').insert({
+        nombre,
+        fono: document.getElementById('pro-fono').value.trim() || null,
+        mail: document.getElementById('pro-mail').value.trim() || null,
+      });
+      if (error) return toast('⚠️ ' + error.message);
+      toast('✅ Profesor registrado');
+      ['pro-nombre','pro-fono','pro-mail'].forEach(i => document.getElementById(i).value = '');
+      await __loadProfes();
+    };
+
+    window.__delProfe = async (cod) => {
+      if (!confirm('¿Eliminar el profesor ' + cod + '?')) return;
+      const { error } = await supabase.from('t_profesor').delete().eq('codprofesor', cod);
+      toast(error ? '⚠️ No se puede eliminar (tiene cursos programados)' : '🗑️ Eliminado');
+      await __loadProfes(); await __loadCursop();
+    };
+
+    // ═════════ 3. ALUMNOS ═════════
+    async function __loadAlumnos(filtro = '') {
+      let q = supabase.from('t_alumnos').select('*').order('nombres').limit(100);
+      if (filtro) q = q.or(`dni.ilike.%${filtro}%,nombres.ilike.%${filtro}%`);
+      const { data } = await filtro ? await q : await q;
+      document.getElementById('lista-alumnos').innerHTML = tablaHTML(
+        data, ['DNI', 'Nombres', 'Correo', 'Teléfono'],
+        (data || []).map(a => `
+          <tr><td class="m-code">${a.dni}</td><td>${escapeHtml(a.nombres)}</td>
+          <td>${a.mail || '—'}</td><td>${a.telefono || '—'}</td></tr>`).join('')
+      );
+    }
+    window.__loadAlumnos = __loadAlumnos;
+    window.__buscarAlumnos = () => {
+      clearTimeout(window.__aluT);
+      window.__aluT = setTimeout(() => __loadAlumnos(document.getElementById('alu-buscar').value.trim()), 250);
+    };
+
+    window.__guardarAlumno = async () => {
+      const dni = document.getElementById('alu-dni').value.trim();
+      const nombres = document.getElementById('alu-nombres').value.trim();
+      if (!/^\d{8}$/.test(dni)) return toast('⚠️ El DNI debe tener exactamente 8 dígitos');
+      if (!nombres) return toast('⚠️ Falta el nombre');
+      const { error } = await supabase.from('t_alumnos').insert({
+        dni, nombres,
+        mail: document.getElementById('alu-mail').value.trim() || null,
+        telefono: document.getElementById('alu-tel').value.trim() || null,
+      });
+      if (error) {
+        if (error.code === '23505') return toast('⚠️ Ese DNI ya está registrado');
+        return toast('⚠️ ' + error.message);
+      }
+      toast('✅ Alumno registrado');
+      ['alu-dni','alu-nombres','alu-mail','alu-tel'].forEach(i => document.getElementById(i).value = '');
+      await __loadAlumnos();
+    };
+
+    // ═════════ 4. PROGRAMAR CURSO ═════════
+    async function __loadCursop() {
+      const { data } = await supabase
+        .from('t_cursop')
+        .select('*, t_cursos(nombre, costo), t_profesor(nombre)')
+        .order('fecha_inicio', { ascending: false });
+      window.__cursopData = data || [];
+      document.getElementById('lista-cursop').innerHTML = tablaHTML(
+        window.__cursopData, ['Código', 'Curso', 'Profesor', 'Horario', 'Inicio', 'Fin', ''],
+        window.__cursopData.map(cp => `
+          <tr><td class="m-code">${cp.cursop}</td>
+          <td>${escapeHtml(cp.t_cursos?.nombre || '?')}</td>
+          <td>${escapeHtml(cp.t_profesor?.nombre || '?')}</td>
+          <td>${cp.horario || '—'}</td>
+          <td>${cp.fecha_inicio}</td><td>${cp.fecha_fin || '—'}</td>
+          <td><button class="icon-btn" onclick="window.__delCursop('${cp.cursop}')">🗑️</button></td></tr>`).join('')
+      );
+      // dropdown de matrícula (todos los programados vigentes)
+      const sel = document.getElementById('mat-cursop');
+      sel.innerHTML = window.__cursopData
+        .filter(cp => !cp.fecha_fin || cp.fecha_fin >= new Date().toISOString().slice(0, 10))
+        .map(cp => `<option value="${cp.cursop}">${escapeHtml(cp.t_cursos?.nombre)} — ${escapeHtml(cp.t_profesor?.nombre)} — ${cp.fecha_inicio}${cp.horario ? ' (' + cp.horario + ')' : ''}</option>`)
+        .join('') || '<option value="">(primero programá un curso)</option>';
+    }
+    window.__loadCursop = __loadCursop;
+
+    window.__guardarCursop = async () => {
+      const codcurso = document.getElementById('cp-curso').value;
+      const codprofesor = document.getElementById('cp-profe').value;
+      const fecha_inicio = document.getElementById('cp-inicio').value;
+      const fecha_fin = document.getElementById('cp-fin').value || null;
+      if (!codcurso || !codprofesor) return toast('⚠️ Elegí curso y profesor (registrarlos antes si no hay)');
+      if (!fecha_inicio) return toast('⚠️ Falta la fecha de inicio');
+      const { error } = await supabase.from('t_cursop').insert({
+        codcurso, codprofesor, fecha_inicio, fecha_fin,
+        horario: document.getElementById('cp-horario').value.trim() || null,
+      });
+      if (error) return toast('⚠️ ' + error.message);
+      toast('✅ Curso programado (CP-XXXX generado)');
+      ['cp-horario','cp-inicio','cp-fin'].forEach(i => document.getElementById(i).value = '');
+      await __loadCursop();
+    };
+
+    window.__delCursop = async (cod) => {
+      if (!confirm('¿Eliminar el curso programado ' + cod + '? Se borrarán sus matrículas.')) return;
+      const { error } = await supabase.from('t_cursop').delete().eq('cursop', cod);
+      toast(error ? '⚠️ ' + error.message : '🗑️ Eliminado');
+      await __loadCursop(); await __loadMatriculas();
+    };
+
+    // ═════════ 5. MATRÍCULA MANUAL ═════════
+    window.__buscarAlumnoDNI = async () => {
+      const dni = document.getElementById('mat-dni').value.trim();
+      if (!/^\d{8}$/.test(dni)) return toast('⚠️ DNI de 8 dígitos');
+      const { data } = await supabase.from('t_alumnos').select('dni, nombres').eq('dni', dni).maybeSingle();
+      document.getElementById('mat-alumno').value = data ? data.nombres : '❌ NO existe — registrálo en la pestaña 3';
+      window.__alumnoOK = !!data;
+    };
+
+    window.__cursopElegido = () => {
+      // Autocompletar el monto con el costo del curso elegido
+      const cod = document.getElementById('mat-cursop').value;
+      const cp = (window.__cursopData || []).find(x => x.cursop === cod);
+      if (cp) document.getElementById('mat-monto').value = cp.t_cursos?.costo ?? 50;
+    };
+
+    window.__guardarMatricula = async () => {
+      const dni = document.getElementById('mat-dni').value.trim();
+      const cursop = document.getElementById('mat-cursop').value;
+      const monto = parseFloat(document.getElementById('mat-monto').value) || 0;
+      const estadoPago = document.getElementById('mat-estado-pago').value;
+      if (!window.__alumnoOK) return toast('⚠️ Buscá el alumno por DNI primero');
+      if (!cursop) return toast('⚠️ Elegí un curso programado');
+      if (monto <= 0) return toast('⚠️ Ingresá el monto');
+
+      // 1. Crear matrícula (nace pendiente — el trigger la confirma si el pago es 'pagado')
+      const { data: mat, error: e1 } = await supabase
+        .from('t_matricula').insert({ cursop, dni }).select('id').single();
+      if (e1) {
+        if (e1.code === '23505') return toast('⚠️ Ese alumno ya está matriculado en este curso');
+        return toast('⚠️ ' + e1.message);
+      }
+
+      // 2. Crear el pago asociado
+      const hoy = new Date().toISOString().slice(0, 10);
+      const { error: e2 } = await supabase.from('t_pago').insert({
+        matricula_id: mat.id,
+        monto,
+        pasarela: document.getElementById('mat-pasarela').value,
+        estado: estadoPago,
+        fecha_pago: estadoPago === 'pagado' ? hoy : null,
+      });
+      if (e2) return toast('⚠️ Matrícula creada pero el pago falló: ' + e2.message);
+
+      toast(estadoPago === 'pagado' ? '🎉 Matrícula CONFIRMADA (pago registrado)' : '✅ Matrícula registrada (pendiente de pago)');
+      document.getElementById('mat-dni').value = '';
+      document.getElementById('mat-alumno').value = '';
+      window.__alumnoOK = false;
+      await __loadMatriculas();
+    };
+
+    async function __loadMatriculas() {
+      const { data } = await supabase
+        .from('t_matricula')
+        .select('id, cursop, dni, fecha_matricula, estado, t_cursop(t_cursos(nombre)), t_alumnos(nombres)')
+        .order('fecha_matricula', { ascending: false })
+        .limit(30);
+      document.getElementById('lista-matriculas').innerHTML = tablaHTML(
+        data, ['Alumno', 'DNI', 'Curso', 'Fecha', 'Estado'],
+        (data || []).map(m => `
+          <tr><td>${escapeHtml(m.t_alumnos?.nombres || '?')}</td>
+          <td class="m-code">${m.dni}</td>
+          <td>${escapeHtml(m.t_cursop?.t_cursos?.nombre || '?')}</td>
+          <td>${m.fecha_matricula}</td>
+          <td class="${m.estado === 'confirmada' ? 'm-ok' : 'm-pend'}">${m.estado.toUpperCase()}</td></tr>`).join('')
+      );
+    }
+    window.__loadMatriculas = __loadMatriculas;
+
+    // ═════════ INFORME 1: MATRICULADOS ═════════
+    window.__inf1 = async () => {
+      const desde = document.getElementById('inf1-desde').value;
+      const hasta = document.getElementById('inf1-hasta').value;
+      let q = supabase.from('t_informe_matriculados').select('*').order('fecha_matricula', { ascending: false });
+      if (desde) q = q.gte('fecha_matricula', desde);
+      if (hasta) q = q.lte('fecha_matricula', hasta);
+      const { data } = await q;
+      const total = (data || []).reduce((s, r) => s + (Number(r.monto_pagado) || 0), 0);
+      document.getElementById('res-inf1').innerHTML =
+        `<b>${(data || []).length}</b> matrículas confirmadas · Total cobrado: <b style="color:var(--gold);">S/ ${total.toFixed(2)}</b>`;
+      document.getElementById('tabla-inf1').innerHTML = tablaHTML(
+        data, ['Nombres', 'DNI', 'Curso', 'Horario', 'F. matrícula', 'Monto pagado'],
+        (data || []).map(r => `
+          <tr><td>${escapeHtml(r.nombres)}</td><td class="m-code">${r.dni}</td>
+          <td>${escapeHtml(r.curso)}</td><td>${r.horario || '—'}</td>
+          <td>${r.fecha_matricula}</td><td>S/ ${r.monto_pagado ?? '—'}</td></tr>`).join('')
+      );
+    };
+    window.__inf1Todo = () => { document.getElementById('inf1-desde').value = ''; document.getElementById('inf1-hasta').value = ''; window.__inf1(); };
+
+    // ═════════ INFORME 2: POR PROFESOR ═════════
+    window.__inf2 = async () => {
+      const desde = document.getElementById('inf2-desde').value;
+      const hasta = document.getElementById('inf2-hasta').value;
+      let q = supabase.from('t_informe_cursos_profesor').select('*').order('fecha_inicio', { ascending: false });
+      if (desde) q = q.gte('fecha_inicio', desde);
+      if (hasta) q = q.lte('fecha_inicio', hasta);
+      const { data } = await q;
+      document.getElementById('tabla-inf2').innerHTML = tablaHTML(
+        data, ['Profesor', 'Curso', 'Horario', 'Inicio', 'Fin', 'Alumnos matriculados'],
+        (data || []).map(r => `
+          <tr><td>${escapeHtml(r.profesor)}</td><td>${escapeHtml(r.curso)}</td>
+          <td>${r.horario || '—'}</td><td>${r.fecha_inicio}</td><td>${r.fecha_fin || '—'}</td>
+          <td><b style="color:var(--gold);">${r.alumnos_matriculados}</b></td></tr>`).join('')
+      );
+    };
+    window.__inf2Todo = () => { document.getElementById('inf2-desde').value = ''; document.getElementById('inf2-hasta').value = ''; window.__inf2(); };
+  </script>
+</body>
+</html>
