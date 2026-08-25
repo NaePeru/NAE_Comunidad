@@ -300,10 +300,12 @@
       };
 
       // 🎁 Cursos GRATIS (desde courses: publicados y sin costo)
+      // Excluimos "NAE / Empieza aquí" (es bienvenida, no un curso real)
       try {
         const { data: gratis } = await supabase.from('courses')
-          .select('titulo, descripcion, icono')
+          .select('titulo, descripcion, icono, slug')
           .eq('publicado', true).eq('requiere_pago', false)
+          .neq('slug', 'nae-empieza-aqui')
           .order('orden').limit(3);
         if (gratis && gratis.length > 0) {
           document.getElementById('gratis-list').innerHTML = gratis.map(c => `
