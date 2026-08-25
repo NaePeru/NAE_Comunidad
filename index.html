@@ -300,12 +300,14 @@
       };
 
       // 🎁 Cursos GRATIS (desde courses: publicados y sin costo)
-      // Excluimos "NAE / Empieza aquí" (es bienvenida, no un curso real)
+      // Excluimos "NAE / Empieza aquí" (bienvenida) y "Recursos Exclusivos"
+      // (vacío) — solo cursos gratis REALES en la vitrina
       try {
         const { data: gratis } = await supabase.from('courses')
           .select('titulo, descripcion, icono, slug')
           .eq('publicado', true).eq('requiere_pago', false)
           .neq('slug', 'nae-empieza-aqui')
+          .neq('slug', 'recursos-exclusivos')
           .order('orden').limit(3);
         if (gratis && gratis.length > 0) {
           document.getElementById('gratis-list').innerHTML = gratis.map(c => `
