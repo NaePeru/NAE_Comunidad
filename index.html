@@ -188,6 +188,21 @@
           <div>Gana puntos, sube de nivel y escala en el ranking</div>
         </div>
       </div>
+
+      <!-- ═══ VITRINA: CURSOS GRATIS (público, sin login) ═══ -->
+      <div id="vitrina-gratis" style="margin-top:36px;">
+        <div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:#3DD68C;letter-spacing:0.15em;margin-bottom:14px;">🎁 EMPEZÁ GRATIS HOY MISMO</div>
+        <div id="gratis-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+
+      <!-- ═══ VITRINA: CURSOS EN VIVO programados (público) ═══ -->
+      <div id="vitrina-live" style="margin-top:28px;display:none;">
+        <div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--gold);letter-spacing:0.15em;margin-bottom:14px;">📅 PRÓXIMOS CURSOS EN VIVO</div>
+        <div id="live-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+        <p style="font-size:12px;color:var(--muted2);margin-top:12px;line-height:1.5;">
+          La matrícula se hace dentro de la comunidad: creá tu cuenta gratis y escribile a Alessandra 💬
+        </p>
+      </div>
     </div>
 
     <!-- ── LADO DERECHO: FORMULARIO ─────────────────────────────────────── -->
@@ -274,7 +289,67 @@
   <script type="module">
     import { supabase, supabaseConfigured } from './assets/js/supabase-client.js';
     import { login, registrar } from './assets/js/auth.js';
-    import { toast } from './assets/js/utils.js';
+    import { toast, escapeHtml } from './assets/js/utils.js';
+
+    // ═══ VITRINA PÚBLICA (sin login): cursos gratis + cursos en vivo ═══
+    (async () => {
+      const fDMA = (iso) => {
+        if (!iso) return '';
+        const [y, m, d] = String(iso).slice(0, 10).split('-');
+        return `${d}-${m}-${y.slice(2)}`;
+      };
+
+      // 🎁 Cursos GRATIS (desde courses: publicados y sin costo)
+      try {
+        const { data: gratis } = await supabase.from('courses')
+          .select('titulo, descripcion, icono')
+          .eq('publicado', true).eq('requiere_pago', false)
+          .order('orden').limit(3);
+        if (gratis && gratis.length > 0) {
+          document.getElementById('gratis-list').innerHTML = gratis.map(c => `
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(61,214,140,.06);border:1px solid rgba(61,214,140,.25);border-radius:12px;padding:12px 14px;">
+              <div style="font-size:24px;flex-shrink:0;">${c.icono || '📘'}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14px;font-weight:700;color:#fff;">${escapeHtml(c.titulo)}</div>
+                <div style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:2px;">${escapeHtml((c.descripcion || '').slice(0, 85))}${(c.descripcion||'').length > 85 ? '…' : ''}</div>
+              </div>
+              <span style="font-size:10px;font-weight:800;color:#3DD68C;border:1px solid rgba(61,214,140,.4);padding:3px 10px;border-radius:12px;flex-shrink:0;">GRATIS</span>
+            </div>`).join('');
+        } else {
+          document.getElementById('vitrina-gratis').style.display = 'none';
+        }
+      } catch (e) { document.getElementById('vitrina-gratis').style.display = 'none'; }
+
+      // 📅 Cursos EN VIVO programados (desde t_cursop — matrícula)
+      try {
+        const hoy = new Date().toLocaleDateString('en-CA');
+        const { data: vivos } = await supabase.from('t_cursop')
+          .select('cursop, horario, fecha_inicio, fecha_fin, t_cursos(nombre, costo, icono), t_profesor(nombre)')
+          .or(`fecha_fin.gte.${hoy},fecha_fin.is.null`)
+          .order('fecha_inicio').limit(4);
+        if (vivos && vivos.length > 0) {
+          document.getElementById('vitrina-live').style.display = 'block';
+          document.getElementById('live-list').innerHTML = vivos.map(cp => `
+            <div style="background:rgba(242,169,0,.05);border:1px solid rgba(242,169,0,.25);border-radius:12px;padding:12px 14px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="font-size:20px;flex-shrink:0;">${cp.t_cursos?.icono || '🎓'}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:14px;font-weight:700;color:#fff;">${escapeHtml(cp.t_cursos?.nombre || '')}</div>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+                    Prof. ${escapeHtml(cp.t_profesor?.nombre || '')} · S/ ${cp.t_cursos?.costo ?? 50}
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted);">
+                <span>🕐 ${cp.horario || 'Horario por confirmar'}</span>
+                <span>📅 inicia ${fDMA(cp.fecha_inicio)}${cp.fecha_fin ? ' al ' + fDMA(cp.fecha_fin) : ''}</span>
+                <span style="color:var(--gold);font-family:var(--font-mono);">[${cp.cursop}]</span>
+              </div>
+            </div>`).join('');
+        }
+      } catch (e) { /* sin t_cursop público → sección oculta */ }
+    })();
+
 
     if (!supabaseConfigured) {
       document.getElementById('config-warning').classList.remove('hidden');

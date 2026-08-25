@@ -106,6 +106,12 @@ pantalla del curso y luego sube la captura ahí mismo.`;
 - Cursos programados con MATRÍCULA ABIERTA (código entre corchetes):
 ${lineasM.join('\n')}
 
+CONSULTA DE CURSOS: si el alumno pregunta por un curso (ej: "¿qué hay de excel
+básico?", "¿cuándo empieza power bi?"), respondé con los datos EXACTOS de esta
+lista: horario, fecha de inicio (y fin), costo en S/, profesor y código de
+matrícula. Presentá las fechas como DD-MM-AA (ej: 23-08-26). Si no hay ningún
+curso programado de lo que pide, decíselo y sugerí escribir al WhatsApp 988502354.
+
 PUEDES MATRICULAR por chat: si el alumno quiere inscribirse en un curso de esta
 lista, pedile su DNI (8 dígitos) y su nombre completo (como está en su DNI).
 Confirmale curso (por código) + DNI + nombre, y cuando estén TODOS los datos,
