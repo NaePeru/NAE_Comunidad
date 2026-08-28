@@ -101,7 +101,7 @@
       try {
         const hoy = new Date().toLocaleDateString('en-CA');
         const { data: vivos } = await supabase.from('t_cursop')
-          .select('cursop, horario, fecha_inicio, fecha_fin, t_cursos(nombre, costo, icono), t_profesor(nombre)')
+          .select('cursop, horario, fecha_inicio, fecha_fin, t_cursos(nombre, costo), t_profesor(nombre)')
           .or(`fecha_fin.gte.${hoy},fecha_fin.is.null`)
           .order('fecha_inicio').limit(6);
         if (!vivos || vivos.length === 0) return;
