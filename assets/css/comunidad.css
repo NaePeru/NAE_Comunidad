@@ -20,11 +20,9 @@
 .yt-thumb-img {
   width: 100%;
   display: block;
-  opacity: 0.85;
+  opacity: 1; /* Opacidad completa: la miniatura siempre nítida (antes 0.85 se veía como sombra) */
   border-radius: 4px;
-  transition: opacity 0.2s;
 }
-.yt-preview:hover .yt-thumb-img { opacity: 1; }
 
 .yt-play-btn {
   position: absolute;
