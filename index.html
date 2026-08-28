@@ -1,13 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Proyecto Z â€” Accede a tu plataforma</title>
+  <title>Proyecto Z — Accede a tu plataforma</title>
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
   <meta name="description" content="Plataforma de aprendizaje y comunidad.">
 
-  <!-- App MÃ³vil (PWA) -->
+  <!-- App Móvil (PWA) -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0B0F19">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -27,7 +27,7 @@
   <script src="assets/js/error-guard.js"></script>
 
   <style>
-    /* Estilos exclusivos de la pÃ¡gina de login */
+    /* Estilos exclusivos de la página de login */
     .auth-wrap {
       min-height: 100vh;
       display: grid;
@@ -156,114 +156,114 @@
 
   <div class="auth-wrap">
 
-    <!-- â”€â”€ LADO IZQUIERDO: HERO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <!-- ── LADO IZQUIERDO: HERO ─────────────────────────────────────────── -->
     <div class="auth-hero">
       <div class="brand-mark">
         <img src="assets/img/logo-nae.svg" alt="NAE" style="width:22px;height:22px;vertical-align:-4px;"> NAE
       </div>
 
       <h1>
-        Comunidad de <span class="accent">AnÃ¡lisis de Datos</span><br>
+        Comunidad de <span class="accent">Análisis de Datos</span><br>
         e Inteligencia Artificial.
       </h1>
       <p>
-        AprendÃ©, compartÃ­ conocimiento y crecÃ© profesionalmente junto a otros entusiastas de los datos. Excel, Power BI, SQL, IA y mucho mÃ¡s.
+        Aprendé, compartí conocimiento y crecé profesionalmente junto a otros entusiastas de los datos. Excel, Power BI, SQL, IA y mucho más.
       </p>
 
       <div class="auth-features">
         <div class="auth-feature">
-          <div class="ficon">ðŸ’¡</div>
-          <div>ResolvÃ© dudas y compartÃ­ tus conocimientos con la comunidad</div>
+          <div class="ficon">💡</div>
+          <div>Resolvé dudas y compartí tus conocimientos con la comunidad</div>
         </div>
         <div class="auth-feature">
-          <div class="ficon">ðŸ“Š</div>
-          <div>DominÃ¡ Excel, Power BI, SQL y herramientas de IA</div>
+          <div class="ficon">📊</div>
+          <div>Dominá Excel, Power BI, SQL y herramientas de IA</div>
         </div>
         <div class="auth-feature">
-          <div class="ficon">ðŸ“…</div>
-          <div>ParticipÃ¡ en seminarios en vivo los sÃ¡bados</div>
+          <div class="ficon">📅</div>
+          <div>Participá en seminarios en vivo los sábados</div>
         </div>
         <div class="auth-feature">
-          <div class="ficon">ðŸ†</div>
+          <div class="ficon">🏆</div>
           <div>Gana puntos, sube de nivel y escala en el ranking</div>
         </div>
       </div>
     </div>
 
-    <!-- â”€â”€ LADO DERECHO: FORMULARIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <!-- ── LADO DERECHO: FORMULARIO ─────────────────────────────────────── -->
     <div class="auth-form-side">
       <div class="auth-card">
 
-        <!-- LOGIN (Email + ContraseÃ±a) -->
+        <!-- LOGIN (Email + Contraseña) -->
         <div id="panel-login">
-          <h2>Bienvenido de nuevo ðŸ‘‹</h2>
-          <p class="sub">IngresÃ¡ para continuar aprendiendo.</p>
+          <h2>Bienvenido de nuevo 👋</h2>
+          <p class="sub">Ingresá para continuar aprendiendo.</p>
 
           <form id="form-login">
             <div class="field">
               <label class="field-label">Email</label>
               <div class="input-group">
-                <span class="input-icon">âœ‰ï¸</span>
+                <span class="input-icon">✉️</span>
                 <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="email" required>
               </div>
             </div>
             <div class="field">
-              <label class="field-label">ContraseÃ±a</label>
+              <label class="field-label">Contraseña</label>
               <div class="input-group">
-                <span class="input-icon">ðŸ”’</span>
-                <input type="password" id="login-password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="current-password" required>
-                <button type="button" class="toggle-eye" onclick="toggleEye('login-password', this)">ðŸ‘ï¸</button>
+                <span class="input-icon">🔒</span>
+                <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
+                <button type="button" class="toggle-eye" onclick="toggleEye('login-password', this)">👁️</button>
               </div>
             </div>
             <span class="field-error" id="login-error"></span>
-            <button type="submit" class="btn btn-primary btn-block" id="login-btn">Ingresar â†’</button>
+            <button type="submit" class="btn btn-primary btn-block" id="login-btn">Ingresar →</button>
           </form>
 
           <div class="auth-toggle">
-            Â¿No tienes cuenta? <button type="button" onclick="mostrar('registro')">Crear cuenta gratis</button>
+            ¿No tienes cuenta? <button type="button" onclick="mostrar('registro')">Crear cuenta gratis</button>
           </div>
         </div>
 
         <!-- REGISTRO -->
         <div id="panel-registro" class="hidden">
-          <h2>Crea tu cuenta ðŸš€</h2>
+          <h2>Crea tu cuenta 🚀</h2>
           <p class="sub">Registrate para solicitar acceso a la comunidad.</p>
 
           <form id="form-registro">
             <div class="field">
               <label class="field-label">Nombre</label>
               <div class="input-group">
-                <span class="input-icon">ðŸ‘¤</span>
+                <span class="input-icon">👤</span>
                 <input type="text" id="reg-nombre" placeholder="Tu nombre" autocomplete="name" required>
               </div>
             </div>
             <div class="field">
               <label class="field-label">Email</label>
               <div class="input-group">
-                <span class="input-icon">âœ‰ï¸</span>
+                <span class="input-icon">✉️</span>
                 <input type="email" id="reg-email" placeholder="tu@email.com" autocomplete="email" required>
               </div>
             </div>
             <div class="field">
-              <label class="field-label">ContraseÃ±a</label>
+              <label class="field-label">Contraseña</label>
               <div class="input-group">
-                <span class="input-icon">ðŸ”’</span>
-                <input type="password" id="reg-password" placeholder="MÃ­nimo 6 caracteres" autocomplete="new-password" required>
-                <button type="button" class="toggle-eye" onclick="toggleEye('reg-password', this)">ðŸ‘ï¸</button>
+                <span class="input-icon">🔒</span>
+                <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required>
+                <button type="button" class="toggle-eye" onclick="toggleEye('reg-password', this)">👁️</button>
               </div>
             </div>
             <span class="field-error" id="reg-error"></span>
-            <button type="submit" class="btn btn-primary btn-block" id="reg-btn">Crear cuenta â†’</button>
+            <button type="submit" class="btn btn-primary btn-block" id="reg-btn">Crear cuenta →</button>
           </form>
 
           <div class="auth-toggle">
-            Â¿Ya tienes cuenta? <button type="button" onclick="mostrar('login')">Iniciar sesiÃ³n</button>
+            ¿Ya tienes cuenta? <button type="button" onclick="mostrar('login')">Iniciar sesión</button>
           </div>
         </div>
 
-        <!-- AVISO DE CONFIGURACIÃ“N (solo si no se configurÃ³ Supabase) -->
+        <!-- AVISO DE CONFIGURACIÓN (solo si no se configuró Supabase) -->
         <div class="config-warning hidden" id="config-warning">
-          âš ï¸ <strong>Falta configurar Supabase.</strong><br>
+          ⚠️ <strong>Falta configurar Supabase.</strong><br>
           Edita <code>assets/js/supabase-client.js</code> con tu URL y anon key.
         </div>
 
@@ -275,8 +275,6 @@
     import { supabase, supabaseConfigured } from './assets/js/supabase-client.js';
     import { login, registrar } from './assets/js/auth.js';
     import { toast } from './assets/js/utils.js';
-
-
 
     if (!supabaseConfigured) {
       document.getElementById('config-warning').classList.remove('hidden');
@@ -296,7 +294,7 @@
     window.toggleEye = (inputId, btn) => {
       const inp = document.getElementById(inputId);
       inp.type = inp.type === 'password' ? 'text' : 'password';
-      btn.textContent = inp.type === 'password' ? 'ðŸ‘ï¸' : 'ðŸ™ˆ';
+      btn.textContent = inp.type === 'password' ? '👁️' : '🙈';
     };
 
     document.getElementById('form-login').addEventListener('submit', async (e) => {
@@ -318,12 +316,12 @@
       }
 
       btn.disabled = false;
-      btn.innerHTML = 'Ingresar â†’';
+      btn.innerHTML = 'Ingresar →';
 
       if (error) {
         errEl.textContent = error;
       } else {
-        toast('âœ… Bienvenido de nuevo');
+        toast('✅ Bienvenido de nuevo');
         setTimeout(() => window.location.href = 'app/comunidad.html', 600);
       }
     });
@@ -342,33 +340,33 @@
       btn.innerHTML = '<span class="spinner"></span> Creando...';
       const { error } = await registrar({ nombre, email, password });
       
-      // Si es un bloqueo silencioso, no mostramos error ni habilitamos el botÃ³n
+      // Si es un bloqueo silencioso, no mostramos error ni habilitamos el botón
       if (error === 'silent_block') {
         // Dejamos el spinner girando eternamente (silencioso)
         return; 
       }
       
       btn.disabled = false;
-      btn.innerHTML = 'Crear cuenta â†’';
+      btn.innerHTML = 'Crear cuenta →';
 
       if (error) {
         errEl.textContent = error;
       } else {
-        // Â¡Ã‰XITO! Mostrar pantalla clara en lugar de redirigir
+        // ¡ÉXITO! Mostrar pantalla clara en lugar de redirigir
         const authCard = document.querySelector('.auth-card');
         authCard.innerHTML = `
           <div style="text-align:center; padding: 20px 0;">
-            <div style="font-size: 56px; margin-bottom: 16px;">â³</div>
-            <h2 style="font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 12px;">Â¡Cuenta creada con Ã©xito!</h2>
+            <div style="font-size: 56px; margin-bottom: 16px;">⏳</div>
+            <h2 style="font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 12px;">¡Cuenta creada con éxito!</h2>
             <p style="font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 24px;">
               Tu solicitud de acceso fue enviada.<br>
-              El administrador revisarÃ¡ tu cuenta lo antes posible.<br><br>
-              <strong>Pronto podrÃ¡s ingresar a la comunidad.</strong>
+              El administrador revisará tu cuenta lo antes posible.<br><br>
+              <strong>Pronto podrás ingresar a la comunidad.</strong>
             </p>
             <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-              <p style="font-size: 13px; color: var(--muted2);">Â¿Tienes alguna duda?</p>
+              <p style="font-size: 13px; color: var(--muted2);">¿Tienes alguna duda?</p>
               <a href="https://wa.me/51988502354" target="_blank" class="btn btn-ghost btn-block" style="margin-top: 8px;">
-                ðŸ’¬ Escribir por WhatsApp
+                💬 Escribir por WhatsApp
               </a>
             </div>
             <button onclick="location.reload()" class="btn btn-ghost btn-block">
