@@ -34,7 +34,6 @@
           <button class="admin-tab" data-tab="cursos" onclick="window.__adminMostrar('cursos')">📚 Cursos</button>
           <button class="admin-tab" data-tab="alumnos" onclick="window.__adminMostrar('alumnos')">👥 Alumnos</button>
           <button class="admin-tab" data-tab="pagos" onclick="window.__adminMostrar('pagos')">💳 Pagos</button>
-          <button class="admin-tab" data-tab="mailing" onclick="window.__adminMostrar('mailing')">📧 Correos</button>
         </div>
 
         <!-- SECCIÓN DASHBOARD -->
@@ -77,33 +76,8 @@
         </section>
 
         <!-- SECCIÓN CHATBOT -->
-        <!-- SECCIÓN CORREOS -->
-        <section id="admin-section-mailing" class="hidden">
-          <div class="section-header">
-            <div class="section-title">Enviar Correo Masivo</div>
-          </div>
-          <div class="card">
-            <p class="muted" style="font-size:13px; margin-bottom:20px;">
-              📨 El correo se enviará a todos los alumnos registrados en la plataforma.<br>
-              <small>(Usa Resend. Máx 100 correos/día en plan gratis)</small>
-            </p>
-            
-            <div class="form-group">
-              <label class="form-label">Asunto del correo</label>
-              <input type="text" class="form-input" id="mail-subject" placeholder="Ej: 📡 Seminario de Power BI mañana a las 7pm">
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Mensaje</label>
-              <textarea class="form-textarea" id="mail-message" placeholder="Escribí tu mensaje aquí..." style="min-height:200px; resize:vertical;"></textarea>
-              <div class="form-hint">💡 Podés usar saltos de línea. El mensaje se envía con el diseño de NAE.</div>
-            </div>
-
-            <button class="btn btn-primary btn-block" id="btn-send-mail" onclick="window.__enviarMailMasivo()">
-              📧 Enviar a todos los alumnos
-            </button>
-          </div>
-        </section>
+        <!-- SECCIÓN CORREOS: eliminada — los emails ahora salen automáticos
+             (publicar en comunidad = anuncio a todos) o vía panel de Campañas -->
 
         <!-- SECCIÓN PAGOS -->
         <section id="admin-section-pagos" class="hidden">
@@ -412,51 +386,8 @@
     // ── Cerrar modales ──
     window.__closeModal = (id) => document.getElementById(id).classList.remove('open');
 
-    // ── Enviar correo masivo ──
-    window.__enviarMailMasivo = async () => {
-      const subject = document.getElementById('mail-subject').value.trim();
-      const message = document.getElementById('mail-message').value.trim();
-      const btn = document.getElementById('btn-send-mail');
-
-      if (!subject || !message) {
-        toast('⚠️ Completá el asunto y el mensaje');
-        return;
-      }
-
-      if (!confirm('¿Seguro que querés enviar este correo a TODOS los alumnos?')) return;
-
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Enviando...';
-
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const response = await fetch('https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/notify-students', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ subject, message }),
-        });
-
-        const data = await response.json();
-
-        btn.disabled = false;
-        btn.innerHTML = '📧 Enviar a todos los alumnos';
-
-        if (response.ok && data.success) {
-          toast(`✅ Correo enviado a ${data.count} alumnos`);
-          document.getElementById('mail-subject').value = '';
-          document.getElementById('mail-message').value = '';
-        } else {
-          toast('⚠️ Error: ' + (data.error || 'Desconocido'));
-        }
-      } catch (e) {
-        btn.disabled = false;
-        btn.innerHTML = '📧 Enviar a todos los alumnos';
-        toast('⚠️ Error de conexión con el servidor');
-      }
-    };
+    // (Correo masivo eliminado: los emails salen automáticos al publicar en la
+    //  comunidad, o vía panel de Campañas para listas externas)
 
   </script>
 </body>
