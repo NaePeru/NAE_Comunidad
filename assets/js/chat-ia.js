@@ -17,6 +17,7 @@ let chatOpen = false;
 let cacheProgreso = null;   // resumen de progreso de certificados (para la IA)
 let cacheVouchers = null;   // últimos vouchers de pago del alumno (para la IA)
 let cacheMatriculables = null; // cursos programados de matrícula (t_cursop) para la IA
+let cacheCursosCatalogo = null; // catálogo grabado con nº de lecciones (detecta "en construcción")
 
 // ── PROMPT BASE (Importado desde prompt.js) ────────────────────────────────
 const PROMPT_BASE = SYSTEM_PROMPT;
@@ -118,6 +119,24 @@ Confirmale curso (por código) + DNI + nombre, y cuando estén TODOS los datos,
 terminá tu respuesta con ESTE bloque exacto (el sistema lo ejecuta solo):
 [[MATRICULAR:{"dni":"12345678","nombres":"APELLIDOS Y NOMBRES","cursop":"260801"}]]
 Reemplazá los valores por los reales. Sin ese bloque no se matricula nada.`;
+    }
+
+    // Catálogo de cursos grabados con estado de construcción
+    if (Array.isArray(cacheCursosCatalogo) && cacheCursosCatalogo.length > 0) {
+      const UMBRAL = 3; // menos de 3 lecciones cargadas = en construcción
+      const listos = cacheCursosCatalogo.filter(c => c.lecciones >= UMBRAL).map(c => `  · ${c.titulo} (${c.lecciones} lecciones)`);
+      const construccion = cacheCursosCatalogo.filter(c => c.lecciones < UMBRAL).map(c => `  · ${c.titulo} (${c.lecciones} lecciones cargadas)`);
+      ctx += `
+
+- Estado del catálogo de cursos grabados:
+DISPONIBLES ya:
+${listos.join('\n') || '  (ninguno por ahora)'}
+EN CONSTRUCCIÓN (contenido incompleto):
+${construccion.join('\n') || '  (ninguno)'}
+
+Si el alumno pregunta por un curso que está EN CONSTRUCCIÓN, respondé EXACTAMENTE
+que estamos desarrollando los temas que faltan y que pronto estará disponible.
+No prometas fechas exactas ni detalles del contenido.`;
     }
 
     ctx += `
@@ -256,11 +275,25 @@ function toggleChat() {
     supabase
       .from('t_cursop')
       .select('cursop, horario, fecha_inicio, fecha_fin, t_cursos(nombre, costo), t_profesor(nombre)')
-      .or(`fecha_fin.gte.${hoyISO2},fecha_fin.is.null`)
+      .or(`fecha_fin.gte.${hoyISO2},fecha_fin.is.null`)  // vigentes o sin fecha fin
       .order('fecha_inicio', { ascending: true })
       .limit(10)
       .then(res => { cacheMatriculables = res.data || []; })
       .catch(() => { cacheMatriculables = null; }); // sin tablas → sin matrícula por chat
+    // Cargar catálogo de cursos grabados con su nº de lecciones (para detectar
+    // los que están EN CONSTRUCCIÓN y responder que pronto estarán disponibles).
+    supabase
+      .from('courses')
+      .select('id, titulo, publicado, lessons(id)')
+      .eq('publicado', true)
+      .order('orden')
+      .then(res => {
+        cacheCursosCatalogo = (res.data || []).map(c => ({
+          titulo: c.titulo,
+          lecciones: (c.lessons || []).length,
+        }));
+      })
+      .catch(() => { cacheCursosCatalogo = null; });
     setTimeout(() => document.getElementById('chat-input')?.focus(), 200);
   }
 }

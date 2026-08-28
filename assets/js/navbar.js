@@ -122,10 +122,15 @@ export function renderNavbar(activoId) {
     });
   }
 
-  // Inicializar Alessandra (chat IA flotante) — una sola vez
+  // Inicializar Alessandra (chat IA flotante) — una sola vez.
+  // EXCEPCIÓN: en el módulo de Cursos NO aparece (decisión del dueño:
+  // el alumno se concentra en el contenido; el chat vive en las demás páginas).
   if (!window.__chatInit) {
-    window.__chatInit = true;
-    initChat();
+    const esModuloCursos = window.location.pathname.includes('cursos.html');
+    if (!esModuloCursos) {
+      window.__chatInit = true;
+      initChat();
+    }
   }
 
   // Inicializar notificaciones — una sola vez (evita múltiples suscripciones)

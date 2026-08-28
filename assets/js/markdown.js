@@ -129,7 +129,6 @@ window.__playYt = function(el) {
         frameborder="0" 
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
         allowfullscreen></iframe>
-      <div class="yt-nae-watermark">◆ NAE</div>
     </div>
     <button class="yt-close-btn" onclick="window.__closeYt(event, '${videoId}')">✕ Cerrar video</button>
   `;

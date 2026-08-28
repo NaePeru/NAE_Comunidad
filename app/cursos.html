@@ -48,7 +48,8 @@
         <span style="font-size:11px;font-weight:800;color:#FF6B6B;letter-spacing:.1em;">🔴 CURSOS EN VIVO — MATRÍCULA ABIERTA</span>
         <div id="live-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:10px;"></div>
         <p style="font-size:12px;color:var(--muted2);margin-top:10px;">
-          💬 Para matricularte: tocá el chat (abajo a la derecha) y escribile a Alessandra
+          💬 Para matricularte: andá a la <a href="comunidad.html" style="color:var(--gold);">Comunidad</a>,
+          tocá el chat de Alessandra (abajo a la derecha) y decile
           <b style="color:var(--gold);">"quiero matricularme en [código]"</b>
         </p>
       </div>
@@ -124,23 +125,12 @@
               <span>🕐 ${cp.horario || 'Por confirmar'}</span>
               <span>📅 ${fDMA(cp.fecha_inicio)}${cp.fecha_fin ? ' al ' + fDMA(cp.fecha_fin) : ''}</span>
             </div>
-            <button class="btn btn-primary btn-sm btn-block" style="margin-top:10px;"
-              onclick="window.__abrirChatMatricula('${cp.cursop}')">💬 Matricularme con Alessandra</button>
+            <a href="comunidad.html" class="btn btn-primary btn-sm btn-block" style="margin-top:10px;text-decoration:none;display:block;">
+              💬 Matricularme con Alessandra (Comunidad)
+            </a>
           </div>`).join('');
-      } catch (e) { /* sin vitrina si falla */ }
+      } catch (e) { /* sin sección si falla */ }
     }
-
-    window.__abrirChatMatricula = (cod) => {
-      // Abrir el chat de Alessandra y precargar la consulta
-      const fab = document.querySelector('.chat-fab');
-      if (fab) {
-        fab.click();
-        setTimeout(() => {
-          const inp = document.getElementById('chat-input');
-          if (inp) { inp.value = `Quiero matricularme en el curso ${cod}`; inp.focus(); }
-        }, 300);
-      }
-    };
 
     function filtrarCursos(filtro, btn) {
       document.querySelectorAll('#vista-catalogo .pill').forEach(p => p.classList.remove('active'));
