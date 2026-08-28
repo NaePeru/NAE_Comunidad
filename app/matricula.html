@@ -48,8 +48,7 @@
       <div class="m-tab" data-t="alumnos" onclick="window.__tab('alumnos')">3️⃣ Alumnos</div>
       <div class="m-tab" data-t="cursop" onclick="window.__tab('cursop')">4️⃣ Programar curso</div>
       <div class="m-tab" data-t="matricula" onclick="window.__tab('matricula')">5️⃣ Matrícula</div>
-      <div class="m-tab" data-t="inf1" onclick="window.__tab('inf1')">📊 Matriculados</div>
-      <div class="m-tab" data-t="inf2" onclick="window.__tab('inf2')">📊 Por profesor</div>
+      <div class="m-tab" data-t="informes" onclick="window.__tab('informes')">📊 Informes</div>
     </div>
 
     <!-- ═══════════ 1. CURSOS ═══════════ -->
@@ -204,41 +203,49 @@
       <div id="lista-matriculas"></div>
     </div>
 
-    <!-- ═══════════ INFORME 1: MATRICULADOS ═══════════ -->
-    <div class="m-panel hidden" id="p-inf1">
-      <h3 style="margin:0 0 14px;">📊 Informe — Alumnos matriculados (confirmadas)</h3>
-      <div class="filter-row">
-        <div class="form-group">
-          <label class="form-label">Desde</label>
-          <input type="date" class="form-input" id="inf1-desde">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Hasta</label>
-          <input type="date" class="form-input" id="inf1-hasta">
-        </div>
-        <button class="btn btn-primary" onclick="window.__inf1()">Filtrar</button>
-        <button class="btn btn-ghost" onclick="window.__inf1Todo()">Ver todo</button>
-      </div>
-      <div id="res-inf1" style="font-size:13px;margin-bottom:10px;"></div>
-      <div id="tabla-inf1"></div>
-    </div>
+    <!-- ═══════════ 📊 INFORMES (módulo unificado) ═══════════ -->
+    <div class="m-panel hidden" id="p-informes">
+      <h3 style="margin:0 0 14px;">📊 Informes</h3>
 
-    <!-- ═══════════ INFORME 2: POR PROFESOR ═══════════ -->
-    <div class="m-panel hidden" id="p-inf2">
-      <h3 style="margin:0 0 14px;">📊 Informe — Cursos dictados por profesor</h3>
-      <div class="filter-row">
-        <div class="form-group">
-          <label class="form-label">Desde (inicio del curso)</label>
-          <input type="date" class="form-input" id="inf2-desde">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Hasta</label>
-          <input type="date" class="form-input" id="inf2-hasta">
-        </div>
-        <button class="btn btn-primary" onclick="window.__inf2()">Filtrar</button>
-        <button class="btn btn-ghost" onclick="window.__inf2Todo()">Ver todo</button>
+      <!-- Selector de tipo de informe -->
+      <div class="m-tabs" style="margin-bottom:16px;">
+        <div class="m-tab active" data-i="alumnos" onclick="window.__infTab('alumnos')">👥 Alumnos matriculados</div>
+        <div class="m-tab" data-i="profes" onclick="window.__infTab('profes')">👨‍🏫 Profesores</div>
       </div>
-      <div id="tabla-inf2"></div>
+
+      <!-- ── INFORME A: ALUMNOS POR CÓDIGO DE CURSO ── -->
+      <div id="inf-alumnos">
+        <p style="font-size:12.5px;color:var(--muted2);margin:0 0 12px;">
+          Buscá por <b>código del curso programado</b> (ej: 260801) y verás todos los alumnos matriculados en él.
+        </p>
+        <div class="filter-row">
+          <div class="form-group" style="max-width:200px;">
+            <label class="form-label">Código cursop</label>
+            <input type="text" class="form-input" id="infA-codigo" placeholder="260801" oninput="window.__infAlumnosLive()">
+          </div>
+          <div class="form-group" style="flex:2;">
+            <label class="form-label">O elegí de la lista</label>
+            <select class="form-select" id="infA-lista" onchange="window.__infAlumnosSelect(this.value)"></select>
+          </div>
+        </div>
+        <div id="res-infA" style="font-size:13px;margin:6px 0 10px;"></div>
+        <div id="tabla-infA"></div>
+      </div>
+
+      <!-- ── INFORME B: PROFESOR → cursos del último mes ── -->
+      <div id="inf-profes" style="display:none;">
+        <p style="font-size:12.5px;color:var(--muted2);margin:0 0 12px;">
+          Elegí al profesor y verás los cursos que dictó <b>en el último mes</b> (con alumnos y recaudado).
+        </p>
+        <div class="filter-row">
+          <div class="form-group" style="flex:2;">
+            <label class="form-label">Profesor</label>
+            <select class="form-select" id="infB-profesor" onchange="window.__infProfesor(this.value)"></select>
+          </div>
+        </div>
+        <div id="res-infB" style="font-size:13px;margin:6px 0 10px;"></div>
+        <div id="tabla-infB"></div>
+      </div>
     </div>
 
   </div>
@@ -265,6 +272,11 @@
     window.__tab = (t) => {
       document.querySelectorAll('.m-tab').forEach(x => x.classList.toggle('active', x.dataset.t === t));
       document.querySelectorAll('.m-panel').forEach(p => p.classList.toggle('hidden', p.id !== 'p-' + t));
+      // Cargar datos de informes la primera vez que se entra a la pestaña
+      if (t === 'informes' && !window.__infCargado) {
+        window.__infCargado = true;
+        __cargarInformes();
+      }
     };
 
     function tablaHTML(filas, cols, filasHTML) {
@@ -610,44 +622,163 @@
       await __loadMatriculas();
     };
 
-    // ═════════ INFORME 1: MATRICULADOS ═════════
-    window.__inf1 = async () => {
-      const desde = document.getElementById('inf1-desde').value;
-      const hasta = document.getElementById('inf1-hasta').value;
-      let q = supabase.from('t_informe_matriculados').select('*').order('fecha_matricula', { ascending: false });
-      if (desde) q = q.gte('fecha_matricula', desde);
-      if (hasta) q = q.lte('fecha_matricula', hasta);
-      const { data } = await q;
-      const total = (data || []).reduce((s, r) => s + (Number(r.monto_pagado) || 0), 0);
-      document.getElementById('res-inf1').innerHTML =
-        `<b>${(data || []).length}</b> matrículas confirmadas · Total cobrado: <b style="color:var(--gold);">S/ ${total.toFixed(2)}</b>`;
-      document.getElementById('tabla-inf1').innerHTML = tablaHTML(
-        data, ['Nombres', 'DNI', 'Curso', 'Horario', 'F. matrícula', 'Monto pagado'],
-        (data || []).map(r => `
-          <tr><td>${escapeHtml(r.nombres)}</td><td class="m-code">${r.dni}</td>
-          <td>${escapeHtml(r.curso)}</td><td>${r.horario || '—'}</td>
-          <td>${fDMA(r.fecha_matricula)}</td><td>S/ ${r.monto_pagado ?? '—'}</td></tr>`).join('')
-      );
-    };
-    window.__inf1Todo = () => { document.getElementById('inf1-desde').value = ''; document.getElementById('inf1-hasta').value = ''; window.__inf1(); };
+    // ═════════ 📊 INFORMES (nuevo módulo unificado) ═════════
 
-    // ═════════ INFORME 2: POR PROFESOR ═════════
-    window.__inf2 = async () => {
-      const desde = document.getElementById('inf2-desde').value;
-      const hasta = document.getElementById('inf2-hasta').value;
-      let q = supabase.from('t_informe_cursos_profesor').select('*').order('fecha_inicio', { ascending: false });
-      if (desde) q = q.gte('fecha_inicio', desde);
-      if (hasta) q = q.lte('fecha_inicio', hasta);
-      const { data } = await q;
-      document.getElementById('tabla-inf2').innerHTML = tablaHTML(
-        data, ['Profesor', 'Curso', 'Horario', 'Inicio', 'Fin', 'Alumnos matriculados'],
-        (data || []).map(r => `
-          <tr><td>${escapeHtml(r.profesor)}</td><td>${escapeHtml(r.curso)}</td>
-          <td>${r.horario || '—'}</td><td>${fDMA(r.fecha_inicio)}</td><td>${r.fecha_fin || '—'}</td>
-          <td><b style="color:var(--gold);">${r.alumnos_matriculados}</b></td></tr>`).join('')
+    // Sub-pestañas dentro de Informes
+    window.__infTab = (t) => {
+      document.querySelectorAll('[data-i]').forEach(x => x.classList.toggle('active', x.dataset.i === t));
+      document.getElementById('inf-alumnos').style.display = t === 'alumnos' ? 'block' : 'none';
+      document.getElementById('inf-profes').style.display = t === 'profes' ? 'block' : 'none';
+    };
+
+    // Llenar dropdowns al cargar informes (se llama al entrar a la pestaña)
+    async function __cargarInformes() {
+      // Lista de cursop para el informe de alumnos
+      const { data: cps } = await supabase
+        .from('t_cursop')
+        .select('cursop, horario, fecha_inicio, t_cursos(nombre), t_profesor(nombre)')
+        .order('fecha_inicio', { ascending: false }).limit(100);
+      window.__cpsData = cps || [];
+      const selA = document.getElementById('infA-lista');
+      selA.innerHTML = '<option value="">— Elegí un curso programado —</option>' +
+        window.__cpsData.map(cp =>
+          `<option value="${cp.cursop}">[${cp.cursop}] ${escapeHtml(cp.t_cursos?.nombre || '?')} — ${escapeHtml(cp.t_profesor?.nombre || '?')} (${fDMA(cp.fecha_inicio)})</option>`
+        ).join('');
+      // Lista de profesores para el informe B
+      const selB = document.getElementById('infB-profesor');
+      const profes = [...new Set(window.__cpsData.map(cp => cp.t_profesor?.nombre).filter(Boolean))];
+      selB.innerHTML = '<option value="">— Elegí un profesor —</option>' +
+        profes.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+    }
+    window.__cargarInformes = __cargarInformes;
+
+    // ── INFORME A: alumnos matriculados POR CÓDIGO de curso ──
+    window.__infAlumnosSelect = (cod) => {
+      document.getElementById('infA-codigo').value = cod;
+      window.__buscarAlumnosCurso(cod);
+    };
+
+    window.__infAlumnosLive = () => {
+      clearTimeout(window.__infAT);
+      window.__infAT = setTimeout(() => {
+        const cod = document.getElementById('infA-codigo').value.trim();
+        if (cod.length >= 4) window.__buscarAlumnosCurso(cod); // códigos YYMMNN = 6 dígitos
+        else if (cod.length === 0) {
+          document.getElementById('tabla-infA').innerHTML = '';
+          document.getElementById('res-infA').innerHTML = '';
+        }
+      }, 300);
+    };
+
+    window.__buscarAlumnosCurso = async (cod) => {
+      const res = document.getElementById('res-infA');
+      const tab = document.getElementById('tabla-infA');
+      if (!cod) return;
+
+      // Buscar el cursop (con nombre del curso para el encabezado)
+      const { data: cp } = await supabase
+        .from('t_cursop')
+        .select('cursop, horario, fecha_inicio, t_cursos(nombre), t_profesor(nombre)')
+        .eq('cursop', cod).maybeSingle();
+
+      if (!cp) {
+        res.innerHTML = `<span style="color:#FF9B9B;">❌ No existe el curso programado <b>${escapeHtml(cod)}</b></span>`;
+        tab.innerHTML = '';
+        return;
+      }
+
+      // Alumnos de ese cursop (todas las matrículas, con su pago)
+      const { data: mats } = await supabase
+        .from('t_matricula')
+        .select('id, dni, fecha_matricula, estado, t_alumnos(nombres, mail), t_pago(estado, monto)')
+        .eq('cursop', cod)
+        .order('fecha_matricula', { ascending: false });
+
+      const lista = mats || [];
+      const confirmadas = lista.filter(m => m.estado === 'confirmada');
+      const totalCobrado = confirmadas.reduce((s, m) => {
+        const pagado = (m.t_pago || []).find(p => p.estado === 'pagado');
+        return s + (pagado ? Number(pagado.monto) : 0);
+      }, 0);
+
+      res.innerHTML = `
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+          <div style="font-weight:700;font-size:14px;">[${cp.cursop}] ${escapeHtml(cp.t_cursos?.nombre || '?')} — Prof. ${escapeHtml(cp.t_profesor?.nombre || '?')}</div>
+          <div style="font-size:12px;color:var(--muted2);margin-top:2px;">
+            ${cp.horario || ''} · inicia ${fDMA(cp.fecha_inicio)} ·
+            <b>${lista.length}</b> matriculados
+            (<span class="m-ok">${confirmadas.length} confirmadas</span> ·
+            <span class="m-pend">${lista.length - confirmadas.length} pendientes</span>) ·
+            Cobrado: <b style="color:var(--gold);">S/ ${totalCobrado.toFixed(2)}</b>
+          </div>
+        </div>`;
+
+      tab.innerHTML = tablaHTML(
+        lista, ['Nombres', 'DNI', 'Correo', 'F. matrícula', 'Pago', 'Estado'],
+        lista.map(m => {
+          const pagado = (m.t_pago || []).find(p => p.estado === 'pagado');
+          const pagoTxt = pagado ? `S/ ${pagado.monto}` : (m.t_pago?.length ? 'pendiente' : '—');
+          return `
+          <tr><td>${escapeHtml(m.t_alumnos?.nombres || '?')}</td>
+          <td class="m-code">${m.dni}</td>
+          <td style="font-size:12px;">${escapeHtml(m.t_alumnos?.mail || '—')}</td>
+          <td>${fDMA(m.fecha_matricula)}</td>
+          <td>${pagoTxt}</td>
+          <td class="${m.estado === 'confirmada' ? 'm-ok' : 'm-pend'}">${m.estado.toUpperCase()}</td></tr>`;
+        }).join('')
       );
     };
-    window.__inf2Todo = () => { document.getElementById('inf2-desde').value = ''; document.getElementById('inf2-hasta').value = ''; window.__inf2(); };
+
+    // ── INFORME B: profesor → cursos dictados el ÚLTIMO MES ──
+    window.__infProfesor = async (nombre) => {
+      const res = document.getElementById('res-infB');
+      const tab = document.getElementById('tabla-infB');
+      if (!nombre) { tab.innerHTML = ''; res.innerHTML = ''; return; }
+
+      // Último mes: cursos cuya fecha_inicio cae en los últimos 30 días O que
+      // están en desarrollo (fecha_fin >= hace 30 días) — dictados/activos.
+      const hoy = new Date();
+      const haceUnMes = new Date(hoy.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const hoyStr = hoy.toISOString().slice(0, 10);
+
+      const { data: cursos } = await supabase
+        .from('t_cursop')
+        .select('cursop, horario, fecha_inicio, fecha_fin, t_cursos(nombre), t_matricula(id, estado), t_profesor(nombre)')
+        .eq('t_profesor(nombre)', nombre)
+        .gte('fecha_inicio', haceUnMes)
+        .order('fecha_inicio', { ascending: false });
+
+      const lista = cursos || [];
+      if (lista.length === 0) {
+        res.innerHTML = `<span style="color:var(--muted2);">El profesor <b>${escapeHtml(nombre)}</b> no dictó cursos en el último mes.</span>`;
+        tab.innerHTML = '';
+        return;
+      }
+
+      const totalAlumnos = lista.reduce((s, c) => s + (c.t_matricula || []).filter(m => m.estado === 'confirmada').length, 0);
+      res.innerHTML = `
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+          <div style="font-weight:700;font-size:14px;">👨‍🏫 ${escapeHtml(nombre)}</div>
+          <div style="font-size:12px;color:var(--muted2);margin-top:2px;">
+            <b>${lista.length}</b> curso(s) en el último mes ·
+            <b style="color:var(--gold);">${totalAlumnos}</b> alumnos confirmados en total
+          </div>
+        </div>`;
+
+      tab.innerHTML = tablaHTML(
+        lista, ['Código', 'Curso', 'Horario', 'Inicio', 'Fin', 'Confirmados'],
+        lista.map(c => {
+          const n = (c.t_matricula || []).filter(m => m.estado === 'confirmada').length;
+          return `
+          <tr><td class="m-code" style="color:var(--gold);">${c.cursop}</td>
+          <td>${escapeHtml(c.t_cursos?.nombre || '?')}</td>
+          <td>${c.horario || '—'}</td>
+          <td>${fDMA(c.fecha_inicio)}</td>
+          <td>${fDMA(c.fecha_fin)}</td>
+          <td><b style="color:var(--gold);">${n}</b></td></tr>`;
+        }).join('')
+      );
+    };
   </script>
 </body>
 </html>
