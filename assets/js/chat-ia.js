@@ -95,8 +95,12 @@ Si no subió ninguno, explicale que paga S/50 escaneando el QR de Yape en la
 pantalla del curso y luego sube la captura ahí mismo.`;
     }
 
-    // Cursos programados de MATRÍCULA (FASE 3 — Alessandra puede matricular)
-    if (Array.isArray(cacheMatriculables) && cacheMatriculables.length > 0) {
+    // Cursos programados de MATRÍCULA (FASE 3) — ⏸️ DESACTIVADO POR DECISIÓN DEL
+    // DUEÑO: los cursos en vivo/matrícula por chat se habilitarán a futuro.
+    // Para reactivar todo el circuito (lista + matriculación por chat):
+    // cambiar MATRICULA_POR_CHAT a true.
+    const MATRICULA_POR_CHAT = false;
+    if (MATRICULA_POR_CHAT && Array.isArray(cacheMatriculables) && cacheMatriculables.length > 0) {
       const fCorta = (iso) => {
         if (!iso) return '';
         const [y, m, d] = String(iso).slice(0, 10).split('-');
@@ -279,17 +283,8 @@ function toggleChat() {
       .limit(3)
       .then(res => { cacheVouchers = res.data || []; })
       .catch(() => { cacheVouchers = null; });
-    // Cargar cursos programados de MATRÍCULA (t_cursop) — para que Alessandra
-    // informe qué cursos hay y pueda matricular por chat (FASE 3).
-    const hoyISO2 = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
-    supabase
-      .from('t_cursop')
-      .select('cursop, horario, fecha_inicio, fecha_fin, t_cursos(nombre, costo), t_profesor(nombre)')
-      .or(`fecha_fin.gte.${hoyISO2},fecha_fin.is.null`)  // vigentes o sin fecha fin
-      .order('fecha_inicio', { ascending: true })
-      .limit(10)
-      .then(res => { cacheMatriculables = res.data || []; })
-      .catch(() => { cacheMatriculables = null; }); // sin tablas → sin matrícula por chat
+    // Cargar cursos programados de MATRÍCULA (t_cursop) — ⏸️ en pausa junto con
+    // MATRICULA_POR_CHAT=false (no se consulta nada mientras esté desactivado).
     // Cargar catálogo de cursos grabados con su nº de lecciones (para detectar
     // los que están EN CONSTRUCCIÓN y responder que pronto estarán disponibles).
     supabase
