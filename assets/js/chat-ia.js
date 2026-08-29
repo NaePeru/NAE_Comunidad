@@ -97,8 +97,13 @@ pantalla del curso y luego sube la captura ahí mismo.`;
 
     // Cursos programados de MATRÍCULA (FASE 3 — Alessandra puede matricular)
     if (Array.isArray(cacheMatriculables) && cacheMatriculables.length > 0) {
+      const fCorta = (iso) => {
+        if (!iso) return '';
+        const [y, m, d] = String(iso).slice(0, 10).split('-');
+        return `${d}-${m}`;
+      };
       const lineasM = cacheMatriculables.map(cp => {
-        return `  · ${cp.t_cursos?.nombre} - ${cp.horario || 'horario por confirmar'} - S/${cp.t_cursos?.costo} (código ${cp.cursop})`;
+        return `  · ${cp.t_cursos?.nombre} - ${cp.horario || 'horario por confirmar'} - S/${cp.t_cursos?.costo} - inicia ${fCorta(cp.fecha_inicio)} (código ${cp.cursop})`;
       });
       ctx += `
 
@@ -106,11 +111,11 @@ pantalla del curso y luego sube la captura ahí mismo.`;
 ${lineasM.join('\n')}
 
 FORMATO DE RESPUESTA OBLIGATORIO: cuando pregunten por cursos en vivo/online,
-mostrá la lista EXACTAMENTE en este formato, una línea por curso, sin agregar
-fechas, profesor ni más texto:
-nombre del curso - horario - S/costo
-Ejemplo real: "MS Excel nivel básico - lun-mier-vier - S/100"
-Si el alumno quiere más detalle o matricularse, AHÍ recién pedí DNI y nombre.
+mostrá la lista EXACTAMENTE en este formato, una línea por curso, sin profesor
+ni texto extra:
+nombre del curso - horario - S/costo - inicia DD-MM
+Ejemplo real: "MS Excel nivel básico - lun-mier-vier - S/100 - inicia 25-08"
+Si el alumno quiere matricularse, AHÍ recién pedí DNI y nombre.
 Si no hay cursos programados, decíselo y derivá al WhatsApp 988502354.
 
 PUEDES MATRICULAR por chat: si el alumno quiere inscribirse en un curso de esta
