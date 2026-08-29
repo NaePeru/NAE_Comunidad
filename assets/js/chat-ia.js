@@ -103,7 +103,7 @@ pantalla del curso y luego sube la captura ahí mismo.`;
         return `${d}-${m}`;
       };
       const lineasM = cacheMatriculables.map(cp => {
-        return `  · ${cp.t_cursos?.nombre} - ${cp.horario || 'horario por confirmar'} - S/${cp.t_cursos?.costo} - inicia ${fCorta(cp.fecha_inicio)} (código ${cp.cursop})`;
+        return `  · ${cp.t_cursos?.nombre} - ${cp.horario || 'horario por confirmar'} - inicia ${fCorta(cp.fecha_inicio)} - S/${cp.t_cursos?.costo} (código ${cp.cursop})`;
       });
       ctx += `
 
@@ -113,8 +113,8 @@ ${lineasM.join('\n')}
 FORMATO DE RESPUESTA OBLIGATORIO: cuando pregunten por cursos en vivo/online,
 mostrá la lista EXACTAMENTE en este formato, una línea por curso, sin profesor
 ni texto extra:
-nombre del curso - horario - S/costo - inicia DD-MM
-Ejemplo real: "MS Excel nivel básico - lun-mier-vier - S/100 - inicia 25-08"
+nombre del curso - horario - inicia DD-MM - S/costo
+Ejemplo real: "MS Excel nivel básico - lun-mier-vier - inicia 25-08 - S/100"
 Si el alumno quiere matricularse, AHÍ recién pedí DNI y nombre.
 Si no hay cursos programados, decíselo y derivá al WhatsApp 988502354.
 
