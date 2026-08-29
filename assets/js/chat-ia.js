@@ -98,20 +98,20 @@ pantalla del curso y luego sube la captura ahí mismo.`;
     // Cursos programados de MATRÍCULA (FASE 3 — Alessandra puede matricular)
     if (Array.isArray(cacheMatriculables) && cacheMatriculables.length > 0) {
       const lineasM = cacheMatriculables.map(cp => {
-        const fechas = cp.fecha_fin && cp.fecha_fin !== cp.fecha_inicio
-          ? `${cp.fecha_inicio} al ${cp.fecha_fin}` : `inicia ${cp.fecha_inicio}`;
-        return `  · [${cp.cursop}] ${cp.t_cursos?.nombre} — ${cp.t_profesor?.nombre} — S/${cp.t_cursos?.costo} — ${fechas}${cp.horario ? ' · ' + cp.horario : ''}`;
+        return `  · ${cp.t_cursos?.nombre} - ${cp.horario || 'horario por confirmar'} - S/${cp.t_cursos?.costo} (código ${cp.cursop})`;
       });
       ctx += `
 
-- Cursos programados con MATRÍCULA ABIERTA (código entre corchetes):
+- Cursos EN VIVO con matrícula abierta:
 ${lineasM.join('\n')}
 
-CONSULTA DE CURSOS: si el alumno pregunta por un curso (ej: "¿qué hay de excel
-básico?", "¿cuándo empieza power bi?"), respondé con los datos EXACTOS de esta
-lista: horario, fecha de inicio (y fin), costo en S/, profesor y código de
-matrícula. Presentá las fechas como DD-MM-AA (ej: 23-08-26). Si no hay ningún
-curso programado de lo que pide, decíselo y sugerí escribir al WhatsApp 988502354.
+FORMATO DE RESPUESTA OBLIGATORIO: cuando pregunten por cursos en vivo/online,
+mostrá la lista EXACTAMENTE en este formato, una línea por curso, sin agregar
+fechas, profesor ni más texto:
+nombre del curso - horario - S/costo
+Ejemplo real: "MS Excel nivel básico - lun-mier-vier - S/100"
+Si el alumno quiere más detalle o matricularse, AHÍ recién pedí DNI y nombre.
+Si no hay cursos programados, decíselo y derivá al WhatsApp 988502354.
 
 PUEDES MATRICULAR por chat: si el alumno quiere inscribirse en un curso de esta
 lista, pedile su DNI (8 dígitos) y su nombre completo (como está en su DNI).
