@@ -114,6 +114,33 @@ Deno.serve(async (req) => {
     };
 
     // ── Helper broadcast: en test → 1 al dueño; en producción → todos ──
+    // ── Difusión paralela por TELEGRAM (bot @asistente_nae_bot) ──
+    // Además del email, los suscriptores del bot reciben el aviso instantáneo.
+    const difundirTelegram = async (texto: string) => {
+      try {
+        const { data: suscriptores } = await admin
+          .from('telegram_suscriptores').select('chat_id').limit(2000);
+        const TG_TOKEN = '8870100192:AAHstX3uJSqanFoLa45w3w8FYgzIovoxiP8';
+        let enviados = 0;
+        for (const s of (suscriptores ?? [])) {
+          const r = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: s.chat_id,
+              text: texto,
+              parse_mode: 'HTML',
+              disable_web_page_preview: true,
+            }),
+          });
+          if (r.ok) enviados++;
+        }
+        return enviados;
+      } catch (e) {
+        return 0; // Telegram es un canal extra: si falla, el email ya salió
+      }
+    };
+
     const broadcast = async (t: string, subjectProd: string, htmlProd: (correo?: string) => string, resumenTest: string) => {
       const { count: totalAlumnos } = await admin
         .from('profiles').select('id', { count: 'exact', head: true }).eq('activo', true);
@@ -259,7 +286,14 @@ Deno.serve(async (req) => {
     if (tipo === 'anuncio') {
       if (esLlamadaSistema) return json({ error: 'Este email requiere sesión de admin' }, 403);
       const contenido = String(body?.contenido ?? '').slice(0, 200);
-      return await broadcast(
+
+      // Difusión paralela por Telegram (no bloquea el email)
+      const tgEnviados = await difundirTelegram(
+        `📢 <b>Nueva publicación en NAE</b>\n\n"${contenido}"\n\n` +
+        `👉 www.naeacademia.com`
+      );
+
+      const emailRes = await broadcast(
         'anuncio',
         '📢 Nueva publicación en NAE',
         () => emailNAE(
@@ -271,6 +305,9 @@ Deno.serve(async (req) => {
         ),
         `Anuncio: ${contenido.slice(0, 60)}...`,
       );
+      // Adjuntar el conteo de Telegram a la respuesta del email
+      const emailBody = await new Response(emailRes.body, emailRes).json().catch(() => ({}));
+      return json({ ...emailBody, telegram_enviados: tgEnviados });
     }
 
     // ═══════════════ TIPO: PRUEBA ═══════════════
