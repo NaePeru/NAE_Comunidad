@@ -285,7 +285,7 @@ Deno.serve(async (req) => {
     // ═══════════════ TIPO: ANUNCIO (admin publicó) ═══════════════
     if (tipo === 'anuncio') {
       if (esLlamadaSistema) return json({ error: 'Este email requiere sesión de admin' }, 403);
-      const contenido = String(body?.contenido ?? '').slice(0, 200);
+      const contenido = String(body?.contenido ?? '').slice(0, 800);
 
       // Difusión paralela por Telegram (no bloquea el email)
       const tgEnviados = await difundirTelegram(

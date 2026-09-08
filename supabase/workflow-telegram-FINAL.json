@@ -1,0 +1,360 @@
+{
+  "name": "Asistente NAE — FINAL (consultas + start)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "31bde7b7-899c-4fa8-9b31-88f95da8b631",
+      "name": "Recibir mensaje TG",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [-784, 192],
+      "webhookId": "3a1c06d6-d43f-427b-b2f3-24c5019db74f",
+      "credentials": {
+        "telegramApi": {
+          "id": "rAQzzrl0Cvqqe8az",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.message.from.is_bot }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            },
+            {
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b5cbadbd-58ab-4af0-bfc4-79bf25767f9d",
+      "name": "¿Es humano?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-544, 192]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "65b3b107-8f17-410f-b23a-50019ce4aa6c",
+      "name": "¿Comando /start?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-256, 192]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/telegram-suscribir",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('Recibir mensaje TG').item.json.message.chat.id }}"
+            },
+            {
+              "name": "nombre",
+              "value": "={{ ($('Recibir mensaje TG').item.json.message.from.first_name || '') + ' ' + ($('Recibir mensaje TG').item.json.message.from.last_name || '') }}"
+            },
+            {
+              "name": "username",
+              "value": "={{ $('Recibir mensaje TG').item.json.message.from.username || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "22f7c50b-491e-4e35-9002-fdcdca8eba34",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "onError": "continueRegularOutput",
+      "position": [0, 32]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Recibir mensaje TG').item.json.message.chat.id }}",
+        "text": "¡Hola! 👋 Soy el Asistente de NAE Academia.\n\nPregúntame por nuestros cursos con grupos activos: Excel, Power BI, SQL o IA. Te muestro precios, horarios y fechas de inicio. También te explico cómo matricularte.",
+        "additionalFields": {}
+      },
+      "id": "8c115101-9751-439d-a646-087ce320099e",
+      "name": "Saludo inicial",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [304, -16],
+      "webhookId": "e126129e-9ed7-49ae-bcc7-220aadd5e0fb",
+      "credentials": {
+        "telegramApi": {
+          "id": "rAQzzrl0Cvqqe8az",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $('Recibir mensaje TG').item.json.message.chat.id }}"
+      },
+      "id": "69360e85-ed35-4d6d-a0d1-c84c21742eb2",
+      "name": "Escribiendo...",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [0, 368],
+      "webhookId": "8ace78e0-522a-435d-a547-b68a6531f4ca",
+      "credentials": {
+        "telegramApi": {
+          "id": "rAQzzrl0Cvqqe8az",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Recibir mensaje TG').item.json.message.text }}",
+        "options": {
+          "systemMessage": "Eres el Asistente Virtual de NAE Academia (naeacademia.com), la Comunidad de Análisis de Datos e Inteligencia Artificial (Excel, Power BI, SQL e IA). Atiendes consultas de alumnos que llegan por Telegram.\n\nMISIÓN: Atender consultas sobre cursos, precios, horarios, certificados y matrícula.\n\nREGLAS:\n1. Responde siempre en español, tono cordial y cercano, respuestas breves con formato claro.\n2. PRECIOS Y HORARIOS salen EXCLUSIVAMENTE de la herramienta 'consultar_bd'. ÚSALA SIEMPRE antes de responder cualquiera de esos datos. NUNCA inventes precios, fechas ni horarios.\n3. La herramienta 'consultar_bd' devuelve TODOS los cursos en UNA sola consulta: código (CUR-XXXX), nombre, costo en soles y sus programaciones vigentes (horario y fechas de inicio/fin) dentro de la lista 't_cursop'. Un curso con 't_cursop' vacía no tiene grupo activo por ahora.\n4. NO MUESTRES el catálogo completo de entrada. Si preguntan «¿qué cursos hay?» o similar, pregunta primero en qué tema está interesado (Excel, Power BI, SQL, IA...) y ofrece ayudarlo a elegir entre los que tienen grupos activos.\n5. FORMATO DE CURSO EN UNA LÍNEA: cada curso lo muestras en UNA sola línea, sin negritas ni viñetas, con este formato exacto:\n{nombre del curso SIN el prefijo 'MS '} - {días abreviados en minúscula}-{fecha de inicio en dd/mm/aa} costo: s/{precio entero}\nDeja UNA línea en blanco entre curso y curso para que se lea bien.\nEjemplos reales:\nExcel nivel avanzado - lun y mie-31/08/26 costo: s/100\n\nPower BI nivel básico - mar y juev-25/08/26 costo: s/120\n\nToma el nombre del curso tal cual está en la base de datos pero QUITA el prefijo 'MS ' si lo tiene (ej: 'MS Excel nivel básico' → 'Excel nivel básico'). Toma los días del campo 'horario', en minúscula y unidos con 'y' (ej: 'Lun y Mier 7:10pm' → 'lun y mie'; 'Mar-Juev 7:10pm' → 'mar y juev'), SIN la hora. La fecha sale de 'fecha_inicio' en formato dd/mm/aa.\n6. Cuando el usuario indique su tema de interés, responde así: UNA línea de introducción «Tenemos estos cursos disponibles:», luego UNA línea en blanco, y después SOLO los cursos de ese tema con programación activa ('t_cursop' con datos), en el formato de la regla 5 (con línea en blanco entre cursos). Sin nada más: no menciones los niveles sin grupo activo ni agregues pregunta de cierre. Si NINGUNO tiene grupo activo, solo entonces dilo en una línea y ofrece los temas que sí tienen grupos activos.\n7. Si preguntan por un curso específico (por nombre o código): si tiene grupo activo, muéstralo en el formato de la regla 5; si no lo tiene, dilo y ofrece alternativas o mencionar que abrirán grupo próximamente.\n8. Certificados: se otorgan al completar el módulo/nivel correspondiente; explícalo si preguntan.\n9. Matrícula: cuando el usuario quiera inscribirse, pide su DNI (8 dígitos) y su nombre completo tal como figura en el DNI para registrarlo, tal como lo haría secretaría.\n10. GUARDARRAÍL: si preguntan temas ajenos a NAE (comida, clima, política, etc.), rechaza amablemente: «No estoy autorizada para responder preguntas fuera de NAE» y ofrece los temas que sí manejas.\n11. SÉ BREVE: responde solo lo esencial. No agregues introducciones, conclusiones ni ofertas de ayuda adicionales; el usuario ya sabe que puede seguir preguntando."
+        }
+      },
+      "id": "d80fcbbc-29cf-4fc3-9ebf-2e4d07bb6264",
+      "name": "Asistente NAE",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [176, 208],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1-mini",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "5eaee537-4fe0-4fb7-8cb2-fc32d3038e54",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [176, 512],
+      "credentials": {
+        "openAiApi": {
+          "id": "NYJH8z9HqoA3eehN",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=tg-{{ $('Recibir mensaje TG').item.json.message.chat.id }}"
+      },
+      "id": "f9409eb9-b5c1-4f09-b0df-b8f9a21b0c35",
+      "name": "Memoria TG",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [352, 480]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Devuelve el catálogo completo de cursos de NAE desde la base de datos real en UNA consulta: código (CUR-XXXX), nombre, costo en soles y programaciones vigentes (horario, fecha de inicio y fin) dentro de 't_cursop'. Úsala SIEMPRE antes de dar cualquier precio, horario, fecha o lista de cursos.",
+        "url": "https://dlpsvbrctccnmvkbcsfp.supabase.co/rest/v1/t_cursos?select=codcurso,nombre,costo,t_cursop(horario,fecha_inicio,fecha_fin)&apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRscHN2YnJjdGNjbm12a2Jjc2ZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjYwNTMsImV4cCI6MjA5ODM0MjA1M30.sMjCrC0wDEks9YBcoxHK4xf1ODCKD6SRJqwRjdea9pU",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {}
+          ]
+        }
+      },
+      "id": "c1570dea-c1a5-4019-a411-1dc6d4c0132c",
+      "name": "consultar_bd",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [576, 448]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Recibir mensaje TG').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "ed00a87c-2dea-4e29-ac99-0407bbde83ac",
+      "name": "Responder por Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [544, 224],
+      "webhookId": "aeafe6f2-5d0e-4beb-9544-f3e11ced8539",
+      "credentials": {
+        "telegramApi": {
+          "id": "rAQzzrl0Cvqqe8az",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir mensaje TG": {
+      "main": [
+        [
+          {
+            "node": "¿Es humano?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es humano?": {
+      "main": [
+        [
+          {
+            "node": "¿Comando /start?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Comando /start?": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escribiendo...",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Saludo inicial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escribiendo...": {
+      "main": [
+        [
+          {
+            "node": "Asistente NAE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asistente NAE": {
+      "main": [
+        [
+          {
+            "node": "Responder por Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Asistente NAE",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria TG": {
+      "ai_memory": [
+        [
+          {
+            "node": "Asistente NAE",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_bd": {
+      "ai_tool": [
+        [
+          {
+            "node": "Asistente NAE",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

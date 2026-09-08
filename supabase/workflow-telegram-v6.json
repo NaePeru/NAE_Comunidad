@@ -1,0 +1,239 @@
+{
+  "name": "Asistente NAE v6 — FINAL",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "a6f10000-0000-4000-8000-000000000001",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "webhookId": "6e3b9d42-0a58-4c7f-b1e2-8d4f6a9c1b3d",
+      "position": [-400, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-start-v6",
+              "leftValue": "={{ ($json.message.text || '').trim().toLowerCase() }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a6f10000-0000-4000-8000-000000000002",
+      "name": "¿/start?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-180, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/telegram-suscribir",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $json.message.chat.id }}"
+            },
+            {
+              "name": "nombre",
+              "value": "={{ ($json.message.from.first_name || '') + ' ' + ($json.message.from.last_name || '') }}"
+            },
+            {
+              "name": "username",
+              "value": "={{ $json.message.from.username || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a6f10000-0000-4000-8000-000000000003",
+      "name": "Guardar suscriptor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [40, -160]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=¡Hola! Soy el Asistente NAE.\n\nYa estás suscrito a los avisos de la comunidad: anuncios y novedades de cursos llegarán aquí.\n\nPregúntame por los cursos de Excel, Power BI, SQL e IA.\nPlataforma: www.naeacademia.com",
+        "additionalFields": {}
+      },
+      "id": "a6f10000-0000-4000-8000-000000000004",
+      "name": "Saludo inicial",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [260, -160]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "Eres el Asistente NAE por Telegram de NAE (New Academy Excel), la comunidad de análisis de datos: cursos de Excel, Power BI, SQL e Inteligencia Artificial.\n\nReglas:\n1. Responde en español, breve y claro, máximo 4 líneas por mensaje.\n2. Ante cualquier pregunta sobre cursos, precios, horarios, contenidos o matrícula, llama SIEMPRE a la herramienta consultar_cursos (no necesita parámetros) y responde únicamente con lo que ella devuelva. Nunca inventes cursos, precios ni fechas.\n3. Los cursos actuales son grabados (el alumno avanza a su ritmo). Si preguntan por cursos en vivo, di que están en planificación y que las fechas se anunciarán por este mismo chat.\n4. Para inscribirse o ver los cursos, indica www.naeacademia.com.\n5. Si te preguntan algo fuera de tema, responde con cortesía y ofrece información de los cursos."
+        }
+      },
+      "id": "a6f10000-0000-4000-8000-000000000005",
+      "name": "Asistente NAE",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [40, 160]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "id": "a6f10000-0000-4000-8000-000000000006",
+      "name": "Modelo GPT",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [-180, 340]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Devuelve la lista completa de cursos publicados de NAE con todos sus datos. Úsala SIEMPRE que pregunten por cursos, precios, horarios, contenidos o matrícula.",
+        "specifyInputSchema": true,
+        "jsonSchema": "{\"type\": \"object\", \"properties\": {}, \"additionalProperties\": true}",
+        "method": "GET",
+        "url": "https://dlpsvbrctccnmvkbcsfp.supabase.co/rest/v1/t_cursos?select=*&publicado=eq.true&order=titulo.asc",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRscHN2YnJjdGNjbm12a2Jjc2ZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjYwNTMsImV4cCI6MjA5ODM0MjA1M30.sMjCrC0wDEks9YBcoxHK4xf1ODCKD6SRJqwRjdea9pU"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRscHN2YnJjdGNjbm12a2Jjc2ZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjYwNTMsImV4cCI6MjA5ODM0MjA1M30.sMjCrC0wDEks9YBcoxHK4xf1ODCKD6SRJqwRjdea9pU"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a6f10000-0000-4000-8000-000000000008",
+      "name": "consultar_cursos",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [60, 340]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "id": "a6f10000-0000-4000-8000-000000000009",
+      "name": "Responder",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [260, 160]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "¿/start?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿/start?": {
+      "main": [
+        [
+          {
+            "node": "Guardar suscriptor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Asistente NAE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar suscriptor": {
+      "main": [
+        [
+          {
+            "node": "Saludo inicial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asistente NAE": {
+      "main": [
+        [
+          {
+            "node": "Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo GPT": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Asistente NAE",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_cursos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Asistente NAE",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {}
+}

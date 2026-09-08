@@ -378,10 +378,11 @@
       if (filtro) q = q.or(`dni.ilike.%${filtro}%,nombres.ilike.%${filtro}%`);
       const { data } = await filtro ? await q : await q;
       document.getElementById('lista-alumnos').innerHTML = tablaHTML(
-        data, ['DNI', 'Nombres', 'Correo', 'Teléfono'],
+        data, ['DNI', 'Nombres', 'Correo', 'Teléfono', ''],
         (data || []).map(a => `
           <tr><td class="m-code">${a.dni}</td><td>${escapeHtml(a.nombres)}</td>
-          <td>${a.mail || '—'}</td><td>${a.telefono || '—'}</td></tr>`).join('')
+          <td>${a.mail || '—'}</td><td>${a.telefono || '—'}</td>
+          <td><button class="icon-btn" title="Eliminar (solo si no tiene pagos)" onclick="window.__delAlumno('${a.dni}')">🗑️</button></td></tr>`).join('')
       );
     }
     window.__loadAlumnos = __loadAlumnos;
@@ -407,6 +408,16 @@
       toast('✅ Alumno registrado');
       ['alu-dni','alu-nombres','alu-mail','alu-tel'].forEach(i => document.getElementById(i).value = '');
       await __loadAlumnos();
+    };
+
+    // Eliminar alumno — la REGLA vive en la base (RPC eliminar_alumno_sin_pago):
+    // si tiene cualquier pago hecho, el servidor lo rechaza y aquí solo mostramos el motivo.
+    window.__delAlumno = async (dni) => {
+      if (!confirm('¿Eliminar al alumno con DNI ' + dni + '?\n\nSolo se elimina si NO tiene pagos registrados.')) return;
+      const { error } = await supabase.rpc('eliminar_alumno_sin_pago', { p_dni: dni });
+      if (error) return toast('⚠️ ' + error.message);
+      toast('🗑️ Alumno eliminado');
+      await __loadAlumnos(document.getElementById('alu-buscar').value.trim());
     };
 
     // ═════════ 4. PROGRAMAR CURSO ═════════
