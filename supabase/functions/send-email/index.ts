@@ -51,6 +51,28 @@ function emailNAE(titulo: string, cuerpo: string, ctaUrl: string, ctaTexto: stri
   </div>`;
 }
 
+// Email SOBRIO/PROFESIONAL — solo para campañas a ex-alumnos: fondo claro,
+// tarjeta blanca, azul marino, sin degradados. Estilo correo corporativo.
+function emailNAEPro(cuerpo: string, ctaUrl: string, ctaTexto: string): string {
+  return `
+  <div style="font-family:Arial,Helvetica,sans-serif;background:#F3F4F6;padding:36px 16px;">
+    <div style="max-width:560px;margin:0 auto;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
+      <div style="padding:18px 32px;border-bottom:1px solid #E5E7EB;">
+        <span style="font-size:15px;font-weight:700;color:#0F2A43;letter-spacing:1.5px;">NAE</span>
+        <span style="font-size:12px;color:#6B7280;margin-left:10px;">New Academia Excel</span>
+      </div>
+      <div style="padding:28px 32px 32px;color:#1F2937;font-size:15px;line-height:1.7;">
+        <div style="white-space:pre-line;">${cuerpo}</div>
+        <a href="${ctaUrl}" style="display:inline-block;background:#0F2A43;color:#FFFFFF;font-weight:700;font-size:14px;padding:12px 32px;border-radius:6px;text-decoration:none;margin-top:28px;">${ctaTexto}</a>
+      </div>
+      <div style="padding:16px 32px;background:#F9FAFB;border-top:1px solid #E5E7EB;color:#6B7280;font-size:12px;line-height:1.6;">
+        NAE · Comunidad de Análisis de Datos · www.naeacademia.com<br>
+        Recibiste este email porque fuiste alumno de NAE
+      </div>
+    </div>
+  </div>`;
+}
+
 Deno.serve(async (req) => {
   // CORS: sin esto los navegadores reciben "Failed to fetch" (falta del rewrite)
   const corsHeaders = {
@@ -221,10 +243,11 @@ Deno.serve(async (req) => {
         const ok = await enviarResend(
           email,
           asunto,
-          emailNAE(
-            'Una invitación de tu profe 📊',
-            `<p style="font-size:15px;color:#E5E7EB;line-height:1.7;margin:0;white-space:pre-line;">${texto}</p>`,
-            `${BASE_URL}`, 'Unirme a NAE — es gratis →'),
+          emailNAEPro(
+            texto,
+            'https://www.youtube.com/@newacademiaexcel',
+            'Ver más clases del canal',
+          ),
           FROM_CAMPAIGN,
         );
         if (ok) {
