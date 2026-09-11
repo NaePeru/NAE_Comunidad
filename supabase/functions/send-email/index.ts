@@ -257,6 +257,27 @@ Deno.serve(async (req) => {
         resultados.push({ email, ok });
       }
 
+      // ── COPIA DE CONTROL AL DUEÑO: cada oleada llega también a su correo,
+      //    con el conteo y el contenido tal como lo vio el primer destinatario.
+      if (enviados > 0 && OWNER_EMAIL) {
+        const l0 = lote[0] ?? { nombre: '', curso: '' };
+        const palabrasCtrl = String(l0.nombre ?? '').trim().split(/\s+/);
+        const textoCtrl = mensaje
+          .replaceAll('[nombre]', titleCase(palabrasCtrl[0] ?? ''))
+          .replaceAll('[nombre_completo]', titleCase(palabrasCtrl.slice(0, 2).join(' ')))
+          .replaceAll('[curso]', titleCase(String(l0.curso ?? '')));
+        await enviarResend(
+          OWNER_EMAIL,
+          `[Copia de control — ${enviados} envíos] ${asunto}`,
+          emailNAEPro(
+            `— COPIA DE CONTROL —\nEsta oleada se envió a ${enviados} ex-alumno(s).\nAsí lo recibió el primero de la lista:\n\n${textoCtrl}`,
+            'https://www.youtube.com/@newacademiaexcel',
+            'Ver más clases del canal',
+          ),
+          FROM_CAMPAIGN,
+        );
+      }
+
       return json({
         ok: true,
         enviados,
