@@ -13,6 +13,10 @@ import { renderPantallaPago, tieneCursoComprado } from './pago-voucher.js';
 window.__coursesData = [];
 let cursoState = null;
 
+// Medición: lecciones ya vistas en esta sesión (evita inflar el contador al
+// navegar adelante/atrás). No persiste — una nueva visita vuelve a contar.
+const vistasRegistradas = new Set();
+
 // Colores por categoría
 const CAT_COLORS = {
   excel:   { accent: '#217346', bg: 'rgba(33,115,70,0.12)',  border: 'rgba(33,115,70,0.35)',  label: '📊 Excel',    thumb: 'linear-gradient(135deg,#0d2818,#217346)' },
@@ -463,6 +467,16 @@ function abrirLeccion(lessonId) {
   `;
   cerrarSidebarMovil();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // ── MEDICIÓN: registrar la vista (fire-and-forget) ──────────────────────
+  // Si la tabla aún no existe o falla la red, se ignora en silencio:
+  // medir jamás puede romper la clase.
+  if (session.user?.id && !vistasRegistradas.has(lessonId)) {
+    vistasRegistradas.add(lessonId);
+    supabase.from('lesson_views')
+      .insert({ lesson_id: lessonId, user_id: session.user.id })
+      .then(() => {}, () => {});
+  }
 }
 
 

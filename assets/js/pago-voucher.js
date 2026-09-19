@@ -7,7 +7,7 @@
 import { supabase, SUPABASE_URL } from './supabase-client.js';
 import { session } from './auth.js';
 
-const PRECIO_CURSO = 50; // S/50
+const PRECIO_CURSO = 80; // S/80
 
 // ── Verificar si el alumno ya compró un curso específico ───────────────────
 export async function tieneCursoComprado(courseId) {
@@ -247,7 +247,7 @@ function initVoucherFunctions() {
         if (!result.monto_valido && !result.nombre_valido) {
           motivoError = `No se detectó un pago de exactamente S/${PRECIO_CURSO} a nombre de Geronimo Cruzado.`;
         } else if (!result.monto_valido) {
-          motivoError = `El monto detectado es S/ ${result.monto}, pero el curso vale exactamente S/ ${PRECIO_CURSO}.<br>El monto debe ser de S/50.`;
+          motivoError = `El monto detectado es S/ ${result.monto}, pero el curso vale exactamente S/ ${PRECIO_CURSO}.<br>El monto debe ser de S/ ${PRECIO_CURSO}.`;
         } else if (!result.nombre_valido) {
           motivoError = `El pago no fue a nombre del beneficiario correcto.<br>
           <span style="font-size:12px; color:var(--muted2);">Destinatario detectado: ${result.destinatario || 'No detectado'}</span>`;

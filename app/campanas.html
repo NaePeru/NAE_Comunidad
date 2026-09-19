@@ -34,6 +34,13 @@
       <div class="stat"><b id="s-cupo">—</b><span>Cupo hoy</span></div>
     </div>
 
+    <!-- MEDICIÓN DE CAMPAÑA -->
+    <div class="step">
+      <h3>📊 Medición de campaña — últimos 8 días (hora Perú)</h3>
+      <p class="hint">El embudo completo: <b>emails enviados → registros en la plataforma → vistas de lecciones</b>. Las vistas del video en YouTube se miden aparte, en YouTube Studio.</p>
+      <div id="medicion-content" style="font-size:13px;color:var(--muted);">Cargando medición…</div>
+    </div>
+
     <!-- PASO 1: IMPORTAR -->
     <div class="step">
       <h3>1️⃣ Importar lista (desde tu Excel)</h3>
@@ -99,6 +106,7 @@ PD: si no encontrás el correo, revisá Promociones o Spam y marcános como segu
         document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted);">🔒 Solo admin.</div>';
       } else {
         cargarStats();
+        cargarMedicion();
       }
     }
 
@@ -113,6 +121,102 @@ PD: si no encontrás el correo, revisá Promociones o Spam y marcános como segu
       const hoyN = hoy ?? 0;
       document.getElementById('s-hoy').textContent = hoyN;
       document.getElementById('s-cupo').textContent = Math.max(0, 100 - hoyN);
+    }
+
+    // ── MEDICIÓN DE CAMPAÑA (embudo diario + top lecciones) ──
+    async function cargarMedicion() {
+      const el = document.getElementById('medicion-content');
+      const desde = new Date(Date.now() - 7 * 864e5).toISOString();
+      // Bucketear por día de Lima (YYYY-MM-DD) — el público y las fechas son Perú
+      const diaLima = iso => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+
+      const vacio = r => (r.error ? [] : (r.data ?? []));
+      const [rEmails, rRegs, rVistas, rLecciones, rCursos] = await Promise.all([
+        supabase.from('email_log').select('creado_en').eq('tipo', 'campana').gte('creado_en', desde).limit(5000),
+        supabase.from('profiles').select('creado_en').gte('creado_en', desde).limit(5000),
+        supabase.from('lesson_views').select('lesson_id, visto_en').gte('visto_en', desde).limit(10000),
+        supabase.from('lessons').select('id, titulo, course_id').limit(1000),
+        supabase.from('courses').select('id, titulo').limit(200),
+      ]);
+      const emails = vacio(rEmails), regs = vacio(rRegs), vistas = vacio(rVistas);
+      const leccionTitulo = Object.fromEntries((vacio(rLecciones)).map(l => [l.id, l.titulo]));
+      const cursoTitulo = Object.fromEntries((vacio(rCursos)).map(c => [c.id, c.titulo]));
+      const cursoDeLeccion = Object.fromEntries((vacio(rLecciones)).map(l => [l.id, l.course_id]));
+
+      // Si la migración 11 no corrió aún, avisarlo (la columna de vistas queda en 0)
+      if (rVistas.error && /lesson_views|does not exist|not found/i.test(rVistas.error.message ?? '')) {
+        el.innerHTML = '<span style="color:#FFB86B;">⚠️ Falta ejecutar la migración 11 (vistas de lecciones) en Supabase para ver esta medición.</span>';
+        return;
+      }
+
+      // Tabla diaria: últimos 8 días, hoy primero
+      const dias = {};
+      for (let i = 0; i < 8; i++) {
+        const d = new Date(Date.now() - i * 864e5).toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+        dias[d] = { emails: 0, regs: 0, vistas: 0 };
+      }
+      for (const e of emails) { const d = diaLima(e.creado_en); if (dias[d]) dias[d].emails++; }
+      for (const p of regs)   { const d = diaLima(p.creado_en); if (dias[d]) dias[d].regs++; }
+      for (const v of vistas) { const d = diaLima(v.visto_en);  if (dias[d]) dias[d].vistas++; }
+
+      const hoyLima = diaLima(new Date().toISOString());
+      const fmtDia = d => {
+        const [y, m, dd] = d.split('-').map(Number);
+        const nom = new Date(y, m - 1, dd).toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short' });
+        return d === hoyLima ? `<b>${nom} — HOY</b>` : nom;
+      };
+
+      const filas = Object.entries(dias).map(([d, v]) => `
+        <tr>
+          <td style="padding:6px 10px;">${fmtDia(d)}</td>
+          <td style="padding:6px 10px;text-align:center;">${v.emails}</td>
+          <td style="padding:6px 10px;text-align:center;">${v.regs}</td>
+          <td style="padding:6px 10px;text-align:center;">${v.vistas}</td>
+        </tr>`).join('');
+
+      // Top lecciones de los últimos 8 días
+      const conteo = {};
+      for (const v of vistas) conteo[v.lesson_id] = (conteo[v.lesson_id] ?? 0) + 1;
+      const top = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const topHtml = top.length
+        ? top.map(([id, n]) => {
+            const curso = cursoTitulo[cursoDeLeccion[id]] ? escapeHtml(cursoTitulo[cursoDeLeccion[id]]) + ' › ' : '';
+            return `<li style="display:flex;justify-content:space-between;gap:10px;padding:4px 0;">
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${curso}${escapeHtml(leccionTitulo[id] ?? 'Lección')}</span>
+              <b style="font-family:var(--font-mono);white-space:nowrap;">${n} 👁</b></li>`;
+          }).join('')
+        : '<li style="color:var(--muted);">Sin vistas registradas aún.</li>';
+
+      // Video estrella: la lección cuyo título menciona "Clasificación ABC"
+      const normalizar = s => (s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const abcIds = Object.entries(leccionTitulo)
+        .filter(([, t]) => { const n = normalizar(t); return n.includes('clasificacion') && n.includes('abc'); })
+        .map(([id]) => id);
+      const abcVistas = vistas.filter(v => abcIds.includes(v.lesson_id)).length;
+      const abcNombre = abcIds.length ? leccionTitulo[abcIds[0]] : null;
+
+      const tot = k => Object.values(dias).reduce((a, v) => a + v[k], 0);
+      el.innerHTML = `
+        <div class="stats" style="margin-bottom:12px;">
+          <div class="stat"><b>${tot('emails')}</b><span>Emails 8d</span></div>
+          <div class="stat"><b>${tot('regs')}</b><span>Registros 8d</span></div>
+          <div class="stat"><b>${tot('vistas')}</b><span>Vistas 8d</span></div>
+          <div class="stat"><b>${abcVistas}</b><span>🎯 Clasif. ABC</span></div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="color:var(--muted);text-transform:uppercase;font-size:11px;">
+            <th style="text-align:left;padding:6px 10px;">Día</th>
+            <th style="padding:6px 10px;">📧 Enviados</th>
+            <th style="padding:6px 10px;">📝 Registros</th>
+            <th style="padding:6px 10px;">👁 Vistas</th>
+          </tr></thead>
+          <tbody style="border-top:1px solid var(--border);">${filas}</tbody>
+        </table>
+        <div style="margin-top:16px;">
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Top lecciones (8 días)</div>
+          <ul style="list-style:none;margin:0;padding:0;">${topHtml}</ul>
+          ${abcNombre ? `<div style="margin-top:8px;font-size:12px;color:var(--muted);">🎯 Video estrella medido: <b style="color:var(--text);">“${escapeHtml(abcNombre)}”</b></div>` : ''}
+        </div>`;
     }
 
     // ── SUBIDA DE ARCHIVO EXCEL/CSV (vía SheetJS, carga perezosa) ──

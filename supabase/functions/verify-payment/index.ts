@@ -4,7 +4,7 @@
 // Verificación automática de vouchers de pago (Yape/Plin) con IA:
 //   1. Calcula hash SHA-256 de la imagen → bloquea vouchers reutilizados
 //   2. Lee el voucher con GPT-4o vision (monto, destinatario, N° operación)
-//   3. Valida: monto S/49-50.99 + nombre del admin + operación no repetida
+//   3. Valida: monto S/79-80.99 + nombre del admin + operación no repetida
 //   4. Si aprueba: registra en payment_logs y desbloquea el curso (course_access)
 //
 // Secret necesario: OPENAI_API_KEY
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
     const nombreDest = (parsed.destinatario || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     const contieneNombreAdmin = ['geronimo', 'gerónimo', 'cruzado'].some(p => nombreDest.includes(p.normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
     const monto = parseFloat(parsed.monto) || 0;
-    const montoValido = (monto >= 49 && monto <= 50.99);
+    const montoValido = (monto >= 79 && monto <= 80.99);
 
     // === 5. Anti-Fraude por Número de Operación ===
     const numOp = (parsed.numero_operacion || '').toString().trim();
@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
     if (operacionYaUsada) {
       motivoRechazo = "Este número de operación ya fue utilizado.";
     } else if (!montoValido) {
-      motivoRechazo = `Monto detectado: S/ ${monto}. Debe ser S/50.`;
+      motivoRechazo = `Monto detectado: S/ ${monto}. Debe ser S/80.`;
     } else if (!contieneNombreAdmin) {
       motivoRechazo = "El destinatario no coincide.";
     }
