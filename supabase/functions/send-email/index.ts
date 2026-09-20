@@ -7,6 +7,7 @@
 //   'like'      → (legacy, el frontend ya no lo usa) te dieron like
 //   'anuncio'   → cuando el ADMIN publica: broadcast a todos los alumnos
 //   'seminario' → recordatorio automático (pg_cron, sábados 08:00 Lima)
+//   'matricula' → confirmación al alumno: matrícula en vivo pagada + acceso comunidad
 //
 // SECRETS necesarios (Supabase → Edge Functions → Secrets):
 //   RESEND_API_KEY = re_...          (tu API key de Resend)
@@ -352,6 +353,57 @@ Deno.serve(async (req) => {
       // Adjuntar el conteo de Telegram a la respuesta del email
       const emailBody = await new Response(emailRes.body, emailRes).json().catch(() => ({}));
       return json({ ...emailBody, telegram_enviados: tgEnviados });
+    }
+
+    // ═══════════════ TIPO: MATRICULA (pago confirmado → email al alumno) ═══════════════
+    if (tipo === 'matricula') {
+      if (!esLlamadaSistema) return json({ error: 'Solo el sistema puede disparar este email' }, 403);
+
+      const email = String(body?.email ?? '').trim();
+      const curso = String(body?.curso ?? '').trim();
+      if (!email || !curso) return json({ error: 'Faltan email o curso' }, 400);
+
+      const titleCase = (s: string) =>
+        (s || '').toLocaleLowerCase('es-PE').replace(/(^|\s)\S/g, c => c.toUpperCase());
+      const primerNombre = titleCase(String(body?.nombre ?? '').trim().split(/\s+/).slice(0, 2).join(' ')) || 'estudiante';
+      const horario = String(body?.horario ?? '').trim();
+      const fechaInicio = body?.fecha_inicio
+        ? new Date(body.fecha_inicio).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })
+        : '';
+
+      const detalle: string[] = [];
+      if (horario) detalle.push(`🕰️ Horario: <strong style="color:#F2A900;">${horario}</strong>`);
+      if (fechaInicio) detalle.push(`📅 Inicio: <strong style="color:#fff;">${fechaInicio}</strong>`);
+      const detalleHtml = detalle.length
+        ? `<p style="font-size:15px;color:#9CA3AF;line-height:1.8;margin:0 0 10px;">${detalle.join('<br>')}</p>`
+        : '';
+
+      const ok = await enviarResend(
+        email,
+        `🎓 Matrícula confirmada: ${curso}`,
+        emailNAE(
+          '🎓 ¡Matrícula confirmada!',
+          `<p style="font-size:16px;color:#E5E7EB;line-height:1.6;margin:0 0 10px;">
+             Hola <strong style="color:#fff;">${primerNombre}</strong>, tu lugar en<br>
+             <strong style="color:#fff;">${curso}</strong> ya está reservado. 🎉
+           </p>
+           ${detalleHtml}
+           <p style="font-size:14px;color:#9CA3AF;line-height:1.7;margin:0 0 6px;border-top:1px solid #1F2937;padding-top:12px;">
+             🎁 <strong style="color:#fff;">Además, tu matrícula incluye acceso a la versión grabada del curso</strong>
+             en la comunidad NAE, para que repases las clases cuando quieras.
+           </p>
+           <p style="font-size:13px;color:#6B7280;line-height:1.6;margin:0;">
+             Entra a <strong style="color:#9CA3AF;">www.naeacademia.com</strong> con este mismo correo
+             y el curso aparecerá desbloqueado en tu cuenta.
+           </p>`,
+          `${BASE_URL}`,
+          'Entrar a la comunidad →',
+          'Matrícula',
+        ),
+      );
+      if (!ok) return json({ error: 'Resend rechazó el envío' }, 500);
+      await logEmail(null as unknown as string, 'matricula', email);
+      return json({ ok: true, to: email, curso });
     }
 
     // ═══════════════ TIPO: PRUEBA ═══════════════
