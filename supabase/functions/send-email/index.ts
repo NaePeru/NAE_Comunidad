@@ -96,9 +96,20 @@ Deno.serve(async (req) => {
     if (!RESEND_API_KEY) return json({ error: 'Falta secret RESEND_API_KEY' }, 500);
     if (!OWNER_EMAIL) return json({ error: 'Falta secret OWNER_EMAIL' }, 500);
 
+    const body = await req.json().catch(() => ({}));
+    const tipo = body?.tipo;
+    if (!tipo) return json({ error: 'Falta tipo' }, 400);
+
     // ── 0. Autenticación: usuario con sesión O llamada del sistema (cron) ──
+    // El gateway de Supabase exige un JWT válido en Authorization (la clave
+    // anon lo es). El CRON_SECRET viaja en el BODY (campo cron_secret) para
+    // marcar llamadas del sistema; también se acepta por header si algún día
+    // se despliega con verify_jwt desactivado.
     const authHeader = req.headers.get('Authorization') ?? '';
-    const esLlamadaSistema = CRON_SECRET !== '' && authHeader.replace('Bearer ', '') === CRON_SECRET;
+    const esLlamadaSistema = CRON_SECRET !== '' && (
+      body?.cron_secret === CRON_SECRET ||
+      authHeader.replace('Bearer ', '') === CRON_SECRET
+    );
 
     let userId: string | null = null;
     if (!esLlamadaSistema) {
@@ -110,10 +121,6 @@ Deno.serve(async (req) => {
       if (!user) return json({ error: 'No autenticado' }, 401);
       userId = user.id;
     }
-
-    const body = await req.json().catch(() => ({}));
-    const tipo = body?.tipo;
-    if (!tipo) return json({ error: 'Falta tipo' }, 400);
 
     const admin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

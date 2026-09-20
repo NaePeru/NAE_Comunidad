@@ -7,15 +7,19 @@
 --   ✅ "Además tienes acceso a la comunidad / curso grabado"
 --   ✅ Botón para entrar a www.naeacademia.com
 --
--- Usa pg_net (ya instalado por la migración 05) para llamar a la Edge
--- Function send-email con el nuevo tipo 'matricula'.
+-- IMPORTANTE — autenticación de las llamadas desde la BD:
+--   El gateway de Supabase exige un JWT válido en el header Authorization
+--   (la clave ANON pública lo es). El CRON_SECRET viaja dentro del body
+--   (campo cron_secret) para que la función la reconozca como llamada del
+--   sistema.
 --
 -- ⚠️ REQUIERE: redeployar la Edge Function send-email (con el tipo
--- 'matricula' nuevo) ANTES de crear pagos nuevos.
+-- 'matricula' y el cron_secret por body) ANTES de confirmar pagos nuevos.
 --
 -- EJECUTAR EN: Supabase → SQL Editor → Run
 -- ============================================================================
 
+-- ── 1. TRIGGER: pago confirmado → email al alumno ─────────────────────────
 create or replace function public.trg_pago_email_matricula()
 returns trigger
 language plpgsql security definer set search_path = public as $$
@@ -40,10 +44,11 @@ begin
         url := 'https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/send-email',
         headers := jsonb_build_object(
           'Content-Type', 'application/json',
-          'Authorization', 'Bearer nae_cron_2026_Xk7mQ9vR4pZ2wT8L'
+          'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRscHN2YnJjdGNjbm12a2Jjc2ZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjYwNTMsImV4cCI6MjA5ODM0MjA1M30.sMjCrC0wDEks9YBcoxHK4xf1ODCKD6SRJqwRjdea9pU'
         ),
         body := jsonb_build_object(
           'tipo',        'matricula',
+          'cron_secret', 'nae_cron_2026_Xk7mQ9vR4pZ2wT8L',
           'email',       v_mail,
           'nombre',      v_nombre,
           'curso',       v_curso,
@@ -62,5 +67,28 @@ create trigger trg_pago_email
   after insert or update of estado on public.t_pago
   for each row execute function public.trg_pago_email_matricula();
 
+-- ── 2. REPARAR el cron del seminario (migración 05) ────────────────────────
+-- Llamaba con el CRON_SECRET plano en Authorization → el gateway lo rechazaba
+-- con "Invalid JWT" (el recordatorio del sábado nunca salió). Se reprograma
+-- con la auth correcta: JWT anon + cron_secret en el body.
+select cron.unschedule('recordatorio-seminario');
+select cron.schedule(
+  'recordatorio-seminario',
+  '0 13 * * 6',
+  $$
+  select net.http_post(
+    url := 'https://dlpsvbrctccnmvkbcsfp.supabase.co/functions/v1/send-email',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRscHN2YnJjdGNjbm12a2Jjc2ZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjYwNTMsImV4cCI6MjA5ODM0MjA1M30.sMjCrC0wDEks9YBcoxHK4xf1ODCKD6SRJqwRjdea9pU'
+    ),
+    body := jsonb_build_object(
+      'tipo', 'seminario',
+      'cron_secret', 'nae_cron_2026_Xk7mQ9vR4pZ2wT8L'
+    )
+  );
+  $$
+);
+
 -- Verificación
-select 'Migracion 15 OK: email de confirmacion de matricula activo' as resultado;
+select 'Migracion 15 OK: email de matricula + cron seminario reparado' as resultado;
