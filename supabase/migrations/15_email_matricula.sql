@@ -78,7 +78,12 @@ create trigger trg_pago_email
 
 -- ── 2. REPARAR el cron del seminario (migración 05 nunca llegó a correr) ───
 -- Requiere pg_cron (creado arriba). Recordatorio: sábados 13:00 UTC = 08:00 Lima.
-select cron.unschedule('recordatorio-seminario');
+do $$
+begin
+  perform cron.unschedule('recordatorio-seminario');
+exception when others then
+  null; -- el job no existía (pg_cron recién instalado): normal en la 1ª vez
+end $$;
 select cron.schedule(
   'recordatorio-seminario',
   '0 13 * * 6',
