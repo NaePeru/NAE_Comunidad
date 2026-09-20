@@ -167,21 +167,21 @@
         e Inteligencia Artificial.
       </h1>
       <p>
-        Aprendé, compartí conocimiento y crecé profesionalmente junto a otros entusiastas de los datos. Excel, Power BI, SQL, IA y mucho más.
+        Aprende, comparte conocimiento y crece profesionalmente junto a otros entusiastas de los datos. Excel, Power BI, SQL, IA y mucho más.
       </p>
 
       <div class="auth-features">
         <div class="auth-feature">
           <div class="ficon">💡</div>
-          <div>Resolvé dudas y compartí tus conocimientos con la comunidad</div>
+          <div>Resuelve dudas y comparte tus conocimientos con la comunidad</div>
         </div>
         <div class="auth-feature">
           <div class="ficon">📊</div>
-          <div>Dominá Excel, Power BI, SQL y herramientas de IA</div>
+          <div>Domina Excel, Power BI, SQL y herramientas de IA</div>
         </div>
         <div class="auth-feature">
           <div class="ficon">📅</div>
-          <div>Participá en seminarios en vivo los sábados</div>
+          <div>Participa en seminarios en vivo los sábados</div>
         </div>
         <div class="auth-feature">
           <div class="ficon">🏆</div>
@@ -197,7 +197,7 @@
         <!-- LOGIN (Email + Contraseña) -->
         <div id="panel-login">
           <h2>Bienvenido de nuevo 👋</h2>
-          <p class="sub">Ingresá para continuar aprendiendo.</p>
+          <p class="sub">Ingresa para continuar aprendiendo.</p>
 
           <form id="form-login">
             <div class="field">
@@ -227,7 +227,7 @@
         <!-- REGISTRO -->
         <div id="panel-registro" class="hidden">
           <h2>Crea tu cuenta 🚀</h2>
-          <p class="sub">Registrate para solicitar acceso a la comunidad.</p>
+          <p class="sub">Crea tu cuenta y entra ahora mismo a la comunidad. Es gratis.</p>
 
           <form id="form-registro">
             <div class="field">
@@ -322,7 +322,7 @@
         errEl.textContent = error;
       } else {
         toast('✅ Bienvenido de nuevo');
-        setTimeout(() => window.location.href = 'app/comunidad.html', 600);
+        setTimeout(() => window.location.href = 'app/comunidad.html', 400);
       }
     });
 
@@ -351,17 +351,21 @@
 
       if (error) {
         errEl.textContent = error;
+      } else if (data?.session) {
+        // Acceso inmediato: la cuenta ya queda activa (trial) → entrar directo
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> ¡Cuenta creada! Entrando...';
+        toast('🎉 ¡Bienvenido a la comunidad!');
+        setTimeout(() => window.location.href = 'app/comunidad.html', 500);
       } else {
-        // ¡ÉXITO! Mostrar pantalla clara en lugar de redirigir
+        // Sin sesión: el proyecto tiene confirmación de email activada
         const authCard = document.querySelector('.auth-card');
         authCard.innerHTML = `
           <div style="text-align:center; padding: 20px 0;">
-            <div style="font-size: 56px; margin-bottom: 16px;">⏳</div>
+            <div style="font-size: 56px; margin-bottom: 16px;">📧</div>
             <h2 style="font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 12px;">¡Cuenta creada con éxito!</h2>
             <p style="font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 24px;">
-              Tu solicitud de acceso fue enviada.<br>
-              El administrador revisará tu cuenta lo antes posible.<br><br>
-              <strong>Pronto podrás ingresar a la comunidad.</strong>
+              Revisa tu correo y confirma tu email<br>para ingresar a la comunidad.
             </p>
             <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
               <p style="font-size: 13px; color: var(--muted2);">¿Tienes alguna duda?</p>

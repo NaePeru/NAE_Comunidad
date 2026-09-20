@@ -21,7 +21,7 @@ export function verificarAcceso() {
 
   if (estado === 'suspendida') {
     titulo = '🔒 Acceso suspendido';
-    msg = 'Tu acceso a la plataforma ha sido suspendido. Si crees que es un error, contactános.';
+    msg = 'Tu acceso a la plataforma ha sido suspendido. Si crees que es un error, contáctanos.';
     icono = '🔒';
   } else if (estado === 'rechazada') {
     titulo = '🚫 Solicitud rechazada';
@@ -38,8 +38,8 @@ export function verificarAcceso() {
         <p style="font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 32px;">${msg}</p>
         
         <div style="background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 16px; margin-bottom: 24px;">
-          <p style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">¿Necesitás ayuda?</p>
-          <a href="https://wa.me/51974688863" target="_blank" class="btn btn-primary" style="width: 100%;">
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">¿Necesitas ayuda?</p>
+          <a href="https://wa.me/51988502354" target="_blank" class="btn btn-primary" style="width: 100%;">
             💬 Escribir por WhatsApp
           </a>
         </div>

@@ -31,3 +31,4 @@ supabase/.temp
 dist/
 build/
 supabase/bakup n8n/
+_server_local.ps1
