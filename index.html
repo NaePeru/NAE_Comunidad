@@ -240,40 +240,56 @@
           </div>
         </div>
 
-        <!-- REGISTRO (pantalla principal: nombre, correo y clave → entra directo) -->
+        <!-- ACCESO CON CÓDIGO (pantalla principal: nombre + correo → código → dentro) -->
         <div id="panel-registro">
-          <h2>Crea tu cuenta 🚀</h2>
-          <p class="sub">Crea tu cuenta y entra ahora mismo a la comunidad. Es gratis.</p>
+          <div id="paso-datos">
+            <h2>Entra a la comunidad 🚀</h2>
+            <p class="sub">Nuevo o ya registrado: te enviamos un código al correo. Sin contraseñas.</p>
 
-          <form id="form-registro">
-            <div class="field">
-              <label class="field-label">Nombre</label>
-              <div class="input-group">
-                <span class="input-icon">👤</span>
-                <input type="text" id="reg-nombre" placeholder="Tu nombre" autocomplete="name" required>
+            <form id="form-datos">
+              <div class="field">
+                <label class="field-label">Nombre</label>
+                <div class="input-group">
+                  <span class="input-icon">👤</span>
+                  <input type="text" id="reg-nombre" placeholder="Tu nombre" autocomplete="name" required>
+                </div>
               </div>
-            </div>
-            <div class="field">
-              <label class="field-label">Email</label>
-              <div class="input-group">
-                <span class="input-icon">✉️</span>
-                <input type="email" id="reg-email" placeholder="tu@email.com" autocomplete="email" required>
+              <div class="field">
+                <label class="field-label">Email</label>
+                <div class="input-group">
+                  <span class="input-icon">✉️</span>
+                  <input type="email" id="reg-email" placeholder="tu@email.com" autocomplete="email" required>
+                </div>
               </div>
-            </div>
-            <div class="field">
-              <label class="field-label">Contraseña</label>
-              <div class="input-group">
-                <span class="input-icon">🔒</span>
-                <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required>
-                <button type="button" class="toggle-eye" onclick="toggleEye('reg-password', this)">👁️</button>
+              <span class="field-error" id="reg-error"></span>
+              <button type="submit" class="btn btn-primary btn-block" id="enviar-btn">Enviarme el código →</button>
+            </form>
+          </div>
+
+          <div id="paso-codigo" class="hidden">
+            <h2>Revisa tu correo 📬</h2>
+            <p class="sub">Enviamos un código de 6 dígitos a <b id="codigo-email"></b>. Vence en 10 minutos.</p>
+
+            <form id="form-codigo">
+              <div class="field">
+                <label class="field-label">Código</label>
+                <div class="input-group">
+                  <span class="input-icon">🔢</span>
+                  <input type="text" id="reg-codigo" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code" style="letter-spacing:8px;font-weight:700;text-align:center;" required>
+                </div>
               </div>
+              <span class="field-error" id="codigo-error"></span>
+              <button type="submit" class="btn btn-primary btn-block" id="entrar-btn">Entrar →</button>
+            </form>
+
+            <div class="auth-toggle">
+              <button type="button" id="reenviar-btn">Reenviar código</button> ·
+              <button type="button" id="cambiar-btn">Cambiar correo</button>
             </div>
-            <span class="field-error" id="reg-error"></span>
-            <button type="submit" class="btn btn-primary btn-block" id="reg-btn">Crear cuenta →</button>
-          </form>
+          </div>
 
           <div class="auth-toggle">
-            ¿Ya tienes cuenta? <button type="button" onclick="mostrar('login')">Iniciar sesión</button>
+            ¿Tienes contraseña? <button type="button" onclick="mostrar('login')">Entrar con contraseña</button>
           </div>
         </div>
 
@@ -289,7 +305,7 @@
 
   <script type="module">
     import { supabase, supabaseConfigured } from './assets/js/supabase-client.js';
-    import { login, registrar } from './assets/js/auth.js';
+    import { login } from './assets/js/auth.js';
     import { toast } from './assets/js/utils.js';
 
     if (!supabaseConfigured) {
@@ -342,60 +358,97 @@
       }
     });
 
-    document.getElementById('form-registro').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('reg-btn');
-      const errEl = document.getElementById('reg-error');
-      errEl.textContent = '';
+    // ── Acceso con código de 6 dígitos (sin contraseñas) ──
+    const pasoDatos = document.getElementById('paso-datos');
+    const pasoCodigo = document.getElementById('paso-codigo');
+    let correoActivo = '';
 
+    // Extrae el mensaje de error de una llamada a la Edge Function
+    const mensajeError = async (data, error) => {
+      if (data?.error) return data.error;
+      if (error) {
+        try { return (await error.context?.json?.())?.error || 'Error de conexión. Intenta de nuevo.'; }
+        catch { return 'Error de conexión. Intenta de nuevo.'; }
+      }
+      return null;
+    };
+
+    document.getElementById('form-datos').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('reg-error');
+      const btn = document.getElementById('enviar-btn');
+      errEl.textContent = '';
       const nombre = document.getElementById('reg-nombre').value.trim();
       const email = document.getElementById('reg-email').value.trim();
-      const password = document.getElementById('reg-password').value;
 
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Creando...';
-      const { error } = await registrar({ nombre, email, password });
-      
-      // Si es un bloqueo silencioso, no mostramos error ni habilitamos el botón
-      if (error === 'silent_block') {
-        // Dejamos el spinner girando eternamente (silencioso)
-        return; 
-      }
-      
+      btn.innerHTML = '<span class="spinner"></span> Enviando...';
+      const { data, error } = await supabase.functions.invoke('auth-code', {
+        body: { accion: 'enviar', email, nombre },
+      });
       btn.disabled = false;
-      btn.innerHTML = 'Crear cuenta →';
+      btn.innerHTML = 'Enviarme el código →';
 
-      if (error) {
-        errEl.textContent = error;
-      } else if (data?.session) {
-        // Acceso inmediato: la cuenta ya queda activa (trial) → entrar directo
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> ¡Cuenta creada! Entrando...';
-        toast('🎉 ¡Bienvenido a la comunidad!');
-        setTimeout(() => window.location.href = 'app/comunidad.html', 500);
-      } else {
-        // Sin sesión: el proyecto tiene confirmación de email activada
-        const authCard = document.querySelector('.auth-card');
-        authCard.innerHTML = `
-          <div style="text-align:center; padding: 20px 0;">
-            <div style="font-size: 56px; margin-bottom: 16px;">📧</div>
-            <h2 style="font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 12px;">¡Cuenta creada con éxito!</h2>
-            <p style="font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 24px;">
-              Revisa tu correo y confirma tu email<br>para ingresar a la comunidad.
-            </p>
-            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-              <p style="font-size: 13px; color: var(--muted2);">¿Tienes alguna duda?</p>
-              <a href="https://wa.me/51988502354" target="_blank" class="btn btn-ghost btn-block" style="margin-top: 8px;">
-                💬 Escribir por WhatsApp
-              </a>
-            </div>
-            <button onclick="location.reload()" class="btn btn-ghost btn-block">
-              Volver al inicio
-            </button>
-          </div>
-        `;
-      }
+      const msg = await mensajeError(data, error);
+      if (msg) { errEl.textContent = msg; return; }
+
+      correoActivo = email;
+      document.getElementById('codigo-email').textContent = email;
+      pasoDatos.classList.add('hidden');
+      pasoCodigo.classList.remove('hidden');
+      document.getElementById('reg-codigo').focus();
     });
+
+    document.getElementById('form-codigo').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('codigo-error');
+      const btn = document.getElementById('entrar-btn');
+      errEl.textContent = '';
+      const codigo = document.getElementById('reg-codigo').value.trim();
+      const nombre = document.getElementById('reg-nombre').value.trim();
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Entrando...';
+      const { data, error } = await supabase.functions.invoke('auth-code', {
+        body: { accion: 'verificar', email: correoActivo, codigo, nombre },
+      });
+      const msg = await mensajeError(data, error);
+      if (msg) {
+        errEl.textContent = msg;
+        btn.disabled = false;
+        btn.innerHTML = 'Entrar →';
+        return;
+      }
+
+      // El código fue válido: la función devolvió una contraseña de un solo uso
+      const { error: errLogin } = await supabase.auth.signInWithPassword({
+        email: correoActivo,
+        password: data.password,
+      });
+      if (errLogin) {
+        errEl.textContent = 'No se pudo iniciar sesión. Pide un código nuevo.';
+        btn.disabled = false;
+        btn.innerHTML = 'Entrar →';
+        return;
+      }
+      toast('🎉 ¡Bienvenido a la comunidad!');
+      setTimeout(() => window.location.href = 'app/comunidad.html', 500);
+    });
+
+    document.getElementById('reenviar-btn').onclick = async () => {
+      const nombre = document.getElementById('reg-nombre').value.trim();
+      await supabase.functions.invoke('auth-code', {
+        body: { accion: 'enviar', email: correoActivo, nombre },
+      });
+      toast('📨 Código reenviado');
+    };
+
+    document.getElementById('cambiar-btn').onclick = () => {
+      pasoCodigo.classList.add('hidden');
+      pasoDatos.classList.remove('hidden');
+      document.getElementById('reg-codigo').value = '';
+      document.getElementById('codigo-error').textContent = '';
+    };
   </script>
 </body>
 </html>
