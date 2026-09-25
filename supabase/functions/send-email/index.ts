@@ -29,7 +29,7 @@ const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 // los emails llegan a TODOS los alumnos desde no-reply@naeacademia.com.
 const TEST_MODE = false;
 const FROM = 'NAE <no-reply@naeacademia.com>';
-const BASE_URL = 'https://www.naeacademia.com';
+const BASE_URL = 'https://comunidad.naeacademia.com';
 
 // Email base con branding NAE (contenido central parametrizable)
 function emailNAE(titulo: string, cuerpo: string, ctaUrl: string, ctaTexto: string, subtitulo = ''): string {
