@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
       }
 
       const lote = leads.slice(0, cupo);
-      const FROM_CAMPAIGN = 'Geronimo - NAE <geronimo@naeacademia.com>';
+      const FROM_CAMPAIGN = 'NAE Academia <informes@naeacademia.com>';
       const titleCase = (s: string) =>
         (s || '').toLocaleLowerCase('es-PE').replace(/(^|\s)\S/g, c => c.toUpperCase());
 
