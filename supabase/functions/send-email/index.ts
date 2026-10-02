@@ -248,16 +248,21 @@ Deno.serve(async (req) => {
           .replaceAll('[nombre_completo]', nombreCorto)
           .replaceAll('[curso]', titleCase(String(l.curso ?? '')));
 
-        const ok = await enviarResend(
-          email,
-          asunto,
-          emailNAEPro(
+        // html_cuerpo (opcional): HTML propio del remitente SIN plantilla ni fondo
+        // (campaña Correo 2). Personaliza las mismas variables que el texto plano.
+        const personalizar = (h: string) => h
+          .replaceAll('[nombre]', primerNombre)
+          .replaceAll('[nombre_completo]', nombreCorto)
+          .replaceAll('[curso]', titleCase(String(l.curso ?? '')));
+        const htmlFinal = typeof body?.html_cuerpo === 'string' && body.html_cuerpo.trim()
+          ? personalizar(body.html_cuerpo)
+          : emailNAEPro(
             texto,
             'https://www.youtube.com/@newacademiaexcel',
             'Ver más clases del canal',
-          ),
-          FROM_CAMPAIGN,
-        );
+          );
+
+        const ok = await enviarResend(email, asunto, htmlFinal, FROM_CAMPAIGN);
         if (ok) {
           enviados++;
           await logEmail(userId ?? '00000000-0000-0000-0000-000000000000', 'campana', email);
@@ -274,14 +279,21 @@ Deno.serve(async (req) => {
           .replaceAll('[nombre]', titleCase(palabrasCtrl[0] ?? ''))
           .replaceAll('[nombre_completo]', titleCase(palabrasCtrl.slice(0, 2).join(' ')))
           .replaceAll('[curso]', titleCase(String(l0.curso ?? '')));
-        await enviarResend(
-          OWNER_EMAIL,
-          `[Copia de control — ${enviados} envíos] ${asunto}`,
-          emailNAEPro(
+        const avisoCtrl = `<div style="font-family:Arial,sans-serif;padding:12px 16px;background:#FFF8E1;border-left:4px solid #F2A900;font-size:13px;color:#5B6470;"><b>— COPIA DE CONTROL —</b> Esta oleada se envi\u00f3 a ${enviados} ex-alumno(s). Abajo, el correo tal como lo recibi\u00f3 el primero de la lista.</div>`;
+        const htmlCtrl = typeof body?.html_cuerpo === 'string' && body.html_cuerpo.trim()
+          ? avisoCtrl + String(body.html_cuerpo)
+            .replaceAll('[nombre]', titleCase(palabrasCtrl[0] ?? ''))
+            .replaceAll('[nombre_completo]', titleCase(palabrasCtrl.slice(0, 2).join(' ')))
+            .replaceAll('[curso]', titleCase(String(l0.curso ?? '')))
+          : emailNAEPro(
             `— COPIA DE CONTROL —\nEsta oleada se envió a ${enviados} ex-alumno(s).\nAsí lo recibió el primero de la lista:\n\n${textoCtrl}`,
             'https://www.youtube.com/@newacademiaexcel',
             'Ver más clases del canal',
-          ),
+          );
+        await enviarResend(
+          OWNER_EMAIL,
+          `[Copia de control — ${enviados} envíos] ${asunto}`,
+          htmlCtrl,
           FROM_CAMPAIGN,
         );
       }
