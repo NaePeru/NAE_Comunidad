@@ -605,9 +605,11 @@
         data, ['Alumno', 'DNI', 'Cursop', 'Curso', 'Fecha', 'Estado', ''],
         (data || []).map(m => {
           const pagoPend = (m.t_pago || []).find(p => p.estado === 'pendiente');
-          const accion = (m.estado === 'pendiente' && pagoPend)
-            ? `<button class="btn btn-sm btn-primary" onclick="window.__confirmarPago('${pagoPend.id}', ${pagoPend.monto})" title="Al confirmar, el trigger confirma la matrícula solo">💰 Confirmar pago</button>`
-            : '';
+          let accion = '';
+          if (m.estado === 'pendiente' && pagoPend) {
+            accion += `<button class="btn btn-sm btn-primary" onclick="window.__confirmarPago('${pagoPend.id}', ${pagoPend.monto})" title="Al confirmar, el trigger confirma la matrícula solo">💰 Confirmar pago</button> `;
+          }
+          accion += `<button class="icon-btn" title="Eliminar matrícula (borra también sus pagos)" onclick="window.__delMatricula('${m.id}')">🗑️</button>`;
           return `
           <tr><td>${escapeHtml(m.t_alumnos?.nombres || '?')}</td>
           <td class="m-code">${m.dni}</td>
@@ -630,6 +632,20 @@
         .eq('id', pagoId);
       if (error) return toast('⚠️ ' + error.message);
       toast('💰 Pago confirmado — matrícula CONFIRMADA por el sistema ✨');
+      await __loadMatriculas();
+    };
+
+    // Eliminar matrícula (FORZADO) — los pagos asociados se borran en cascada (ON DELETE CASCADE).
+    // Si el pago llegó a 'pagado', el acceso al curso grabado en la comunidad NO se revoca solo.
+    window.__delMatricula = async (id) => {
+      if (!confirm('⚠️ ¿ELIMINAR la matrícula?\n\n' +
+          'Se eliminarán TAMBIÉN todos sus pagos registrados (pendientes y pagados).\n' +
+          'Esta acción no se puede deshacer.\n\n' +
+          'Nota: si el alumno ya recibió acceso al curso grabado en la comunidad, ese acceso queda.'))
+        return;
+      const { error } = await supabase.from('t_matricula').delete().eq('id', id);
+      if (error) return toast('⚠️ ' + error.message);
+      toast('🗑️ Matrícula eliminada (junto con sus pagos)');
       await __loadMatriculas();
     };
 
@@ -725,7 +741,7 @@
         </div>`;
 
       tab.innerHTML = tablaHTML(
-        lista, ['Nombres', 'DNI', 'Correo', 'F. matrícula', 'Pago', 'Estado'],
+        lista, ['Nombres', 'DNI', 'Correo', 'F. matrícula', 'Pago', 'Estado', ''],
         lista.map(m => {
           const pagado = (m.t_pago || []).find(p => p.estado === 'pagado');
           const pagoTxt = pagado ? `S/ ${pagado.monto}` : (m.t_pago?.length ? 'pendiente' : '—');
@@ -735,7 +751,8 @@
           <td style="font-size:12px;">${escapeHtml(m.t_alumnos?.mail || '—')}</td>
           <td>${fDMA(m.fecha_matricula)}</td>
           <td>${pagoTxt}</td>
-          <td class="${m.estado === 'confirmada' ? 'm-ok' : 'm-pend'}">${m.estado.toUpperCase()}</td></tr>`;
+          <td class="${m.estado === 'confirmada' ? 'm-ok' : 'm-pend'}">${m.estado.toUpperCase()}</td>
+          <td><button class="icon-btn" title="Eliminar matrícula (borra también sus pagos)" onclick="window.__delMatricula('${m.id}')">🗑️</button></td></tr>`;
         }).join('')
       );
     };
