@@ -157,6 +157,7 @@
         </div>
         <button class="btn btn-primary" onclick="window.__guardarCursop()">+ Programar</button>
       </div>
+      <p class="hint" id="cp-modalidad-hint" style="font-size:11px;color:var(--muted2);margin:0 0 6px;display:none;">💻 Curso virtual: la <b>fecha de inicio</b> es su apertura (queda vigente para siempre) y el <b>fin se deja vacío</b> — no caduca.</p>
       <div id="lista-cursop"></div>
     </div>
 
@@ -456,6 +457,16 @@
         .join('') || '<option value="">(primero programá un curso)</option>';
     }
     window.__loadCursop = __loadCursop;
+
+    // guia de fechas segun modalidad (virtual no caduca)
+    document.getElementById('cp-modalidad').addEventListener('change', (e) => {
+      const esVirtual = e.target.value === 'virtual';
+      const hint = document.getElementById('cp-modalidad-hint');
+      if (hint) hint.style.display = esVirtual ? 'block' : 'none';
+      if (esVirtual && !document.getElementById('cp-inicio').value) {
+        document.getElementById('cp-inicio').value = new Date().toISOString().slice(0, 10);
+      }
+    });
 
     window.__guardarCursop = async () => {
       const codcurso = document.getElementById('cp-curso').value;
