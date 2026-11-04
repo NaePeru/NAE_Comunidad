@@ -103,9 +103,9 @@ Deno.serve(async (req) => {
     const nombreDest = (parsed.destinatario || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     const contieneNombreAdmin = ['geronimo', 'gerónimo', 'cruzado'].some(p => nombreDest.includes(p.normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
     const monto = parseFloat(parsed.monto) || 0;
-    // Precio esperado segun el curso: promo Power Pivot S/60, resto S/80.
-    const PRECIOS: Record<string, number> = { 'power-pivot-excel': 60 };
-    const PRECIO_DEFAULT = 80;
+    // Precio esperado: TODOS los cursos de la comunidad S/60 (regla del negocio 04/11).
+    const PRECIOS: Record<string, number> = {};
+    const PRECIO_DEFAULT = 60;
     let esperado = PRECIO_DEFAULT;
     try {
       const cursos = await admin.from('courses').select('slug').eq('id', body?.courseId ?? '').single();
