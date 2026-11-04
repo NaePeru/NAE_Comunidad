@@ -60,6 +60,14 @@
           <input type="text" class="form-input" id="cur-nombre" placeholder="Ej: MS Excel Básico">
         </div>
         <div class="form-group">
+          <label class="form-label">Modalidad</label>
+          <select class="form-select" id="cur-modalidad">
+            <option value="online">🎥 Online en vivo (Zoom)</option>
+            <option value="virtual">💻 Virtual - videos (comunidad)</option>
+            <option value="presencial">🏫 Presencial</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label class="form-label">Costo (S/) *</label>
           <input type="number" class="form-input" id="cur-costo" placeholder="50" min="0" step="0.5">
         </div>
@@ -321,8 +329,9 @@
     window.__guardarCurso = async () => {
       const nombre = document.getElementById('cur-nombre').value.trim();
       const costo = parseFloat(document.getElementById('cur-costo').value) || 0;
+      const modalidad = document.getElementById('cur-modalidad').value || 'online';
       if (!nombre) return toast('⚠️ Falta el nombre del curso');
-      const { error } = await supabase.from('t_cursos').insert({ nombre, costo });
+      const { error } = await supabase.from('t_cursos').insert({ nombre, costo, modalidad });
       if (error) return toast('⚠️ ' + error.message);
       toast('✅ Curso registrado'); document.getElementById('cur-nombre').value = ''; document.getElementById('cur-costo').value = '';
       await __loadCursos();
