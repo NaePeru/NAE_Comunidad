@@ -436,10 +436,11 @@
         .order('fecha_inicio', { ascending: false });
       window.__cursopData = data || [];
       document.getElementById('lista-cursop').innerHTML = tablaHTML(
-        window.__cursopData, ['cursop', 'Nombre curso', 'Horario', 'F. inicio', 'F. final', 'Profesor', ''],
+        window.__cursopData, ['cursop', 'Nombre curso', 'Modalidad', 'Horario', 'F. inicio', 'F. final', 'Profesor', ''],
         window.__cursopData.map(cp => `
           <tr><td class="m-code">${cp.cursop}</td>
           <td>${escapeHtml(cp.t_cursos?.nombre || '?')}</td>
+          <td>${cp.modalidad === 'virtual' ? '💻 Virtual' : cp.modalidad === 'presencial' ? '🏫 Presencial' : '🎥 Online'}</td>
           <td>${cp.horario || '—'}</td>
           <td>${fDMA(cp.fecha_inicio)}</td>
           <td>${fDMA(cp.fecha_fin)}</td>
