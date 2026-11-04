@@ -1,10 +1,11 @@
 -- ============================================================================
--- MIGRACIÓN 19 — Cursos VIRTUALES siempre vigentes (no caducan)
+-- MIGRACIÓN 19 (CORREGIDA) — Cursos VIRTUALES siempre vigentes (no caducan)
 -- Un curso virtual (videos/comunidad) no "inicia ni termina": la fecha_inicio
 -- es su fecha de APERTURA y sigue ofreciéndose para siempre.
 -- Los online/presenciales mantienen la regla actual: se ocultan al iniciar.
 --
 -- EJECUTAR EN: Supabase → SQL Editor → pegar TODO → Run
+-- (corregida: la modalidad vive en t_cursop "p", NO en t_cursos "c")
 -- ============================================================================
 
 create or replace view public.t_cursos_vigentes as
@@ -12,7 +13,6 @@ select
   c.codcurso,
   c.nombre,
   c.costo,
-  c.modalidad,
   coalesce(
     json_agg(
       json_build_object(
@@ -32,7 +32,7 @@ left join public.t_cursop p
        p.modalidad = 'virtual'                                          -- virtual: siempre vigente
     or p.fecha_inicio >= ((now() at time zone 'America/Lima')::date)   -- resto: aún no inicia
  )
-group by c.codcurso, c.nombre, c.costo, c.modalidad;
+group by c.codcurso, c.nombre, c.costo;
 
 comment on view public.t_cursos_vigentes is
   'Cursos ofertables: grupos online/presenciales que aún no inician + TODO grupo virtual (no caducan).';
