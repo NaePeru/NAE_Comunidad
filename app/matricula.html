@@ -60,14 +60,6 @@
           <input type="text" class="form-input" id="cur-nombre" placeholder="Ej: MS Excel Básico">
         </div>
         <div class="form-group">
-          <label class="form-label">Modalidad</label>
-          <select class="form-select" id="cur-modalidad">
-            <option value="online">🎥 Online en vivo (Zoom)</option>
-            <option value="virtual">💻 Virtual - videos (comunidad)</option>
-            <option value="presencial">🏫 Presencial</option>
-          </select>
-        </div>
-        <div class="form-group">
           <label class="form-label">Costo (S/) *</label>
           <input type="number" class="form-input" id="cur-costo" placeholder="50" min="0" step="0.5">
         </div>
@@ -142,6 +134,14 @@
         <div class="form-group">
           <label class="form-label">Profesor *</label>
           <select class="form-select" id="cp-profe"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Modalidad</label>
+          <select class="form-select" id="cp-modalidad">
+            <option value="online">🎥 Online en vivo (Zoom)</option>
+            <option value="virtual">💻 Virtual - videos (comunidad)</option>
+            <option value="presencial">🏫 Presencial</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Horario</label>
@@ -329,9 +329,8 @@
     window.__guardarCurso = async () => {
       const nombre = document.getElementById('cur-nombre').value.trim();
       const costo = parseFloat(document.getElementById('cur-costo').value) || 0;
-      const modalidad = document.getElementById('cur-modalidad').value || 'online';
       if (!nombre) return toast('⚠️ Falta el nombre del curso');
-      const { error } = await supabase.from('t_cursos').insert({ nombre, costo, modalidad });
+      const { error } = await supabase.from('t_cursos').insert({ nombre, costo });
       if (error) return toast('⚠️ ' + error.message);
       toast('✅ Curso registrado'); document.getElementById('cur-nombre').value = ''; document.getElementById('cur-costo').value = '';
       await __loadCursos();
@@ -464,8 +463,9 @@
       const fecha_fin = document.getElementById('cp-fin').value || null;
       if (!codcurso || !codprofesor) return toast('⚠️ Elegí curso y profesor (registrarlos antes si no hay)');
       if (!fecha_inicio) return toast('⚠️ Falta la fecha de inicio');
+      const modalidad = document.getElementById('cp-modalidad').value || 'online';
       const { error } = await supabase.from('t_cursop').insert({
-        codcurso, codprofesor, fecha_inicio, fecha_fin,
+        codcurso, codprofesor, fecha_inicio, fecha_fin, modalidad,
         horario: document.getElementById('cp-horario').value.trim() || null,
       });
       if (error) return toast('⚠️ ' + error.message);
