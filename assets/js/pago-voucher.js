@@ -7,7 +7,9 @@
 import { supabase, SUPABASE_URL } from './supabase-client.js';
 import { session } from './auth.js';
 
-const PRECIO_CURSO = 80; // S/80
+// Precio por curso (slug -> soles). Default: S/80. Promo Power Pivot: S/60 primeros cupos.
+const PRECIOS_POR_CURSO = { 'power-pivot-excel': 60 };
+const precioDe = (course) => PRECIOS_POR_CURSO[course?.slug] ?? 80;
 
 // ── Verificar si el alumno ya compró un curso específico ───────────────────
 export async function tieneCursoComprado(courseId) {
@@ -24,6 +26,7 @@ export async function tieneCursoComprado(courseId) {
 export function renderPantallaPago(course, containerId = 'curso-container') {
   const container = document.getElementById(containerId);
   if (!container) return;
+  const PRECIO_CURSO = precioDe(course);
 
   container.innerHTML = `
     <div class="course-back" onclick="window.__volverCatalogo()">← Volver al catálogo</div>

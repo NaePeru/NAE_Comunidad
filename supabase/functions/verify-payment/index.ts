@@ -103,7 +103,15 @@ Deno.serve(async (req) => {
     const nombreDest = (parsed.destinatario || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     const contieneNombreAdmin = ['geronimo', 'gerónimo', 'cruzado'].some(p => nombreDest.includes(p.normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
     const monto = parseFloat(parsed.monto) || 0;
-    const montoValido = (monto >= 79 && monto <= 80.99);
+    // Precio esperado segun el curso: promo Power Pivot S/60, resto S/80.
+    const PRECIOS: Record<string, number> = { 'power-pivot-excel': 60 };
+    const PRECIO_DEFAULT = 80;
+    let esperado = PRECIO_DEFAULT;
+    try {
+      const cursos = await admin.from('courses').select('slug').eq('id', body?.courseId ?? '').single();
+      if (cursos.data?.slug && PRECIOS[cursos.data.slug] !== undefined) esperado = PRECIOS[cursos.data.slug];
+    } catch { /* curso no mapeado: precio default */ }
+    const montoValido = (monto >= esperado - 1 && monto <= esperado + 0.99);
 
     // === 5. Anti-Fraude por Número de Operación ===
     const numOp = (parsed.numero_operacion || '').toString().trim();
