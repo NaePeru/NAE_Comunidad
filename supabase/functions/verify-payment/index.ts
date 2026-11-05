@@ -153,6 +153,61 @@ Deno.serve(async (req) => {
           user_id: user.id,
           course_id: courseId
         });
+
+        // === MATRICULA OFICIAL EN SECRETARIA (t_alumnos + t_matricula + t_pago) ===
+        try {
+          const dni = String(body?.dni || '').trim();
+          if (/^\d{8}$/.test(dni)) {
+            const telefono = String(body?.telefono || '').trim() || null;
+            const { data: perfil } = await supabaseAdmin.from('profiles')
+              .select('nombre').eq('id', user.id).single();
+            const nombres = perfil?.nombre || user.email?.split('@')[0] || 'Alumno comunidad';
+            const correo = user.email || null;
+
+            // alumno (crear o actualizar datos de contacto)
+            const { data: alumnoExistente } = await supabaseAdmin.from('t_alumnos')
+              .select('dni').eq('dni', dni).limit(1);
+            if (alumnoExistente && alumnoExistente.length > 0) {
+              await supabaseAdmin.from('t_alumnos')
+                .update({ nombres, mail: correo, telefono }).eq('dni', dni);
+            } else {
+              await supabaseAdmin.from('t_alumnos')
+                .insert({ dni, nombres, mail: correo, telefono });
+            }
+
+            // mapear curso comunidad -> curso secretaria (codcurso_web) -> grupo vigente
+            const { data: cursoCom } = await supabaseAdmin.from('courses')
+              .select('codcurso_web').eq('id', courseId).single();
+            if (cursoCom?.codcurso_web) {
+              const { data: grupo } = await supabaseAdmin.from('t_cursop')
+                .select('cursop').eq('codcurso', cursoCom.codcurso_web)
+                .order('fecha_inicio', { ascending: false }).limit(1);
+              if (grupo && grupo.length > 0) {
+                const cursop = grupo[0].cursop;
+                const { data: matExistente } = await supabaseAdmin.from('t_matricula')
+                  .select('id').eq('cursop', cursop).eq('dni', dni).limit(1);
+                let matriculaId = matExistente?.[0]?.id;
+                if (!matriculaId) {
+                  const { data: mat } = await supabaseAdmin.from('t_matricula')
+                    .insert({ cursop, dni }).select('id');
+                  matriculaId = mat?.[0]?.id;
+                }
+                if (matriculaId) {
+                  await supabaseAdmin.from('t_pago').insert({
+                    matricula_id: matriculaId,
+                    monto: monto,
+                    fecha_pago: new Date().toISOString().slice(0, 10),
+                    pasarela: parsed.metodo || 'yape',
+                    estado: 'pagado'
+                  });
+                  // el trigger de negocio confirma la matricula solo
+                }
+              }
+            }
+          }
+        } catch (errMat) {
+          console.error('Matricula automatica fallo (no bloquea el acceso):', errMat);
+        }
       }
     }
 
@@ -161,7 +216,7 @@ Deno.serve(async (req) => {
     if (operacionYaUsada) {
       motivoRechazo = "Este número de operación ya fue utilizado.";
     } else if (!montoValido) {
-      motivoRechazo = `Monto detectado: S/ ${monto}. Debe ser S/80.`;
+      motivoRechazo = `Monto detectado: S/ ${monto}. Debe ser S/${esperado}.`;
     } else if (!contieneNombreAdmin) {
       motivoRechazo = "El destinatario no coincide.";
     }

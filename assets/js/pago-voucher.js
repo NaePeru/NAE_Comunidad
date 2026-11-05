@@ -83,6 +83,17 @@ export function renderPantallaPago(course, containerId = 'curso-container') {
         </div>
       </div>
 
+      <!-- Datos para la matricula oficial -->
+      <div style="display:flex; gap:10px; margin-bottom:10px;">
+        <input id="pago-dni" placeholder="Tu DNI (8 dígitos) *" maxlength="8" inputmode="numeric"
+               style="flex:1; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; font-size:14px; color:var(--text);">
+        <input id="pago-tel" placeholder="Celular (opcional)" maxlength="9" inputmode="numeric"
+               style="flex:1; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; font-size:14px; color:var(--text);">
+      </div>
+      <div style="font-size:11px; color:var(--muted2); text-align:center; margin-bottom:14px;">
+        Con tu DNI registramos tu matrícula oficial — es el mismo con el que yapéas 😉
+      </div>
+
       <!-- Zona de subida -->
       <div id="voucher-upload-zone" style="border:2px dashed var(--border2); border-radius:12px; padding:28px 20px; text-align:center; cursor:pointer; transition:border-color 0.2s; margin-bottom:16px;"
            onclick="document.getElementById('voucher-file-input').click()">
@@ -154,6 +165,9 @@ function initVoucherFunctions() {
 
   window.__verificarPago = async (courseId, courseTitle) => {
     if (!voucherFile) return;
+    const dni = (document.getElementById('pago-dni')?.value || '').trim();
+    const telefono = (document.getElementById('pago-tel')?.value || '').trim();
+    if (!/^\d{8}$/.test(dni)) { alert('Escribí tu DNI (8 dígitos) — es necesario para tu matrícula oficial.'); return; }
     // Guard de sesión: sin esto, session.user.id null → TypeError y flujo roto.
     if (!session.user?.id) { alert('Tu sesión expiró. Recargá la página.'); return; }
 
@@ -201,7 +215,7 @@ function initVoucherFunctions() {
             'Authorization': `Bearer ${sess.access_token}`,
           },
           // Mandamos la URL de la foto Y el ID del curso al servidor
-          body: JSON.stringify({ voucherUrl, courseId }),
+          body: JSON.stringify({ voucherUrl, courseId, dni, telefono }),
           signal: controller.signal,
         });
       } finally {
