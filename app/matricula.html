@@ -145,7 +145,15 @@
         </div>
         <div class="form-group">
           <label class="form-label">Horario</label>
-          <input type="text" class="form-input" id="cp-horario" placeholder="Lun y Mié 7-9pm">
+          <input type="text" class="form-input" id="cp-horario" placeholder="Lun y Mié 7-9pm (virtual: Videos — a tu ritmo)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Costo edición (S/)</label>
+          <input type="number" class="form-input" id="cp-costo" placeholder="150 (vacío = precio del curso)" min="0" step="0.5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Horas</label>
+          <input type="number" class="form-input" id="cp-horas" placeholder="20" min="1" step="1">
         </div>
         <div class="form-group">
           <label class="form-label">Fecha inicio *</label>
@@ -441,7 +449,7 @@
         window.__cursopData.map(cp => `
           <tr><td class="m-code">${cp.cursop}</td>
           <td>${escapeHtml(cp.t_cursos?.nombre || '?')}</td>
-          <td>${cp.modalidad === 'virtual' ? '💻 Virtual' : cp.modalidad === 'presencial' ? '🏫 Presencial' : '🎥 Online'}</td>
+          <td>${cp.modalidad === 'virtual' ? '💻 Virtual' : cp.modalidad === 'presencial' ? '🏫 Presencial' : '🎥 Online'}${cp.horas ? ' · ' + cp.horas + 'h' : ''}</td>
           <td>${cp.horario || '—'}</td>
           <td>${fDMA(cp.fecha_inicio)}</td>
           <td>${fDMA(cp.fecha_fin)}</td>
@@ -467,6 +475,8 @@
       document.getElementById('cp-profe').value = cp.codprofesor;
       document.getElementById('cp-modalidad').value = cp.modalidad || 'online';
       document.getElementById('cp-horario').value = cp.horario || '';
+      document.getElementById('cp-costo').value = cp.costo ?? '';
+      document.getElementById('cp-horas').value = cp.horas ?? '';
       document.getElementById('cp-inicio').value = cp.fecha_inicio || '';
       document.getElementById('cp-fin').value = cp.fecha_fin || '';
       const btn = document.querySelector('#p-cursop .btn-primary');
@@ -494,10 +504,13 @@
       if (!fecha_inicio) return toast('⚠️ Falta la fecha de inicio');
       const modalidad = document.getElementById('cp-modalidad').value || 'online';
       const horario = document.getElementById('cp-horario').value.trim() || null;
+      const costoEd = parseFloat(document.getElementById('cp-costo').value) || null;
+      const horasEd = parseInt(document.getElementById('cp-horas').value) || null;
       let error;
       if (window.__cursopEditando) {
         ({ error } = await supabase.from('t_cursop').update({
           codcurso, codprofesor, fecha_inicio, fecha_fin, modalidad, horario,
+          costo: costoEd, horas: horasEd,
         }).eq('cursop', window.__cursopEditando));
         window.__cursopEditando = null;
         const btn = document.querySelector('#p-cursop .btn-primary');
@@ -507,11 +520,12 @@
       } else {
         ({ error } = await supabase.from('t_cursop').insert({
           codcurso, codprofesor, fecha_inicio, fecha_fin, modalidad, horario,
+          costo: costoEd, horas: horasEd,
         }));
         if (error) return toast('⚠️ ' + error.message);
         toast('✅ Curso programado (código numérico generado)');
       }
-      ['cp-horario','cp-inicio','cp-fin'].forEach(i => document.getElementById(i).value = '');
+      ['cp-horario','cp-inicio','cp-fin','cp-costo','cp-horas'].forEach(i => document.getElementById(i).value = '');
       await __loadCursop();
     };
 
