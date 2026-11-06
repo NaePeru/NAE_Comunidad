@@ -446,7 +446,7 @@
           <td>${fDMA(cp.fecha_inicio)}</td>
           <td>${fDMA(cp.fecha_fin)}</td>
           <td>${escapeHtml(cp.t_profesor?.nombre || '?')}</td>
-          <td><button class="icon-btn" onclick="window.__delCursop('${cp.cursop}')">🗑️</button></td></tr>`).join('')
+          <td><button class="icon-btn" title="Editar" onclick="window.__editarCursop('${cp.cursop}')">✏️</button><button class="icon-btn" title="Eliminar" onclick="window.__delCursop('${cp.cursop}')">🗑️</button></td></tr>`).join('')
       );
       // dropdown de matrícula — el CÓDIGO va primero porque es el identificador
       // único (puede haber varias ediciones del mismo curso)
@@ -457,6 +457,23 @@
         .join('') || '<option value="">(primero programá un curso)</option>';
     }
     window.__loadCursop = __loadCursop;
+
+    // editar un grupo programado: baja al formulario para corregir y guardar cambios
+    window.__editarCursop = (cod) => {
+      const cp = (window.__cursopData || []).find(x => x.cursop === cod);
+      if (!cp) return;
+      window.__cursopEditando = cod;
+      document.getElementById('cp-curso').value = cp.codcurso;
+      document.getElementById('cp-profe').value = cp.codprofesor;
+      document.getElementById('cp-modalidad').value = cp.modalidad || 'online';
+      document.getElementById('cp-horario').value = cp.horario || '';
+      document.getElementById('cp-inicio').value = cp.fecha_inicio || '';
+      document.getElementById('cp-fin').value = cp.fecha_fin || '';
+      const btn = document.querySelector('#p-cursop .btn-primary');
+      if (btn) btn.textContent = '✓ Guardar cambios';
+      document.getElementById('p-cursop').scrollIntoView({ behavior: 'smooth' });
+      toast('✏️ Editando grupo ' + cod + ' — corregí y guardá cambios');
+    };
 
     // guia de fechas segun modalidad (virtual no caduca)
     document.getElementById('cp-modalidad').addEventListener('change', (e) => {
@@ -476,12 +493,24 @@
       if (!codcurso || !codprofesor) return toast('⚠️ Elegí curso y profesor (registrarlos antes si no hay)');
       if (!fecha_inicio) return toast('⚠️ Falta la fecha de inicio');
       const modalidad = document.getElementById('cp-modalidad').value || 'online';
-      const { error } = await supabase.from('t_cursop').insert({
-        codcurso, codprofesor, fecha_inicio, fecha_fin, modalidad,
-        horario: document.getElementById('cp-horario').value.trim() || null,
-      });
-      if (error) return toast('⚠️ ' + error.message);
-      toast('✅ Curso programado (código numérico generado)');
+      const horario = document.getElementById('cp-horario').value.trim() || null;
+      let error;
+      if (window.__cursopEditando) {
+        ({ error } = await supabase.from('t_cursop').update({
+          codcurso, codprofesor, fecha_inicio, fecha_fin, modalidad, horario,
+        }).eq('cursop', window.__cursopEditando));
+        window.__cursopEditando = null;
+        const btn = document.querySelector('#p-cursop .btn-primary');
+        if (btn) btn.textContent = '+ Programar';
+        if (error) return toast('⚠️ ' + error.message);
+        toast('✅ Grupo actualizado');
+      } else {
+        ({ error } = await supabase.from('t_cursop').insert({
+          codcurso, codprofesor, fecha_inicio, fecha_fin, modalidad, horario,
+        }));
+        if (error) return toast('⚠️ ' + error.message);
+        toast('✅ Curso programado (código numérico generado)');
+      }
       ['cp-horario','cp-inicio','cp-fin'].forEach(i => document.getElementById(i).value = '');
       await __loadCursop();
     };
