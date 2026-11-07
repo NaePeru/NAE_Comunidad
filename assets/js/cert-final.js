@@ -239,170 +239,106 @@ async function cargarHtml2Canvas() {
   throw new Error('No se pudo cargar html2canvas desde ningún CDN');
 }
 
-// ── FUENTES PREMIUM (Playfair Display + Great Vibes) ────────────────────────
+// ── FUENTES DEL CERTIFICADO (Barlow Condensed + Poppins) ───────────────────
 async function asegurarFuentesCert() {
   if (!document.querySelector('link[data-cert-fonts]')) {
     const l = document.createElement('link');
     l.rel = 'stylesheet';
     l.dataset.certFonts = '1';
-    l.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,600;1,700&family=Great+Vibes&display=swap';
+    l.href = 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap';
     document.head.appendChild(l);
   }
   try { await document.fonts.ready; } catch (e) { /* seguimos con fallback serif */ }
 }
 
-// ── PLANTILLA HTML DEL CERTIFICADO (diseño premium marfil & oro) ────────────
+// ── PLANTILLA HTML DEL CERTIFICADO (modelo azul: panel diagonal suave) ─────
 function htmlCertificado(cert) {
   const nombre = (cert.nombre_emisor || 'ALUMNO').toUpperCase();
   const fecha = new Date(cert.emitido_en).toLocaleDateString('es-PE', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
-  const anio = new Date(cert.emitido_en).getFullYear();
   const nombreLargo = nombre.length > 30;
-  const dniHtml = cert.dni ? `<div style="font-family:'Playfair Display',serif;font-size:22px;color:#6b6353;letter-spacing:2px;margin-top:10px;">DNI: ${cert.dni}</div>` : '';
-
-  // Ornamento de esquina (SVG dorado, se rota con CSS para cada esquina)
-  const esquina = (rot) => `
-    <svg width="120" height="120" viewBox="0 0 120 120" style="position:absolute;${rot};opacity:0.9;">
-      <path d="M6,114 C6,52 52,6 114,6" stroke="#b8912e" stroke-width="3.5" fill="none"/>
-      <path d="M18,114 C18,62 62,18 114,18" stroke="#d4af37" stroke-width="1.6" fill="none"/>
-      <circle cx="114" cy="6" r="4.5" fill="#b8912e"/>
-      <circle cx="6" cy="114" r="4.5" fill="#b8912e"/>
-      <path d="M114,30 C104,30 96,22 96,12" stroke="#d4af37" stroke-width="1.4" fill="none"/>
-      <path d="M30,114 C30,104 22,96 12,96" stroke="#d4af37" stroke-width="1.4" fill="none"/>
-    </svg>`;
+  const dniHtml = cert.dni
+    ? `<div style="font-family:Poppins,sans-serif;font-size:15px;color:#5F7087;letter-spacing:2px;margin-top:10px;">DNI: ${cert.dni}</div>` : '';
 
   return `
-  <div id="cert-canvas-root" style="width:1480px;height:1046px;position:fixed;left:-99999px;top:0;z-index:-1;">
-    <!-- Papel marfil con viñeta sutil -->
-    <div style="width:100%;height:100%;background:
-        radial-gradient(ellipse at center,#fbf7ee 0%,#f3ecd9 78%,#ece2c8 100%);
-        padding:30px;box-sizing:border-box;">
+  <div id="cert-canvas-root" style="width:1480px;height:1046px;position:fixed;left:-99999px;top:0;z-index:-1;background:#FFFFFF;">
 
-      <!-- Marco dorado metálico exterior -->
-      <div style="width:100%;height:100%;background:linear-gradient(135deg,
-          #8a6d1f 0%,#d4af37 18%,#f5e08a 38%,#d4af37 58%,#a8842a 78%,#8a6d1f 100%);
-          padding:7px;box-sizing:border-box;">
+    <!-- Decoración: panel azul suave diagonal + franja viva + círculos (SVG) -->
+    <svg width="1480" height="1046" viewBox="0 0 1480 1046" style="position:absolute;inset:0;">
+      <polygon points="1154,0 1480,0 1480,1046 888,1046" fill="#2E5A96"/>
+      <polygon points="1176,0 1202,0 910,1046 884,1046" fill="#0068FF"/>
+      <circle cx="1360" cy="150" r="58" fill="none" stroke="#78C8F5" stroke-width="5"/>
+      <circle cx="1310" cy="920" r="74" fill="none" stroke="#78AAD1" stroke-width="5"/>
+    </svg>
 
-        <!-- Filete interior oscuro -->
-        <div style="width:100%;height:100%;background:#faf6ec;
-            border:1px solid rgba(138,109,31,0.55);padding:5px;box-sizing:border-box;">
+    <!-- Sello NAE (sobre el panel azul) -->
+    <div style="position:absolute;right:170px;top:400px;width:200px;height:200px;border-radius:50%;
+        background:radial-gradient(circle at 35% 30%,#0068FF 0%,#1E4A8C 55%,#2E5A96 100%);
+        display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div style="position:absolute;inset:14px;border-radius:50%;border:3px solid #78C8F5;"></div>
+      <div style="position:absolute;inset:28px;border-radius:50%;border:1.5px solid #CDE4FA;"></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:52px;
+          color:#FFFFFF;line-height:1;">NAE</div>
+      <div style="font-family:Poppins,sans-serif;font-weight:600;font-size:15px;
+          color:#FFFFFF;letter-spacing:3px;margin-top:4px;">ACADEMIA</div>
+      <div style="font-family:Poppins,sans-serif;font-size:12px;color:#D7EBFA;margin-top:2px;">Lima · Perú</div>
+    </div>
+    <div style="position:absolute;right:185px;top:640px;font-family:Poppins,sans-serif;
+        font-size:16px;color:#78C8F5;letter-spacing:1px;">www.naeacademia.com</div>
 
-          <!-- Marco dorado fino principal -->
-          <div style="width:100%;height:100%;border:3px solid #b8912e;position:relative;
-              box-sizing:border-box;padding:64px 100px 56px;display:flex;
-              flex-direction:column;align-items:center;">
+    <!-- Contenido (zona blanca, centrado) -->
+    <div style="position:relative;height:100%;display:flex;flex-direction:column;align-items:center;
+        padding:54px 480px 42px 80px;box-sizing:border-box;text-align:center;">
 
-            ${esquina('top:14px;left:14px;')}
-            ${esquina('top:14px;right:14px;transform:scaleX(-1);')}
-            ${esquina('bottom:14px;left:14px;transform:scaleY(-1);')}
-            ${esquina('bottom:14px;right:14px;transform:scale(-1,-1);')}
+      <div style="font-family:Poppins,sans-serif;font-weight:600;font-size:22px;color:#1E2432;
+          letter-spacing:5px;">◆ NAE ACADEMIA</div>
+      <div style="font-family:Poppins,sans-serif;font-size:14px;color:#5F7087;
+          letter-spacing:2px;margin-top:4px;">Educación tecnológica online</div>
 
-            <!-- Monograma NAE: rombo dorado -->
-            <div style="position:relative;width:132px;height:132px;margin-bottom:18px;">
-              <svg width="132" height="132" viewBox="0 0 132 132">
-                <defs>
-                  <linearGradient id="oroD" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="#8a6d1f"/><stop offset="0.35" stop-color="#e8c766"/>
-                    <stop offset="0.6" stop-color="#f7e7a8"/><stop offset="1" stop-color="#a8842a"/>
-                  </linearGradient>
-                </defs>
-                <rect x="27" y="27" width="78" height="78" transform="rotate(45 66 66)" fill="url(#oroD)"/>
-                <rect x="36" y="36" width="60" height="60" transform="rotate(45 66 66)" fill="#faf6ec"/>
-                <rect x="41" y="41" width="50" height="50" transform="rotate(45 66 66)" fill="none" stroke="#b8912e" stroke-width="1.6"/>
-              </svg>
-              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-                  font-family:'Playfair Display',serif;font-weight:900;font-size:30px;color:#1d2340;
-                  letter-spacing:1px;">NAE</div>
-            </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:96px;
+          color:#1C3E6E;letter-spacing:14px;text-indent:14px;line-height:1;margin-top:30px;">CERTIFICADO</div>
+      <div style="width:330px;height:4px;background:#0068FF;margin-top:14px;"></div>
 
-            <!-- Encabezado institucional -->
-            <div style="font-family:'Playfair Display',serif;font-size:23px;color:#6b6353;
-                letter-spacing:6px;margin-bottom:6px;">NEW ACADEMY EXCEL</div>
-            <div style="font-family:'Playfair Display',serif;font-size:16px;color:#9a8f78;
-                letter-spacing:2px;margin-bottom:22px;">Centro de Capacitación · Comunidad de Análisis de Datos</div>
+      <div style="font-family:Poppins,sans-serif;font-size:16px;color:#5F7087;
+          letter-spacing:8px;text-indent:8px;margin-top:26px;">SE OTORGA A</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;
+          font-size:${nombreLargo ? '58px' : '72px'};color:#1E2432;margin-top:10px;
+          line-height:1.05;max-width:880px;">${nombre}</div>
+      ${dniHtml}
+      <div style="width:660px;height:3px;background:#1C3E6E;margin-top:16px;"></div>
 
-            <!-- Título -->
-            <div style="font-family:'Playfair Display',serif;font-weight:900;font-size:64px;
-                color:#1d2340;letter-spacing:14px;text-indent:14px;">CERTIFICADO</div>
-            <div style="font-family:'Playfair Display',serif;font-size:21px;color:#6b6353;
-                letter-spacing:9px;text-indent:9px;margin-top:2px;">DE APROBACIÓN</div>
+      <div style="font-family:Poppins,sans-serif;font-size:17px;color:#5F7087;margin-top:22px;">
+        Por haber aprobado el curso</div>
+      <div style="display:inline-block;background:#0068FF;color:#FFFFFF;border-radius:30px;
+          padding:9px 26px;font-family:Poppins,sans-serif;font-weight:600;font-size:14px;
+          letter-spacing:3px;margin-top:16px;">CLASES EN VIVO</div>
+      <div style="font-family:Poppins,sans-serif;font-weight:700;font-size:44px;color:#1C3E6E;
+          letter-spacing:3px;margin-top:16px;line-height:1.15;max-width:880px;">${(cert.titulo || '').toUpperCase()}</div>
+      <div style="font-family:Poppins,sans-serif;font-size:15px;color:#5F7087;margin-top:14px;">
+        ${cert.horas} horas académicas · Modalidad ${cert.modalidad} · Lima, Perú</div>
 
-            <!-- Divisor: línea — rombo — línea -->
-            <div style="display:flex;align-items:center;gap:14px;margin:26px 0 24px;">
-              <div style="width:150px;height:2px;background:linear-gradient(90deg,transparent,#b8912e);"></div>
-              <div style="width:12px;height:12px;background:linear-gradient(135deg,#d4af37,#8a6d1f);transform:rotate(45deg);"></div>
-              <div style="width:150px;height:2px;background:linear-gradient(90deg,#b8912e,transparent);"></div>
-            </div>
-
-            <!-- Otorgado a + nombre -->
-            <div style="font-family:'Playfair Display',serif;font-size:19px;color:#9a8f78;
-                letter-spacing:5px;">SE OTORGA A</div>
-            <div style="font-family:'Playfair Display',serif;font-weight:700;font-style:italic;
-                font-size:${nombreLargo ? '52px' : '64px'};color:#161a2e;margin-top:14px;
-                text-align:center;line-height:1.1;max-width:1100px;">${nombre}</div>
-            ${dniHtml}
-
-            <!-- Adorno bajo el nombre -->
-            <div style="display:flex;align-items:center;gap:10px;margin:18px 0 20px;">
-              <div style="width:220px;height:1.5px;background:#c9a544;"></div>
-              <div style="width:8px;height:8px;background:#b8912e;transform:rotate(45deg);"></div>
-              <div style="width:220px;height:1.5px;background:#c9a544;"></div>
-            </div>
-
-            <!-- Programa -->
-            <div style="font-family:'Playfair Display',serif;font-size:20px;color:#6b6353;">Por completar satisfactoriamente el programa de</div>
-            <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:38px;
-                color:#8a6d1f;margin-top:10px;text-align:center;">${cert.titulo || ''}</div>
-            <div style="font-family:'Playfair Display',serif;font-size:19px;color:#6b6353;
-                margin-top:12px;">${cert.horas} horas académicas · Modalidad ${cert.modalidad} · Lima, Perú</div>
-
-            <!-- Zona inferior: firmas + sello -->
-            <div style="display:flex;align-items:flex-end;justify-content:center;gap:130px;
-                width:100%;margin-top:auto;padding-top:30px;">
-
-              <div style="text-align:center;width:300px;">
-                <div style="font-family:'Great Vibes',cursive;font-size:44px;color:#1d2340;
-                    line-height:1;">Geronimo Cruzado</div>
-                <div style="width:260px;height:1.5px;background:#6b6353;margin:10px auto 8px;"></div>
-                <div style="font-family:'Playfair Display',serif;font-size:15px;color:#6b6353;
-                    letter-spacing:1px;">Analista de Datos · Director</div>
-              </div>
-
-              <!-- Sello de lacre dorado -->
-              <div style="width:150px;height:150px;border-radius:50%;position:relative;
-                  background:radial-gradient(circle at 35% 30%,#f0d98a 0%,#d4af37 40%,#8a6d1f 100%);
-                  box-shadow:0 3px 10px rgba(90,70,20,0.45), inset 0 0 0 6px rgba(255,248,220,0.25);
-                  display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <div style="position:absolute;inset:16px;border-radius:50%;
-                    border:2px dashed rgba(70,55,15,0.55);"></div>
-                <div style="text-align:center;font-family:'Playfair Display',serif;color:#3d2f0e;">
-                  <div style="font-size:15px;letter-spacing:2px;">◆ NAE ◆</div>
-                  <div style="font-size:11px;font-weight:700;letter-spacing:1px;margin-top:4px;">CERTIFICADO<br>VERIFICADO</div>
-                  <div style="font-size:12px;margin-top:4px;">${anio}</div>
-                </div>
-              </div>
-
-              <div style="text-align:center;width:300px;">
-                <div style="font-family:'Great Vibes',cursive;font-size:44px;color:#1d2340;
-                    line-height:1;">Jhonny Vasquez C.</div>
-                <div style="width:260px;height:1.5px;background:#6b6353;margin:10px auto 8px;"></div>
-                <div style="font-family:'Playfair Display',serif;font-size:15px;color:#6b6353;
-                    letter-spacing:1px;">Arquitecto de Datos</div>
-              </div>
-            </div>
-
-            <!-- Pie de verificación -->
-            <div style="margin-top:26px;text-align:center;">
-              <div style="font-family:'Playfair Display',serif;font-size:15px;color:#6b6353;">
-                Emitido el ${fecha} · Código de verificación: <b>${cert.codigo}</b></div>
-              <div style="font-family:'Playfair Display',serif;font-size:13px;color:#9a8f78;
-                  margin-top:4px;">Verifica la autenticidad en www.naeacademia.com/verificar.html</div>
-            </div>
-
-          </div>
+      <!-- Firmas -->
+      <div style="display:flex;justify-content:center;gap:150px;margin-top:auto;width:100%;">
+        <div style="width:330px;">
+          <div style="font-family:Poppins,sans-serif;font-style:italic;font-weight:500;
+              font-size:27px;color:#1E2432;">Gerónimo Cruzado</div>
+          <div style="width:300px;height:2px;background:#5F7087;margin:10px auto 8px;"></div>
+          <div style="font-family:Poppins,sans-serif;font-weight:600;font-size:14px;
+              color:#1C3E6E;letter-spacing:2px;">ANALISTA DE DATOS</div>
+        </div>
+        <div style="width:330px;">
+          <div style="font-family:Poppins,sans-serif;font-style:italic;font-weight:500;
+              font-size:27px;color:#1E2432;">Jhonny Vasquez</div>
+          <div style="width:300px;height:2px;background:#5F7087;margin:10px auto 8px;"></div>
+          <div style="font-family:Poppins,sans-serif;font-weight:600;font-size:14px;
+              color:#1C3E6E;letter-spacing:2px;">ARQUITECTO C.A.P 17280</div>
         </div>
       </div>
+
+      <!-- Pie: solo código -->
+      <div style="font-family:Poppins,sans-serif;font-size:14px;color:#5F7087;margin-top:26px;">
+        Emitido el ${fecha} · Código de verificación: <b>${cert.codigo}</b></div>
     </div>
   </div>`;
 }
