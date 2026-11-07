@@ -254,9 +254,10 @@ async function asegurarFuentesCert() {
 // ── PLANTILLA HTML DEL CERTIFICADO (modelo azul: panel diagonal suave) ─────
 function htmlCertificado(cert) {
   const nombre = (cert.nombre_emisor || 'ALUMNO').toUpperCase();
-  const fecha = new Date(cert.emitido_en).toLocaleDateString('es-PE', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  });
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+                 'septiembre','octubre','noviembre','diciembre'];
+  const fp = String(cert.emitido_en).slice(0, 10).split('-');
+  const fecha = `${parseInt(fp[2], 10)} de ${MESES[parseInt(fp[1], 10) - 1]} del ${fp[0]}`;
   const nombreLargo = nombre.length > 30;
   const dniHtml = cert.dni
     ? `<div style="font-family:Poppins,sans-serif;font-size:15px;color:#5F7087;letter-spacing:2px;margin-top:10px;">DNI: ${cert.dni}</div>` : '';
@@ -315,8 +316,10 @@ function htmlCertificado(cert) {
           letter-spacing:3px;margin-top:16px;">CLASES EN VIVO</div>
       <div style="font-family:Poppins,sans-serif;font-weight:700;font-size:44px;color:#1C3E6E;
           letter-spacing:3px;margin-top:16px;line-height:1.15;max-width:880px;">${(cert.titulo || '').toUpperCase()}</div>
-      <div style="font-family:Poppins,sans-serif;font-size:15px;color:#5F7087;margin-top:14px;">
-        ${cert.horas} horas académicas · Modalidad ${cert.modalidad} · Lima, Perú</div>
+      <div style="font-family:Poppins,sans-serif;font-size:16px;color:#5F7087;margin-top:16px;line-height:1.7;">
+        Emitido el ${fecha}<br>
+        completando un total de ${cert.horas} horas académicas · Modalidad ${cert.modalidad}
+      </div>
 
       <!-- Firmas -->
       <div style="display:flex;justify-content:center;gap:150px;margin-top:auto;width:100%;">
@@ -338,7 +341,7 @@ function htmlCertificado(cert) {
 
       <!-- Pie: solo código -->
       <div style="font-family:Poppins,sans-serif;font-size:14px;color:#5F7087;margin-top:26px;">
-        Emitido el ${fecha} · Código de verificación: <b>${cert.codigo}</b></div>
+        Código de verificación: <b>${cert.codigo}</b></div>
     </div>
   </div>`;
 }
