@@ -117,9 +117,13 @@
   font-size: 13px;
   color: rgba(232,232,240,0.75);
   font-weight: 400;
-  line-height: 1.65;
+  line-height: 1.55;
   margin-bottom: 10px;
   white-space: pre-line;
+  display: -webkit-box;
+  -webkit-line-clamp: 8;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .course-meta {
   font-family: var(--font-mono);
