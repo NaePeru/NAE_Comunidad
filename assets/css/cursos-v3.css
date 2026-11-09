@@ -1,0 +1,577 @@
+/* ============================================================================
+   PROYECTO Z — cursos.css
+   Estilos del catálogo de cursos y la vista de detalle (lecciones).
+   Inspirado en Skool Classroom + Domestika: limpio, premium, con progreso.
+   ============================================================================ */
+
+/* ── TIPOGRAFÍA MEJORADA ──────────────────────────────────────────────────── */
+.courses-page .page-title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+.courses-page .page-sub {
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 6px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* ── GRILLA DE CURSOS (2 por fila) ────────────────────────────────────────── */
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+@media (max-width: 640px) {
+  .courses-grid { grid-template-columns: 1fr; }
+}
+
+
+/* ── FILTROS ──────────────────────────────────────────────────────────────── */
+.course-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 26px;
+  flex-wrap: wrap;
+}
+
+
+/* ── TARJETAS DE CURSO (catálogo rediseñado) ──────────────────────────────── */
+.course-card {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  margin-bottom: 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  overflow: hidden;
+}
+.course-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--cat-accent, var(--gold));
+  opacity: 0.8;
+}
+.course-card:hover {
+  border-color: var(--cat-accent, rgba(242,169,0,0.4));
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.32);
+  text-decoration: none;
+}
+.course-card:hover::before { opacity: 1; }
+.course-card.locked { opacity: 0.6; cursor: not-allowed; }
+.course-card.locked:hover {
+  border-color: var(--border);
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.course-thumb {
+  flex-shrink: 0;
+  width: 92px;
+  height: 92px;
+  margin: 16px 0 16px 18px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  position: relative;
+}
+.course-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+.course-body { flex: 1; min-width: 0; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; }
+.course-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #FFFFFF !important;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.course-desc {
+  font-size: 13px;
+  color: rgba(232,232,240,0.75);
+  font-weight: 400;
+  line-height: 1.55;
+  margin-bottom: 10px;
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-line-clamp: 8;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.course-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(232,232,240,0.55);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.course-meta .meta-dot { opacity: 0.4; }
+
+.course-progress {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.course-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.course-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cat-accent, var(--gold)), var(--orange));
+  border-radius: 20px;
+  transition: width 0.6s ease;
+}
+.course-progress-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cat-accent, var(--gold));
+  min-width: 38px;
+  text-align: right;
+}
+
+.course-action {
+  flex-shrink: 0;
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--cat-accent-bg, rgba(242,169,0,0.1));
+  border: 1px solid var(--cat-accent-border, rgba(242,169,0,0.3));
+  color: var(--cat-accent, var(--gold));
+  white-space: nowrap;
+  margin-right: 18px;
+  transition: all 0.18s;
+}
+.course-card:hover .course-action {
+  transform: scale(1.03);
+}
+.course-card.locked .course-action {
+  background: rgba(255,255,255,0.04);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+/* B edge: cuando el progreso es 100%, acción con check */
+.course-card.completed .course-action {
+  background: rgba(61,214,140,0.1);
+  border-color: rgba(61,214,140,0.3);
+  color: var(--green);
+}
+
+
+/* ============================================================================
+   VISTA DE CURSO — Layout 2 columnas estilo Skool
+   Izquierda: sidebar con módulos/lecciones colapsables
+   Derecha: reproductor de video grande + descripción + acciones
+   ============================================================================ */
+
+/* Layout principal: 2 columnas */
+.curso-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── SIDEBAR DE TEMARIO (izquierda) ──────────────────────────────────────── */
+.curso-sidebar {
+  position: sticky;
+  top: 84px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+
+/* Header del sidebar (info del curso + progreso) */
+.sidebar-course-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.sidebar-course-thumb {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.sidebar-course-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+}
+.sidebar-progress {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sidebar-progress-bar {
+  flex: 1;
+  height: 5px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.sidebar-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--orange));
+  border-radius: 20px;
+  transition: width 0.6s ease;
+}
+.sidebar-progress-text {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+/* Módulo (colapsable) */
+.sb-module {
+  margin-bottom: 6px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.sb-module-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+  user-select: none;
+}
+.sb-module-header:hover { background: var(--card2); }
+.sb-module-chevron {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  width: 12px;
+}
+.sb-module.collapsed .sb-module-chevron { transform: rotate(-90deg); }
+.sb-module-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  flex: 1;
+  color: var(--text);
+}
+.sb-module-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted2);
+}
+
+/* Lección dentro del sidebar */
+.sb-lessons {
+  list-style: none;
+  padding: 2px 0 6px 0;
+  margin: 0;
+}
+.sb-module.collapsed .sb-lessons { display: none; }
+.sb-lesson {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px 9px 30px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+  position: relative;
+}
+.sb-lesson:hover { background: var(--card2); }
+.sb-lesson.active {
+  background: rgba(242,169,0,0.1);
+}
+.sb-lesson.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 6px; bottom: 6px;
+  width: 3px;
+  background: var(--gold);
+  border-radius: 20px;
+}
+.sb-lesson-check {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  color: transparent;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.sb-lesson-check.done {
+  background: var(--green);
+  border-color: var(--green);
+  color: #0f1117;
+}
+.sb-lesson.active .sb-lesson-check:not(.done) {
+  border-color: var(--gold);
+}
+.sb-lesson-title {
+  font-size: 12.5px;
+  color: rgba(232,232,240,0.85);
+  line-height: 1.4;
+  flex: 1;
+}
+.sb-lesson.active .sb-lesson-title { color: #fff; font-weight: 600; }
+.sb-lesson.done-item .sb-lesson-title { color: var(--muted); }
+.sb-lesson-duration {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--muted2);
+  flex-shrink: 0;
+}
+
+
+/* ── ÁREA PRINCIPAL (derecha - reproductor) ──────────────────────────────── */
+.curso-main {
+  min-width: 0;
+}
+
+.curso-main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.curso-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted2);
+}
+.curso-breadcrumb .crumb-active { color: var(--gold); }
+.btn-toggle-sidebar {
+  display: none;
+  font-size: 18px;
+  padding: 6px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+/* Reproductor de video */
+.player-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.video-wrap {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  background: #000;
+}
+.video-wrap iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: 0;
+}
+
+/* Contenido debajo del video */
+.player-content {
+  padding: 22px 24px;
+}
+.player-module-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(242,169,0,0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+.player-lesson-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 10px;
+}
+.player-lesson-desc {
+  font-size: 14.5px;
+  color: rgba(232,232,240,0.7);
+  line-height: 1.7;
+  margin-bottom: 22px;
+}
+
+/* Acciones: Completar + Siguiente */
+.player-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.player-actions-left { display: flex; align-items: center; gap: 12px; }
+.lesson-complete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  background: linear-gradient(135deg, var(--green), #2bb374);
+  color: #06160e;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.lesson-complete-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(61,214,140,0.3); }
+.lesson-complete-btn.done {
+  background: var(--card2);
+  color: var(--green);
+  border: 1px solid rgba(61,214,140,0.4);
+}
+.lesson-next-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  background: var(--card2);
+  color: var(--text);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border2);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.lesson-next-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.lesson-next-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Curso bloqueado */
+.locked-msg {
+  text-align: center;
+  padding: 60px 24px;
+}
+.locked-msg .lock-icon { font-size: 56px; margin-bottom: 18px; }
+.locked-msg h3 { font-size: 20px; margin-bottom: 12px; font-weight: 700; color: #fff; }
+.locked-msg p { color: var(--muted); font-size: 14px; max-width: 420px; margin: 0 auto 24px; line-height: 1.7; }
+
+/* Sin lecciones */
+.no-lessons-msg {
+  text-align: center;
+  padding: 60px 24px;
+}
+.no-lessons-msg .icon { font-size: 50px; margin-bottom: 14px; opacity: 0.6; }
+
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  /* MOBILE: limpiar cursos, solo mostrar las tarjetas */
+  .courses-page .page-header { display: none !important; }
+  .course-filters { display: none !important; }
+
+  .curso-layout {
+    grid-template-columns: 1fr;
+  }
+  .curso-sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 85%; max-width: 340px;
+    height: 100vh;
+    max-height: 100vh;
+    z-index: 200;
+    border-radius: 0;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  .curso-sidebar.open { transform: translateX(0); }
+  .btn-toggle-sidebar { display: block; }
+  /* Overlay cuando el sidebar está abierto */
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 150;
+  }
+  .sidebar-overlay.open { display: block; }
+}
+
+@media (max-width: 600px) {
+  .player-lesson-title { font-size: 19px; }
+  .player-content { padding: 18px; }
+  .player-actions { flex-direction: column; align-items: stretch; }
+  .lesson-complete-btn, .lesson-next-btn { width: 100%; justify-content: center; }
+}
+
+
+/* ── RESPONSIVE CATÁLOGO ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* MOBILE: tarjetas de curso simplificadas (solo nombre + detalle) */
+  .course-thumb { width: 48px; height: 48px; font-size: 22px; margin: 12px 0 12px 14px; border-radius: 10px; }
+  .course-body { padding: 12px 14px; }
+  .course-title { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+  .course-desc { font-size: 12.5px; line-height: 1.5; }
+  .courses-page .page-title { font-size: 24px; }
+  /* Ocultar elementos innecesarios en móvil */
+  .course-action { display: none; }            /* Comenzar, Continuar, 🔒 */
+  .course-card .badge { display: none; }        /* GRATIS, PREMIUM */
+  .course-meta { display: none; }               /* Excel · 2 lecciones */
+  .course-progress { display: none; }           /* barra de progreso */
+}
