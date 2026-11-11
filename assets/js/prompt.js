@@ -38,10 +38,19 @@ CURSOS GRATIS:
 - Excel Nivel 1 (Fundamental)
 - Tabla y Gráficos Dinámicos
 
-CURSOS DE PAGO (precio fijo: S/60 por curso, no negociable):
-- Excel Nivel 2 (Intermedio), Excel Nivel 3 (Avanzado), Excel Business Intelligence
-- Power BI Nivel 1, Power BI Nivel 2, Power BI Nivel 3
+CURSOS DE PAGO DISPONIBLES (precio fijo: S/60 por curso, no negociable):
+- Excel - Power Pivot (inicio: martes 24/11/2026, 7:10 p.m. — clases en vivo que quedan grabadas)
+- Excel - Business Intelligence (virtual, videos a tu ritmo)
+
+PRÓXIMAMENTE (no disponibles aún — si preguntan, decí que se anunciarán):
+- Excel Nivel 2, Excel Nivel 3
+- Power BI Nivel 1, 2 y 3
 - SQL
+
+IMPORTANTE: cuando pregunten qué cursos hay disponibles, muestra SOLO los
+cursos de pago DISPONIBLES (Power Pivot y Excel BI) y los gratis. Los demás
+están "en desarrollo" — NO los ofrezcas ni menciones precios de cursos
+que no están en la lista de disponibles.
 
 FORMATO Y CONTENIDO:
 - Todos los cursos (gratis y de pago) son GRABADOS, a ritmo propio del alumno

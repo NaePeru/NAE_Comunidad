@@ -99,7 +99,7 @@ pantalla del curso y luego sube la captura ahí mismo.`;
     // DUEÑO: los cursos en vivo/matrícula por chat se habilitarán a futuro.
     // Para reactivar todo el circuito (lista + matriculación por chat):
     // cambiar MATRICULA_POR_CHAT a true.
-    const MATRICULA_POR_CHAT = false;
+    const MATRICULA_POR_CHAT = true;
     if (MATRICULA_POR_CHAT && Array.isArray(cacheMatriculables) && cacheMatriculables.length > 0) {
       const fCorta = (iso) => {
         if (!iso) return '';
