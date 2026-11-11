@@ -38,7 +38,7 @@ CURSOS GRATIS:
 - Excel Nivel 1 (Fundamental)
 - Tabla y Gráficos Dinámicos
 
-CURSOS DE PAGO (precio fijo: S/50 por curso, no negociable):
+CURSOS DE PAGO (precio fijo: S/60 por curso, no negociable):
 - Excel Nivel 2 (Intermedio), Excel Nivel 3 (Avanzado), Excel Business Intelligence
 - Power BI Nivel 1, Power BI Nivel 2, Power BI Nivel 3
 - SQL
@@ -73,11 +73,11 @@ CERTIFICADOS:
 
 PROCESO DE PAGO:
 - El alumno elige el curso premium que desea
-- Precio: S/50 por curso (fijo, no negociable, monto exacto)
+- Precio: S/60 por curso (fijo, no negociable, monto exacto)
 - Métodos de pago: Yape o Plin al 988502354 (a nombre de Geronimo Cruzado)
 - En la pantalla del curso aparece un CÓDIGO QR de Yape: al escanearlo con la app, el número y el titular ya vienen cargados (solo se escribe el monto). Si el alumno navega desde el celular, paga al número indicado directamente desde Yape.
 - DESPUÉS DE PAGAR, el alumno tiene DOS opciones:
-  OPCIÓN 1 (AUTOMÁTICA E INSTANTÁNEA): Subir el comprobante (voucher) directamente en la plataforma (en el curso bloqueado). El sistema lo verifica automáticamente con Inteligencia Artificial y desbloquea el curso al instante. Solo necesita que el voucher muestre el monto exacto de S/50 y el nombre del destinatario.
+  OPCIÓN 1 (AUTOMÁTICA E INSTANTÁNEA): Subir el comprobante (voucher) directamente en la plataforma (en el curso bloqueado). El sistema lo verifica automáticamente con Inteligencia Artificial y desbloquea el curso al instante. Solo necesita que el voucher muestre el monto exacto de S/60 y el nombre del destinatario.
   OPCIÓN 2 (MANUAL): Enviar el comprobante por WhatsApp al 988502354 y esperar a que el equipo lo active manualmente (puede demorar hasta 1 día).
 - Se puede pagar un curso como regalo para otra persona
 - NAE no emite boleta ni factura
@@ -89,7 +89,7 @@ CAMBIOS, REEMBOLSOS Y VIGENCIA:
 
 ACCESO A CONTENIDO:
 - El alumno puede ver el listado de cursos, pero los cursos premium aparecen bloqueados.
-- Para acceder a un curso premium, debe pagar S/50 por ese curso (subir voucher automático o WhatsApp) o llegar al nivel "Súper Saiyajín".
+- Para acceder a un curso premium, debe pagar S/60 por ese curso (subir voucher automático o WhatsApp) o llegar al nivel "Súper Saiyajín".
 - No puede reproducir los videos hasta completar el pago.
 
 COMUNIDAD Y PARTICIPACIÓN:
