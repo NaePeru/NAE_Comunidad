@@ -139,18 +139,13 @@ Reemplazá los valores por los reales. Sin ese bloque no se matricula nada.`;
     if (Array.isArray(cacheCursosCatalogo) && cacheCursosCatalogo.length > 0) {
       const UMBRAL = 3; // menos de 3 lecciones cargadas = en construcción
       const listos = cacheCursosCatalogo.filter(c => c.lecciones >= UMBRAL).map(c => `  · ${c.titulo} (${c.lecciones} lecciones)`);
-      const construccion = cacheCursosCatalogo.filter(c => c.lecciones < UMBRAL).map(c => `  · ${c.titulo} (${c.lecciones} lecciones cargadas)`);
+      const construccion = [] // ocultos // (c => `  · ${c.titulo} (${c.lecciones} lecciones cargadas)`);
       ctx += `
 
 - Estado del catálogo de cursos grabados:
 DISPONIBLES ya:
 ${listos.join('\n') || '  (ninguno por ahora)'}
-EN CONSTRUCCIÓN (contenido incompleto):
-${construccion.join('\n') || '  (ninguno)'}
-
-Si el alumno pregunta por un curso que está EN CONSTRUCCIÓN, respondé EXACTAMENTE
-que estamos desarrollando los temas que faltan y que pronto estará disponible.
-No prometas fechas exactas ni detalles del contenido.`;
+`;
     }
 
     ctx += `
