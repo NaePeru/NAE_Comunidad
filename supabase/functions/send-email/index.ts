@@ -397,6 +397,15 @@ Deno.serve(async (req) => {
         ? `<p style="font-size:15px;color:#9CA3AF;line-height:1.8;margin:0 0 10px;">${detalle.join('<br>')}</p>`
         : '';
 
+      // Botones del grupo de WhatsApp y la clase por Zoom (si el grupo los tiene)
+      const grupoWa = String(body?.grupo_whatsapp ?? '').trim();
+      const linkZoom = String(body?.link_zoom ?? '').trim();
+      const btn = (href: string, txt: string, bg: string) =>
+        `<a href="${href}" style="display:inline-block;background:${bg};color:#0B0F19;font-weight:700;padding:12px 22px;border-radius:8px;text-decoration:none;margin:6px 8px 0 0;">${txt}</a>`;
+      const enlacesHtml = (grupoWa || linkZoom)
+        ? `<div style="margin:6px 0 10px;">${grupoWa ? btn(grupoWa, '💬 Grupo de WhatsApp', '#25D366') : ''}${linkZoom ? btn(linkZoom, '🎥 Clase por Zoom', '#2F80ED') : ''}</div>`
+        : '';
+
       const ok = await enviarResend(
         email,
         `🎓 Matrícula confirmada: ${curso}`,
@@ -407,6 +416,7 @@ Deno.serve(async (req) => {
              <strong style="color:#fff;">${curso}</strong> ya está reservado. 🎉
            </p>
            ${detalleHtml}
+           ${enlacesHtml}
            <p style="font-size:14px;color:#9CA3AF;line-height:1.7;margin:0 0 6px;border-top:1px solid #1F2937;padding-top:12px;">
              🎁 <strong style="color:#fff;">Además, tu matrícula incluye acceso a la versión grabada del curso</strong>
              en la comunidad NAE, para que repases las clases cuando quieras.
