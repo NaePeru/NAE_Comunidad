@@ -10,7 +10,7 @@ import { session } from './auth.js';
 // Precio de los cursos de la comunidad: S/60 (decision del negocio 04/11).
 // Para diferenciar algn curso en el futuro: agregarlo en PRECIOS_POR_CURSO.
 const PRECIOS_POR_CURSO = {};
-const precioDe = (course) => PRECIOS_POR_CURSO[course?.slug] ?? 60;
+const precioDe = (course) => PRECIOS_POR_CURSO[course?.slug] ?? 80;
 
 // ── Verificar si el alumno ya compró un curso específico ───────────────────
 export async function tieneCursoComprado(courseId) {

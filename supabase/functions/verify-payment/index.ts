@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     const monto = parseFloat(parsed.monto) || 0;
     // Precio esperado: TODOS los cursos de la comunidad S/60 (regla del negocio 04/11).
     const PRECIOS: Record<string, number> = {};
-    const PRECIO_DEFAULT = 60;
+    const PRECIO_DEFAULT = 80;
     let esperado = PRECIO_DEFAULT;
     try {
       const cursos = await admin.from('courses').select('slug').eq('id', body?.courseId ?? '').single();
