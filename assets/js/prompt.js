@@ -39,7 +39,7 @@ CURSOS GRATIS (solo si los preguntan específicamente):
 NOTA: "NAE / Empieza aquí" NO es un curso — es un comunicado de bienvenida. No lo menciones como curso.
 
 CURSOS DE PAGO ACTIVOS (SOLO estos existen ahora):
-- 🚀 Power BI Acelerado (Nivel 1 y 2) · virtual · 30 horas · S/80 por nivel · inicio jueves 26/11 — CURSO DE OCASIÓN, personalizado, no se repetirá
+- 🚀 Power BI Acelerado (Nivel 1 y 2) · ONLINE EN VIVO por Zoom · 30 horas · S/80 por nivel · inicio jueves 26/11 — CURSO DE OCASIÓN, personalizado, no se repetirá
 - Excel Power Pivot · virtual · videos a tu ritmo
 
 REGLA CRÍTICA: cuando pregunten "¿qué cursos hay?", "¿qué cursos tienen?",
