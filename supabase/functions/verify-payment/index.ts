@@ -218,21 +218,16 @@ Deno.serve(async (req) => {
             const nombreCurso = cursoInfo?.titulo || 'tu curso';
             const primerNombre = (perfil?.nombre || user.email?.split('@')[0] || 'alumno').split(' ')[0];
             const htmlBienvenida = `
-            <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px 16px;background:#FFFFFF;color:#1F2937;font-size:15px;line-height:1.8">
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px 16px;background:#FFFFFF;color:#1F2937;font-size:15px;line-height:1.8;">
               <div style="border-bottom:2px solid #0F2A43;padding-bottom:10px;margin-bottom:16px">
                 <span style="font-size:16px;font-weight:bold;color:#0F2A43;letter-spacing:1px;">&#9670; NAE Academia</span>
-                <span style="float:right;font-size:13px;color:#5B6470;font-weight:700;">Matr&iacute;cula confirmada</span>
               </div>
               <p>&#161;Hola, <b>${primerNombre}</b>! Tu matr&iacute;cula en <b style="color:#0F2A43;">${nombreCurso}</b> queda confirmada &#127881;</p>
-              <p><b>Tu acceso ya est&aacute; activo:</b></p>
-              <p>&#128205; Entra a <a href="https://comunidad.naeacademia.com" style="color:#E05C2A;font-weight:bold;">comunidad.naeacademia.com</a> con este mismo correo (${user.email}) — el curso ya aparece desbloqueado en tu cuenta.</p>
-              <p>&#128226; <b>El enlace de la sala (Zoom) llegar&aacute; por el grupo de WhatsApp del curso:</b><br>
-              <a href="https://chat.whatsapp.com/JqkQtA62ME1Lc2KBshAbur" style="color:#E05C2A;font-weight:bold;">&gt;&gt; &Uacute;nete al grupo del curso</a></p>
-              <p>&#128197; Inicio: <b>jueves 26 de noviembre</b> — clases en vivo por Zoom. El enlace de cada clase llega por el grupo de WhatsApp.</p>
+              <p>El enlace de la sala llegar&aacute; por el grupo de WhatsApp del curso.</p>
               <p>Nos vemos en clase.</p>
               <div style="margin-top:18px;padding-top:12px;border-top:1px solid #E3E1D6;font-size:13px;color:#0F2A43;">
                 <b>GER&Oacute;NIMO CRUZADO</b><br>
-                Analista de datos &middot; NAE Academia
+                NAE Academia
               </div>
             </div>`;
             await fetch('https://api.resend.com/emails', {
@@ -241,7 +236,7 @@ Deno.serve(async (req) => {
               body: JSON.stringify({
                 from: 'Geronimo Cruzado <informes@naeacademia.com>',
                 to: user.email,
-                subject: `Matrícula confirmada: ${nombreCurso} — el enlace de la sala llega por el grupo de WhatsApp`,
+                subject: `Matrícula confirmada: ${nombreCurso}`,
                 html: htmlBienvenida,
                 reply_to: 'geronimo.cruzado.c@uni.edu.pe',
               }),
