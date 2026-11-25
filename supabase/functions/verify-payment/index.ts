@@ -223,7 +223,8 @@ Deno.serve(async (req) => {
                 <span style="font-size:16px;font-weight:bold;color:#0F2A43;letter-spacing:1px;">&#9670; NAE Academia</span>
               </div>
               <p>&#161;Hola, <b>${primerNombre}</b>! Tu matr&iacute;cula en <b style="color:#0F2A43;">${nombreCurso}</b> queda confirmada &#127881;</p>
-              <p>El enlace de la sala llegar&aacute; por el grupo de WhatsApp del curso.</p>
+              <p>&#128226; &Uacute;nete al grupo de WhatsApp del curso (ah&iacute; llega el enlace de cada clase):<br>
+              <a href="https://chat.whatsapp.com/DQnqos5PkyrC1Ty4drotY6" style="color:#E05C2A;font-weight:bold;text-decoration:underline;">&gt;&gt; Grupo del curso Power BI</a></p>
               <p>Nos vemos en clase.</p>
               <div style="margin-top:18px;padding-top:12px;border-top:1px solid #E3E1D6;font-size:13px;color:#0F2A43;">
                 <b>GER&Oacute;NIMO CRUZADO</b><br>
